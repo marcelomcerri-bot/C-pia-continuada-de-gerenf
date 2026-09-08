@@ -11,6 +11,7 @@ interface PlayerData {
   online: boolean;
   currentRoom: string;
   prestige: number;
+  score: number;
   energy: number;
   stress: number;
   level: string;
@@ -18,6 +19,12 @@ interface PlayerData {
   lastActivity: string;
   shiftTime: number;
   lastSeen: number;
+  x?: number;
+  y?: number;
+  facing?: string;
+  isMoving?: boolean;
+  avatar?: any;
+  activeCase?: string;
 }
 
 // In-memory store for rooms and players
@@ -79,7 +86,7 @@ function broadcastRoomUpdate(roomCode: string) {
 // API Routes
 app.post("/api/rooms/:roomCode/join", (req, res) => {
   const { roomCode } = req.params;
-  const { playerName, playerId: reqPlayerId } = req.body;
+  const { playerName, playerId: reqPlayerId, avatar } = req.body;
   
   if (!rooms[roomCode]) {
     rooms[roomCode] = {};
@@ -95,14 +102,20 @@ app.post("/api/rooms/:roomCode/join", (req, res) => {
     playerName: playerName || `Estudante`,
     online: true,
     currentRoom: "Corredor",
-    prestige: 100,
+    prestige: 0,
+    score: 0,
     energy: 100,
     stress: 0,
     level: "Estudante",
     completedMissions: 0,
-    lastActivity: "Iniciou o turno",
+    lastActivity: "Entrou no hospital",
     shiftTime: 0,
-    lastSeen: Date.now()
+    lastSeen: Date.now(),
+    x: 400,
+    y: 300,
+    facing: 'down',
+    isMoving: false,
+    avatar: avatar || null,
   };
   
   broadcastRoomUpdate(roomCode);
@@ -113,14 +126,22 @@ app.post("/api/rooms/:roomCode/heartbeat", (req, res) => {
   const { roomCode } = req.params;
   const {
     playerId,
+    playerName: reqPlayerName,
     currentRoom,
     prestige,
+    score,
     energy,
     stress,
     level,
     completedMissions,
     lastActivity,
-    shiftTime
+    shiftTime,
+    x,
+    y,
+    facing,
+    isMoving,
+    avatar,
+    activeCase
   } = req.body;
   
   if (!playerId) {
@@ -135,21 +156,29 @@ app.post("/api/rooms/:roomCode/heartbeat", (req, res) => {
   }
   
   const existingPlayer = rooms[roomCode][playerId];
-  const playerName = existingPlayer ? existingPlayer.playerName : `Estudante`;
+  const playerName = reqPlayerName || (existingPlayer ? existingPlayer.playerName : `Estudante`);
+  const finalScore = score !== undefined ? score : (prestige !== undefined ? prestige : 0);
   
   rooms[roomCode][playerId] = {
     playerId,
     playerName,
     online: true,
     currentRoom: currentRoom || "Corredor",
-    prestige: prestige !== undefined ? prestige : 100,
+    prestige: finalScore,
+    score: finalScore,
     energy: energy !== undefined ? energy : 100,
     stress: stress !== undefined ? stress : 0,
     level: level || "Estudante",
     completedMissions: completedMissions !== undefined ? completedMissions : 0,
     lastActivity: lastActivity || "Ativo",
     shiftTime: shiftTime !== undefined ? shiftTime : 0,
-    lastSeen: Date.now()
+    lastSeen: Date.now(),
+    x: x !== undefined ? x : existingPlayer?.x ?? 400,
+    y: y !== undefined ? y : existingPlayer?.y ?? 300,
+    facing: facing || existingPlayer?.facing || 'down',
+    isMoving: isMoving !== undefined ? isMoving : false,
+    avatar: avatar || existingPlayer?.avatar || null,
+    activeCase: activeCase || existingPlayer?.activeCase || '',
   };
   
   broadcastRoomUpdate(roomCode);

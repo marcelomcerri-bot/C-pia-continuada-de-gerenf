@@ -37,6 +37,7 @@ export class GameScene extends Phaser.Scene {
   private energyRestoreTimer = 0;
   private stressDecayTimer = 0;
   private lastHudEmit = 0;
+  private lastServerHeartbeat = 0;
   private crisisTimer = 0;
   private nextCrisisTime = 0;
   private lastActivity = 'Explorando o hospital';
@@ -2124,6 +2125,12 @@ export class GameScene extends Phaser.Scene {
       this.lastHudEmit = time;
       this.emitHudUpdate();
     }
+
+    // Server heartbeat for Teacher/Spectator mode
+    if (time - this.lastServerHeartbeat > 1000) {
+      this.lastServerHeartbeat = time;
+      this.broadcastState();
+    }
   }
 
   // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -2155,14 +2162,21 @@ export class GameScene extends Phaser.Scene {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           playerId: room.playerId,
+          playerName: this.state.playerProfile?.name || 'Estudante',
           currentRoom: roomName,
           prestige: this.state.prestige,
+          score: this.state.prestige,
           energy: Math.round(this.state.energy),
           stress: Math.round(this.state.stress || 0),
           level: levelInfo.title ?? `Nível ${levelInfo.level}`,
           completedMissions: this.state.completedMissions.length,
           lastActivity: this.lastActivity,
           shiftTime: Math.floor(this.state.gameTime / 60),
+          x: Math.round(this.player.x),
+          y: Math.round(this.player.y),
+          facing: (this.player as any).facing || 'down',
+          isMoving: this.player.isCurrentlyMoving(),
+          avatar: this.state.playerProfile || null,
         }),
       });
     } catch { /* silent — never interrupt gameplay */ }
