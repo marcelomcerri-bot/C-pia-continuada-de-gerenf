@@ -805,31 +805,38 @@ export class BootScene extends Phaser.Scene {
     const hX = cx - hW / 2;
     const hY = tY - hH + 4;
 
-    // Head base
+    // 1. Head base
     drawRoundedRect(hX, hY, hW, hH, c.skin, outline, 7);
     
-    // Blush
+    // 2. Hair (drawn BEFORE blush/eyes so face features are always on top!)
+    ctx.fillStyle = c.hair;
+    this.drawHair(ctx, c.visual.hairStyle, c.hair, cx, hY, hW/2, hH/2, isDown, isUp, isLR, facing, c.skin);
+
+    // 3. Blush
     if (!isUp && c.visual.gender === 'female') {
       ctx.fillStyle = 'rgba(244,114,182, 0.5)';
       if(isLR) {
-        ctx.beginPath(); ctx.arc(hX + (facing>0?hW-6:6), hY + hH - 6, 3, 0, Math.PI*2); ctx.fill();
+        const blushX = facing > 0 ? hX + hW - 5 : hX + 3;
+        ctx.beginPath(); ctx.arc(blushX, hY + hH - 5, 2.5, 0, Math.PI*2); ctx.fill();
       } else {
         ctx.beginPath(); ctx.arc(hX + 4, hY + hH - 6, 3, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(hX + hW - 4, hY + hH - 6, 3, 0, Math.PI*2); ctx.fill();
       }
     }
 
-    // Eyes
+    // 4. Eyes (drawn AFTER hair so they are NEVER covered by bangs or blocks!)
     if (!isUp) {
       ctx.fillStyle = '#0f172a';
       if (isLR) {
-        const eyeX = facing > 0 ? hX + hW - 6 : hX + 6;
-        ctx.fillRect(eyeX, hY + hH/2 - 2, 3, 4);
+        // Single eye on front face in side profile view
+        const eyeX = facing > 0 ? hX + hW - 5 : hX + 2;
+        const eyeY = hY + hH/2 - 2;
+        ctx.fillRect(eyeX, eyeY, 3, 4);
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(eyeX + (facing>0?1:0), hY + hH/2 - 2, 1, 1);
+        ctx.fillRect(facing > 0 ? eyeX + 1 : eyeX, eyeY, 1, 1);
         if (c.visual.gender === 'female') {
            ctx.fillStyle = '#0f172a';
-           ctx.fillRect(eyeX + (facing>0 ? 3 : -1), hY + hH/2 - 2, 1, 1);
+           ctx.fillRect(facing > 0 ? eyeX + 1 : eyeX - 1, eyeY - 1, 2, 1); // Eyelash
         }
       } else {
         ctx.fillRect(hX + 5, hY + hH/2 - 2, 3, 4);
@@ -844,10 +851,6 @@ export class BootScene extends Phaser.Scene {
         }
       }
     }
-
-    // Hair
-    ctx.fillStyle = c.hair;
-    this.drawHair(ctx, c.visual.hairStyle, c.hair, cx, hY, hW/2, hH/2, isDown, isUp, isLR, facing, c.skin);
 
     // Stethoscope for Doctors
     if (c.role === 'doctor' && !isUp) {
@@ -1004,6 +1007,37 @@ export class BootScene extends Phaser.Scene {
 
     if (style === 'bald') return;
 
+    // ── SIDE PROFILE VIEW (isLR): Keep face and eye completely clear! ──────
+    if (isLR) {
+      const backX = facing > 0 ? cx - hrx : cx - 1;
+      // 1. Top cap (skull crown)
+      drawHairChunk(cx - hrx, hY - 3, hrx * 2, 5, 3);
+
+      // 2. Back half of skull hair coverage
+      drawHairChunk(backX, hY, hrx + 1, hry * 2 - 4, 3);
+
+      // 3. Sideburn / Ear anchor
+      const sbX = facing > 0 ? cx - 2 : cx;
+      ctx.fillStyle = hair;
+      ctx.fillRect(sbX, hY + 1, 2.5, 5);
+
+      // 4. Style-specific back attachments (ponytail, bun, long hair)
+      if (style === 'ponytail' || style === 'high_pony' || style === 'long_tied') {
+        const ponyX = facing > 0 ? cx - hrx - 3 : cx + hrx - 3;
+        // Scrunchie / Tie
+        ctx.fillStyle = '#f43f5e';
+        ctx.fillRect(ponyX + 1, hY + 3, 5, 2);
+        // Ponytail strand hanging behind the head
+        drawHairChunk(ponyX, hY + 5, 6, 12, 2);
+      } else if (style === 'bun' || style === 'updo') {
+        const bunX = facing > 0 ? cx - hrx - 2 : cx + hrx - 4;
+        drawHairChunk(bunX, hY - 5, 8, 8, 4);
+      } else if (style === 'loose_long') {
+        drawHairChunk(backX - 2, hY + 2, hrx + 3, hry * 2 + 5, 3);
+      }
+      return; // Early return for side profile so no front bangs cover the face!
+    }
+
     if (style === 'male_stylish') {
       if (!isUp) {
         ctx.fillStyle = hair;
@@ -1037,85 +1071,57 @@ export class BootScene extends Phaser.Scene {
     // Full coverage/details if facing away (de costas)
     if (isUp) {
       if (style === 'low_fade') {
-        // High fade, lots of neck showing
         drawHairChunk(cx - hrx, hY, hrx * 2, hry * 2 - 7, 4);
       } else if (style === 'curly_top' || style === 'afro_short') {
-        // Curly/Afro on top, high fade on sides/back
         drawHairChunk(cx - hrx - 1, hY - 2, hrx * 2 + 2, hry * 2 - 5, 5);
       } else if (style === 'receding') {
-        // Receding hair from back: hair on sides and a band at the bottom, bald on top
         drawHairChunk(cx - hrx, hY + 4, hrx * 2, hry * 2 - 9, 3);
-        drawHairChunk(cx - hrx, hY, 3, hry * 2 - 5, 2); // left side
-        drawHairChunk(cx + hrx - 3, hY, 3, hry * 2 - 5, 2); // right side
+        drawHairChunk(cx - hrx, hY, 3, hry * 2 - 5, 2);
+        drawHairChunk(cx + hrx - 3, hY, 3, hry * 2 - 5, 2);
       } else if (style === 'bob') {
-        // Medium bob covering neck almost fully
         drawHairChunk(cx - hrx, hY, hrx * 2, hry * 2 - 2, 3);
       } else if (style === 'loose_long') {
-        // Long hair flowing down over the back
         drawHairChunk(cx - hrx - 2, hY, hrx * 2 + 4, hry * 2 + 8, 4);
-        // Hair tip shading
         ctx.fillStyle = darken(hair, 0.15);
         ctx.fillRect(cx - hrx - 1, hY + hry * 2 + 4, hrx * 2 + 2, 3);
       } else if (style === 'bun' || style === 'updo') {
-        // Tied up, clean neck
         drawHairChunk(cx - hrx, hY, hrx * 2, hry * 2 - 5, 4);
-        // Bun/updo on top/back
         if (style === 'bun') {
           drawHairChunk(cx - 5, hY - 7, 10, 8, 4);
-          // Cute hair scrunchie
           ctx.fillStyle = '#3b82f6';
           ctx.fillRect(cx - 4, hY - 1, 8, 2);
         } else {
           drawHairChunk(cx - 6, hY - 4, 12, 7, 3);
         }
       } else if (style === 'ponytail' || style === 'high_pony' || style === 'long_tied') {
-        // Tied back in a pony, clean neck
         drawHairChunk(cx - hrx, hY, hrx * 2, hry * 2 - 5, 4);
-        // Cute hair scrunchie
         ctx.fillStyle = '#f43f5e';
         ctx.fillRect(cx - 3, hY + 4, 6, 2);
-        // Ponytail hanging down
         drawHairChunk(cx - 3, hY + 6, 6, 12, 2);
       } else {
-        // Standard short styles: business, short_neat, short_wavy, short_curly_gray, etc.
         const puff = (style === 'short_wavy' || style === 'short_curly_gray') ? 1 : 0;
         drawHairChunk(cx - hrx - puff, hY - puff, hrx * 2 + puff * 2, hry * 2 - 5 + puff, 4);
       }
       return;
     }
 
-    // Top cap (bangs)
+    // Front view (isDown)
     let bangH = 6;
     if (style.includes('short') || style === 'business' || style === 'low_fade') bangH = 4;
     if (style === 'bob') bangH = 7;
     if (style === 'afro_short' || style === 'curly_top') bangH = 8;
     
     drawHairChunk(cx - hrx, hY - 1, hrx * 2, bangH + 1, 3);
-    
-    // Sideburns / back hair extending down if facing side
-    if (isLR) {
-      if (style === 'bob' || style.includes('long')) {
-         drawHairChunk(facing > 0 ? cx - hrx : cx, hY, hrx, hry * 2 - 2, 2);
-      } else {
-         drawHairChunk(facing > 0 ? cx - hrx : cx + hrx / 2, hY, hrx / 2, hry, 2);
-      }
-    } else {
-      // Front facing sideburns or long hair framing face
-      if (style === 'bob' || style.includes('long')) {
-        drawHairChunk(cx - hrx, hY, 4, hry * 2 - 2, 2);
-        drawHairChunk(cx + hrx - 4, hY, 4, hry * 2 - 2, 2);
-      }
+
+    if (style === 'bob' || style.includes('long')) {
+      drawHairChunk(cx - hrx, hY, 4, hry * 2 - 2, 2);
+      drawHairChunk(cx + hrx - 4, hY, 4, hry * 2 - 2, 2);
     }
 
-    // Additional pieces
     switch (style) {
       case 'bun':
       case 'updo':
         drawHairChunk(cx - 6, hY - 8, 12, 8, 4);
-        break;
-      case 'ponytail':
-      case 'long_tied':
-        if(isUp || isLR) drawHairChunk(cx - (isLR && facing<0 ? 8 : -4), hY + 4, 6, 12, 2);
         break;
       case 'afro_short':
       case 'curly_top':
@@ -1123,58 +1129,25 @@ export class BootScene extends Phaser.Scene {
       case 'short_wavy':
         drawHairChunk(cx - hrx - 2, hY - 4, hrx*2 + 4, 10, 5);
         break;
-      case 'male_stylish':
-        if (!isUp) {
-          drawHairChunk(cx - hrx - 1, hY - 7, hrx * 2 + 2, 9, 4);
-          ctx.fillStyle = hair;
-          ctx.beginPath();
-          ctx.moveTo(cx - hrx - 1, hY - 6);
-          ctx.lineTo(cx + hrx + 2, hY - 4);
-          ctx.lineTo(cx + hrx - 1, hY + 3);
-          ctx.lineTo(cx - hrx / 3, hY + 1);
-          ctx.lineTo(cx - hrx - 1, hY - 2);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillRect(cx - hrx - 1, hY - 1, 2.5, 6);
-          ctx.fillRect(cx + hrx - 1.5, hY - 1, 2.5, 5);
-        } else {
-          drawHairChunk(cx - hrx, hY - 5, hrx * 2, hry * 2 - 4, 4);
-        }
-        break;
       case 'receding':
-        if (!isUp) {
-           ctx.fillStyle = skinColor;
-           ctx.fillRect(cx - hrx + 2, hY - 1, hrx*2 - 4, 6);
-        }
+        ctx.fillStyle = skinColor;
+        ctx.fillRect(cx - hrx + 2, hY - 1, hrx*2 - 4, 6);
         break;
       case 'loose_long':
-        if (!isUp) {
-          if (isLR) {
-            drawHairChunk(facing>0 ? cx - hrx - 2 : cx, hY, hrx + 2, hry*2 + 4, 3);
-          } else {
-            drawHairChunk(cx - hrx - 3, hY, 7, hry*2 + 4, 3);
-            drawHairChunk(cx + hrx - 4, hY, 7, hry*2 + 4, 3);
-          }
-        } else {
-          drawHairChunk(cx - hrx - 3, hY, hrx*2 + 6, hry*2 + 6, 2);
-        }
+        drawHairChunk(cx - hrx - 3, hY, 7, hry*2 + 4, 3);
+        drawHairChunk(cx + hrx - 4, hY, 7, hry*2 + 4, 3);
         break;
-      default: // Short generic
+      default:
         drawHairChunk(cx - hrx - 1, hY - 4, hrx*2 + 2, hry+2, 2);
         break;
     }
     
     // Front bangs
-    if (!isUp && style !== 'male_stylish') {
+    if (style !== 'male_stylish') {
       ctx.fillStyle = hair;
       ctx.beginPath();
-      if(isLR) {
-        ctx.moveTo(cx - hrx, hY-2); ctx.lineTo(cx + hrx, hY-2); 
-        ctx.lineTo(cx + (facing>0?hrx:-hrx), hY + hry); ctx.fill();
-      } else {
-        ctx.moveTo(cx - hrx, hY-2); ctx.lineTo(cx + hrx, hY-2);
-        ctx.lineTo(cx, hY + 6); ctx.fill();
-      }
+      ctx.moveTo(cx - hrx, hY-2); ctx.lineTo(cx + hrx, hY-2);
+      ctx.lineTo(cx, hY + 6); ctx.fill();
     }
   }
 

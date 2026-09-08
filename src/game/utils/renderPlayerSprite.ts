@@ -95,15 +95,26 @@ export function drawHair(
 
   // Modern Male Player Unique Hair Style (NO giant black block!)
   if (style === 'male_stylish') {
-    if (!isUp) {
-      // 1. Sleek Top Quiff (Curved top above skull line)
+    if (isUp) {
+      drawHairChunk(cx - hrx, hY - 4, hrx * 2, hry * 2 - 4, 3);
+      ctx.fillStyle = lighten(hair, 0.25);
+      ctx.fillRect(cx - hrx / 2, hY - 2, hrx, 1);
+    } else if (isLR) {
+      // Side profile: hair on top and back of skull, leaving face clear
+      const backX = facing > 0 ? cx - hrx : cx - 2;
+      drawHairChunk(backX, hY - 4, hrx + 2, hry + 2, 3);
+      // Sideburn
+      const sbX = facing > 0 ? cx - 2 : cx;
+      ctx.fillStyle = hair;
+      ctx.fillRect(sbX, hY + 1, 2.5, 4);
+    } else {
+      // Front view
       ctx.fillStyle = hair;
       rrFill(ctx, cx - hrx - 1, hY - 5, hrx * 2 + 2, 6, 3);
       ctx.strokeStyle = outline;
       ctx.lineWidth = 1.5;
       rrStroke(ctx, cx - hrx - 1, hY - 5, hrx * 2 + 2, 6, 3);
 
-      // 2. Angled textured fringe across top forehead (exposing forehead skin!)
       ctx.fillStyle = hair;
       ctx.beginPath();
       ctx.moveTo(cx - hrx - 1, hY - 1);
@@ -113,65 +124,54 @@ export function drawHair(
       ctx.closePath();
       ctx.fill();
 
-      // 3. Tapered sideburns
       ctx.fillRect(cx - hrx - 1, hY - 1, 2.5, 5);
       ctx.fillRect(cx + hrx - 1.5, hY - 1, 2.5, 4);
 
-      // 4. Glossy hair highlight line
       ctx.fillStyle = lighten(hair, 0.35);
       ctx.fillRect(cx - hrx / 2, hY - 3.5, hrx, 1);
-    } else {
-      drawHairChunk(cx - hrx, hY - 4, hrx * 2, hry * 2 - 4, 3);
-      ctx.fillStyle = lighten(hair, 0.25);
-      ctx.fillRect(cx - hrx / 2, hY - 2, hrx, 1);
-    }
-    return; // EARLY RETURN!
-  }
-
-  if (isUp) {
-    if (style === 'ponytail' || style === 'high_pony' || style === 'long_tied') {
-      drawHairChunk(cx - hrx, hY, hrx * 2, hry * 2 - 5, 4);
-      ctx.fillStyle = '#f43f5e';
-      ctx.fillRect(cx - 3, hY + 4, 6, 2);
-      drawHairChunk(cx - 3, hY + 6, 6, 12, 2);
-    } else {
-      drawHairChunk(cx - hrx, hY - 1, hrx * 2, hry * 2 - 5, 4);
     }
     return;
   }
 
-  // Top cap (bangs)
-  let bangH = 6;
-  if (style.includes('short') || style === 'business') bangH = 4;
-  
-  drawHairChunk(cx - hrx, hY - 1, hrx * 2, bangH + 1, 3);
-  
-  // Sideburns
+  // Female / Ponytail / Default styles
+  if (isUp) {
+    drawHairChunk(cx - hrx, hY, hrx * 2, hry * 2 - 5, 4);
+    if (style === 'ponytail' || style === 'high_pony' || style === 'long_tied') {
+      ctx.fillStyle = '#f43f5e';
+      ctx.fillRect(cx - 3, hY + 4, 6, 2);
+      drawHairChunk(cx - 3, hY + 6, 6, 12, 2);
+    }
+    return;
+  }
+
   if (isLR) {
-    drawHairChunk(facing > 0 ? cx - hrx : cx + hrx / 2, hY, hrx / 2, hry, 2);
-  } else {
-    if (style === 'ponytail') {
-      drawHairChunk(cx - hrx, hY, 3, hry * 2 - 4, 2);
-      drawHairChunk(cx + hrx - 3, hY, 3, hry * 2 - 4, 2);
+    // Side view profile:
+    // 1. Top hair cap (from back of head to forehead line, face stays clear!)
+    drawHairChunk(cx - hrx, hY - 2, hrx * 2, 6, 3);
+
+    // 2. Back hair / Ponytail on BACK of head
+    if (style === 'ponytail' || style === 'high_pony' || style === 'long_tied') {
+      const backX = facing > 0 ? cx - hrx - 3 : cx + hrx - 3;
+      // Hair tie
+      ctx.fillStyle = '#f43f5e';
+      ctx.fillRect(backX + 1, hY + 3, 5, 2);
+      // Hanging ponytail
+      drawHairChunk(backX, hY + 5, 6, 12, 2);
     }
-  }
 
-  // Additional pieces
-  if (style === 'ponytail') {
-    if (isLR) drawHairChunk(cx - (facing < 0 ? 8 : -4), hY + 4, 6, 12, 2);
-  }
-
-  // Front bangs for generic styles
-  if (!isUp) {
+    // 3. Sideburn / back of ear coverage (on back half of head)
+    const sbX = facing > 0 ? cx - hrx : cx + 2;
     ctx.fillStyle = hair;
-    ctx.beginPath();
-    if (isLR) {
-      ctx.moveTo(cx - hrx, hY - 2); ctx.lineTo(cx + hrx, hY - 2);
-      ctx.lineTo(cx + (facing > 0 ? hrx : -hrx), hY + hry); ctx.fill();
-    } else {
-      ctx.moveTo(cx - hrx, hY - 2); ctx.lineTo(cx + hrx, hY - 2);
-      ctx.lineTo(cx, hY + 6); ctx.fill();
-    }
+    ctx.fillRect(sbX, hY + 2, 4, 5);
+
+    return;
+  }
+
+  // Front view (isDown)
+  drawHairChunk(cx - hrx, hY - 1, hrx * 2, 6, 3);
+  if (style === 'ponytail') {
+    drawHairChunk(cx - hrx, hY, 3, hry * 2 - 4, 2);
+    drawHairChunk(cx + hrx - 3, hY, 3, hry * 2 - 4, 2);
   }
 }
 
@@ -303,22 +303,43 @@ export function drawCharacter(
   // Blush (Female)
   if (!isUp && c.visual.gender === 'female') {
     ctx.fillStyle = 'rgba(244,114,182, 0.5)';
-    ctx.beginPath(); ctx.arc(hX + 4, hY + hH - 6, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(hX + hW - 4, hY + hH - 6, 3, 0, Math.PI * 2); ctx.fill();
+    if (isLR) {
+      // Only on front cheek in side view
+      const blushX = facing > 0 ? hX + hW - 4 : hX + 4;
+      ctx.beginPath(); ctx.arc(blushX, hY + hH - 6, 3, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(hX + 4, hY + hH - 6, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(hX + hW - 4, hY + hH - 6, 3, 0, Math.PI * 2); ctx.fill();
+    }
   }
 
   // Eyes
   if (!isUp) {
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(hX + 5, hY + hH / 2 - 2, 3, 4);
-    ctx.fillRect(hX + hW - 8, hY + hH / 2 - 2, 3, 4);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(hX + 6, hY + hH / 2 - 2, 1, 1);
-    ctx.fillRect(hX + hW - 7, hY + hH / 2 - 2, 1, 1);
-    if (c.visual.gender === 'female') {
+    if (isLR) {
+      // Side Profile View: ONE EYE near the front edge of the face!
+      const eyeX = facing > 0 ? hX + hW - 6 : hX + 3;
+      const eyeY = hY + hH / 2 - 2;
       ctx.fillStyle = '#0f172a';
-      ctx.fillRect(hX + 4, hY + hH / 2 - 2, 1, 1);
-      ctx.fillRect(hX + hW - 5, hY + hH / 2 - 2, 1, 1);
+      ctx.fillRect(eyeX, eyeY, 3, 4);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(facing > 0 ? eyeX + 1 : eyeX, eyeY, 1, 1);
+      if (c.visual.gender === 'female') {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(facing > 0 ? eyeX + 1 : eyeX - 1, eyeY - 1, 2, 1); // Eyelash
+      }
+    } else {
+      // Front View
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(hX + 5, hY + hH / 2 - 2, 3, 4);
+      ctx.fillRect(hX + hW - 8, hY + hH / 2 - 2, 3, 4);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(hX + 6, hY + hH / 2 - 2, 1, 1);
+      ctx.fillRect(hX + hW - 7, hY + hH / 2 - 2, 1, 1);
+      if (c.visual.gender === 'female') {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(hX + 4, hY + hH / 2 - 2, 1, 1);
+        ctx.fillRect(hX + hW - 5, hY + hH / 2 - 2, 1, 1);
+      }
     }
   }
 
@@ -330,16 +351,22 @@ export function drawCharacter(
     const capColor = '#ffffff';
     const stripeColor = '#e74c3c';
     const capY = hY - 5;
+    const capX = isLR ? (facing > 0 ? cx - 7 : cx - 5) : cx - 8;
     ctx.fillStyle = capColor;
-    rrFill(ctx, cx - 8, capY, 16, 6, 1);
+    rrFill(ctx, capX, capY, 14, 6, 1);
     ctx.fillStyle = stripeColor;
-    ctx.fillRect(cx - 8, capY + 3, 16, 2);
+    ctx.fillRect(capX, capY + 3, 14, 2);
   }
 
   // --- ARMS (front) ---
   const armColor = isUp ? darken(torsoColor, 0.1) : torsoColor;
-  drawRoundedRect(cx - tW / 2 - 4, tY + 2 + (moving ? -stride : 0), 5, 11, armColor, outline, 2);
-  drawRoundedRect(cx + tW / 2 - 1, tY + 2 + (moving ? -strideB : 0), 5, 11, armColor, outline, 2);
+  if (isLR) {
+    const frontArmX = facing > 0 ? cx + tW / 2 - 3 : cx - tW / 2 - 2;
+    drawRoundedRect(frontArmX, tY + 2 + (moving ? -stride : 0), 5, 11, armColor, outline, 2);
+  } else {
+    drawRoundedRect(cx - tW / 2 - 4, tY + 2 + (moving ? -stride : 0), 5, 11, armColor, outline, 2);
+    drawRoundedRect(cx + tW / 2 - 1, tY + 2 + (moving ? -strideB : 0), 5, 11, armColor, outline, 2);
+  }
 
   // 📋 Clinical Clipboard
   if (!isUp) {
@@ -347,7 +374,7 @@ export function drawCharacter(
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 1;
 
-    const cbX = cx + 3;
+    const cbX = isLR ? (facing > 0 ? cx + 2 : cx - 8) : cx + 3;
     const cbY = tY + 5;
 
     ctx.fillRect(cbX, cbY, 6, 8);
