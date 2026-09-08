@@ -27,9 +27,27 @@ interface PlayerData {
   activeCase?: string;
 }
 
-// In-memory store for rooms and players
+interface DecisionLog {
+  id: string;
+  playerId: string;
+  playerName: string;
+  timestamp: number;
+  npcName: string;
+  questionText: string;
+  selectedOption: string;
+  isCorrect: boolean;
+  pointsEarned: number;
+  feedback: string;
+  category: string;
+}
+
+// In-memory store for rooms and decision logs (erros/acertos)
 const rooms: Record<string, Record<string, PlayerData>> = {
   GLOBAL: {}
+};
+
+const decisionLogs: Record<string, DecisionLog[]> = {
+  GLOBAL: []
 };
 
 // Registered SSE clients for each room
@@ -213,6 +231,65 @@ app.post("/api/rooms/:roomCode/reset", (req, res) => {
   rooms[roomCode] = {};
   broadcastRoomUpdate(roomCode);
   res.json({ status: "ok", message: "Room reset successfully" });
+});
+
+// Record a student's answer (Hit/Error)
+app.post("/api/rooms/:roomCode/log-decision", (req, res) => {
+  const { roomCode } = req.params;
+  const {
+    playerId,
+    playerName,
+    npcName,
+    questionText,
+    selectedOption,
+    isCorrect,
+    pointsEarned,
+    feedback,
+    category
+  } = req.body;
+
+  if (!decisionLogs[roomCode]) {
+    decisionLogs[roomCode] = [];
+  }
+
+  const logEntry: DecisionLog = {
+    id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    playerId: playerId || "anon",
+    playerName: playerName || "Estudante",
+    timestamp: Date.now(),
+    npcName: npcName || "NPC Hospitalar",
+    questionText: questionText || "Questão gerencial",
+    selectedOption: selectedOption || "Opção selecionada",
+    isCorrect: Boolean(isCorrect),
+    pointsEarned: typeof pointsEarned === "number" ? pointsEarned : 0,
+    feedback: feedback || "",
+    category: category || "Gerência"
+  };
+
+  decisionLogs[roomCode].unshift(logEntry); // new decisions first
+
+  // Keep max 500 decision entries per room
+  if (decisionLogs[roomCode].length > 500) {
+    decisionLogs[roomCode] = decisionLogs[roomCode].slice(0, 500);
+  }
+
+  res.json({ status: "ok", logId: logEntry.id });
+});
+
+// Fetch all recorded student decisions (Erros e Acertos)
+app.get("/api/rooms/:roomCode/decisions", (req, res) => {
+  const { roomCode } = req.params;
+  const logs = decisionLogs[roomCode] || [];
+  res.json({ decisions: logs });
+});
+
+// Clear ALL records (rooms, active players, decision logs) to start fresh
+app.post("/api/rooms/:roomCode/clear-logs", (req, res) => {
+  const { roomCode } = req.params;
+  rooms[roomCode] = {};
+  decisionLogs[roomCode] = [];
+  broadcastRoomUpdate(roomCode);
+  res.json({ status: "ok", message: "Todos os registros (jogadores, erros e acertos) foram zerados." });
 });
 
 app.get("/api/rooms/:roomCode/stream", (req, res) => {

@@ -17,9 +17,32 @@ import {
   Clock,
   Eye,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  Search,
+  Trash2,
+  Filter,
+  Check,
+  ClipboardList,
+  FileText,
+  X
 } from "lucide-react";
 import { playSound } from "../game/utils/audio";
+
+export interface DecisionLog {
+  id: string;
+  playerId: string;
+  playerName: string;
+  timestamp: number;
+  npcName: string;
+  questionText: string;
+  selectedOption: string;
+  isCorrect: boolean;
+  pointsEarned: number;
+  feedback: string;
+  category: string;
+}
 
 export interface PlayerData {
   playerId: string;
@@ -511,6 +534,10 @@ export function ProfessorView() {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [isRealtime, setIsRealtime] = useState(false);
   const [showClassReport, setShowClassReport] = useState(false);
+  const [showDecisionLogsModal, setShowDecisionLogsModal] = useState(false);
+  const [decisions, setDecisions] = useState<DecisionLog[]>([]);
+  const [decisionFilter, setDecisionFilter] = useState<"all" | "correct" | "error">("all");
+  const [decisionSearch, setDecisionSearch] = useState("");
 
   // Manual spectator override (null = auto broadcast top scorer)
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
@@ -623,6 +650,23 @@ export function ProfessorView() {
     };
   }, [fetchPlayers]);
 
+  const fetchDecisions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/rooms/GLOBAL/decisions");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && Array.isArray(data.decisions)) {
+        setDecisions(data.decisions);
+      }
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    fetchDecisions();
+    const interval = setInterval(fetchDecisions, 3000);
+    return () => clearInterval(interval);
+  }, [fetchDecisions]);
+
   const handleResetRoom = useCallback(async () => {
     try {
       await fetch("/api/rooms/GLOBAL/reset", { method: "POST" });
@@ -633,6 +677,53 @@ export function ProfessorView() {
       console.error("Error resetting room", err);
     }
   }, [fetchPlayers]);
+
+  const handleClearAllServerRecords = useCallback(async () => {
+    if (
+      !window.confirm(
+        "⚠️ TEM CERTEZA QUE DESEJA ZERAR TODOS OS REGISTROS DO SERVIDOR?\n\nIsso apagará permanentemente todos os registros de erros, acertos e conexões ativas dos alunos no servidor para iniciar uma nova avaliação do zero."
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/rooms/GLOBAL/clear-logs", { method: "POST" });
+      if (res.ok) {
+        setDecisions([]);
+        setPlayers([]);
+        setManualSelectedId(null);
+        fetchPlayers();
+        fetchDecisions();
+        alert("✅ Todos os registros de erros, acertos e jogadores foram zerados no servidor com sucesso!");
+      }
+    } catch (err) {
+      alert("Erro ao zerar registros no servidor.");
+    }
+  }, [fetchPlayers, fetchDecisions]);
+
+  // Filter decisions log
+  const filteredDecisions = decisions.filter((d) => {
+    const matchesFilter =
+      decisionFilter === "all"
+        ? true
+        : decisionFilter === "correct"
+        ? d.isCorrect
+        : !d.isCorrect;
+
+    const term = decisionSearch.toLowerCase().trim();
+    const matchesSearch =
+      !term ||
+      d.playerName.toLowerCase().includes(term) ||
+      d.npcName.toLowerCase().includes(term) ||
+      d.questionText.toLowerCase().includes(term) ||
+      d.selectedOption.toLowerCase().includes(term) ||
+      d.category.toLowerCase().includes(term);
+
+    return matchesFilter && matchesSearch;
+  });
+
+  const correctCount = decisions.filter((d) => d.isCorrect).length;
+  const errorCount = decisions.filter((d) => !d.isCorrect).length;
 
   // Real active online players filter
   const realOnlinePlayers = players.filter((p) => p.online);
@@ -708,6 +799,29 @@ export function ProfessorView() {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              try {
+                playSound("click");
+              } catch {}
+              setShowDecisionLogsModal(true);
+              fetchDecisions();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-[#050c18] font-mono font-bold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            <span>ERROS & ACERTOS ({decisions.length})</span>
+          </button>
+
+          <button
+            onClick={handleClearAllServerRecords}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+            title="Apaga permanentemente todos os registros e limpa a sala do servidor"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>ZERAR TUDO</span>
+          </button>
+
           <button
             onClick={() => {
               try {
@@ -1097,6 +1211,252 @@ export function ProfessorView() {
           </div>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* MODAL: RELATÓRIO DE ERROS & ACERTOS DOS ALUNOS NO SERVIDOR       */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showDecisionLogsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="relative w-full max-w-5xl h-[90vh] bg-[#071324] border-2 border-teal-500/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden font-sans"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-5 py-3.5 bg-[#0a1b30] border-b border-teal-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <ClipboardList className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm sm:text-base font-bold text-white font-mono tracking-wide flex items-center gap-2 uppercase">
+                      RELATÓRIO DE ERROS & ACERTOS DA TURMA
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30">
+                        {decisions.length} Registros no Servidor
+                      </span>
+                    </h2>
+                    <p className="text-[11px] text-slate-400 font-mono">
+                      Acompanhe em tempo real as escolhas, condutas clínicas e decisões gerenciais de cada aluno
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleClearAllServerRecords}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs transition-all shadow cursor-pointer active:scale-95"
+                    title="Zera permanentemente o banco de respostas e a lista de alunos no servidor"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>ZERAR TODOS OS REGISTROS</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowDecisionLogsModal(false)}
+                    className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Stats Ribbon */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-[#050c18] border-b border-slate-800 font-mono text-xs">
+                <div className="p-3 rounded-xl bg-[#09182c] border border-slate-700/80">
+                  <span className="text-[10px] text-slate-400 uppercase block mb-1">Total de Respostas</span>
+                  <span className="text-lg font-bold text-white flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-teal-400" />
+                    {decisions.length}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#09182c] border border-emerald-500/30">
+                  <span className="text-[10px] text-emerald-400 uppercase block mb-1">Acertos (Condutas Corretas)</span>
+                  <span className="text-lg font-bold text-emerald-300 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    {correctCount} ({decisions.length ? Math.round((correctCount / decisions.length) * 100) : 0}%)
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#09182c] border border-rose-500/30">
+                  <span className="text-[10px] text-rose-400 uppercase block mb-1">Erros / Inadequadas</span>
+                  <span className="text-lg font-bold text-rose-300 flex items-center gap-1.5">
+                    <XCircle className="w-4 h-4 text-rose-400" />
+                    {errorCount} ({decisions.length ? Math.round((errorCount / decisions.length) * 100) : 0}%)
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#09182c] border border-amber-500/30">
+                  <span className="text-[10px] text-amber-400 uppercase block mb-1">Pontos Distribuídos</span>
+                  <span className="text-lg font-bold text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    {decisions.reduce((acc, d) => acc + (d.pointsEarned || 0), 0)} PTS
+                  </span>
+                </div>
+              </div>
+
+              {/* Filters & Search Bar */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-[#0a182b] border-b border-slate-800 flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 min-w-[220px]">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={decisionSearch}
+                      onChange={(e) => setDecisionSearch(e.target.value)}
+                      placeholder="Buscar por aluno, NPC, questão..."
+                      className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#050c18] border border-slate-700 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-teal-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 font-mono text-xs">
+                  <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                    <Filter className="w-3.5 h-3.5 text-teal-400" />
+                    Filtrar:
+                  </span>
+                  <button
+                    onClick={() => setDecisionFilter("all")}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      decisionFilter === "all"
+                        ? "bg-teal-500 text-[#050c18] font-bold"
+                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    Todos ({decisions.length})
+                  </button>
+                  <button
+                    onClick={() => setDecisionFilter("correct")}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      decisionFilter === "correct"
+                        ? "bg-emerald-500 text-[#050c18] font-bold"
+                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    Acertos (✅ {correctCount})
+                  </button>
+                  <button
+                    onClick={() => setDecisionFilter("error")}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      decisionFilter === "error"
+                        ? "bg-rose-500 text-white font-bold"
+                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    Erros (❌ {errorCount})
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Decision Logs List */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#050c18]">
+                {filteredDecisions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-center text-slate-400 font-mono space-y-3 my-auto">
+                    <ClipboardList className="w-12 h-12 text-slate-600 animate-pulse" />
+                    <h3 className="text-sm font-bold uppercase text-slate-300">
+                      Nenhum registro encontrado
+                    </h3>
+                    <p className="text-xs text-slate-500 max-w-md">
+                      {decisions.length === 0
+                        ? "Nenhum aluno respondeu a questões até o momento. Quando os estudantes tomarem decisões nos diálogos, os registros aparecerão aqui em tempo real."
+                        : "Nenhum resultado atende ao filtro de busca atual."}
+                    </p>
+                  </div>
+                ) : (
+                  filteredDecisions.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`p-4 rounded-xl border transition-all space-y-2.5 ${
+                        item.isCorrect
+                          ? "bg-[#06191d] border-emerald-500/40 shadow-sm"
+                          : "bg-[#180d16] border-rose-500/40 shadow-sm"
+                      }`}
+                    >
+                      {/* Top Header */}
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-white font-mono px-2.5 py-0.5 rounded bg-slate-800 border border-slate-700">
+                            👤 {item.playerName}
+                          </span>
+                          <span className="text-xs font-bold text-teal-300 font-mono">
+                            🗣️ {item.npcName}
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/30">
+                            {item.category}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 font-mono">
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(item.timestamp).toLocaleTimeString("pt-BR")}
+                          </span>
+                          {item.isCorrect ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-xs font-bold flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              ACERTO (+{item.pointsEarned} PTS)
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/50 text-xs font-bold flex items-center gap-1">
+                              <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                              ERRO / INADEQUADO
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Question Text */}
+                      <div className="p-3 rounded-lg bg-[#081220] border border-slate-800/80 text-xs text-slate-200">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                          Cenário / Pergunta Apresentada
+                        </span>
+                        <p className="leading-relaxed">{item.questionText}</p>
+                      </div>
+
+                      {/* Choice & Rationale Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div
+                          className={`p-3 rounded-lg border ${
+                            item.isCorrect
+                              ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-200"
+                              : "bg-rose-950/20 border-rose-500/30 text-rose-200"
+                          }`}
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-wider block mb-1 flex items-center gap-1">
+                            {item.isCorrect ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Opção Escolhida (Correta)
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-3.5 h-3.5 text-rose-400" /> Opção Escolhida pelo Aluno
+                              </>
+                            )}
+                          </span>
+                          <p className="font-semibold">{item.selectedOption}</p>
+                        </div>
+
+                        <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-300">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                            Feedback & Raciocínio Pedagógico
+                          </span>
+                          <p className="leading-relaxed text-[11px]">{item.feedback}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

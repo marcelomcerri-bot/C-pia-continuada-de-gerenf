@@ -416,6 +416,34 @@ export class DialogScene extends Phaser.Scene {
       });
     }
 
+    // ── Log decision to server (for Professor View: Erros e Acertos) ──
+    try {
+      const session = (window as any).sessionRoom;
+      const playerId = session?.playerId || sessionStorage.getItem("gestor_player_id") || "anon-student";
+      const playerName = this.state.playerProfile?.name || "Estudante";
+      const isCorrect = !isIncorrectChoice;
+      const pointsEarned = stateUpdate.prestige !== undefined ? (stateUpdate.prestige - this.state.prestige) : (isCorrect ? 10 : 0);
+      const feedbackText = Array.isArray((choice as any).feedback) 
+        ? (choice as any).feedback.join(' ') 
+        : ((choice as any).feedback || (isCorrect ? 'Conduta adequada conforme protocolos de gerência.' : 'Decisão em desacordo com os referenciais.'));
+
+      fetch('/api/rooms/GLOBAL/log-decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId,
+          playerName,
+          npcName: `${this.npcDef.name} (${this.npcDef.title || 'Equipe HUAP'})`,
+          questionText: Array.isArray(this.dialogue.text) ? this.dialogue.text.join(' ') : (this.dialogue.text || 'Cenário gerencial'),
+          selectedOption: choice.text,
+          isCorrect,
+          pointsEarned,
+          feedback: feedbackText,
+          category: (this.npcDef as any).sector || 'Gerência Assistencial'
+        })
+      }).catch(() => {});
+    } catch (_) {}
+
     // Show feedback line instead of instantly closing
     this.showingChoices = false;
     this.choiceArea.removeAll(true);
