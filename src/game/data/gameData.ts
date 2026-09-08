@@ -1870,14 +1870,14 @@ export const NPC_DEFS: NPCDef[] = [
     schedule: [
       { hour: 8, col: 45, row: 21 }, { hour: 14, col: 38, row: 14 },
     ],
-    missionIds: ['protocolo_sepse', 'acreditacao_ona', 'indicadores_qualidade'],
+    missionIds: ['indicadores_qualidade', 'acreditacao_ona'],
     dialogues: [
       {
         id: 'protocolo_start',
-        condition: (s) => s.completedMissions.includes('protocolo_sepse') && !s.missionProgress['indicadores_qualidade'],
+        condition: (s) => s.completedMissions.includes('protocolo_sepse') && !s.completedMissions.includes('indicadores_qualidade'),
         text: [
-          'Excelente trabalho com o protocolo de sepse!',
-          'Agora precisamos monitorar indicadores de qualidade da UTI.',
+          'Excelente trabalho com o protocolo de sepse no PS!',
+          'Agora precisamos monitorar os indicadores de qualidade da UTI.',
           'Taxa de infecção, mortalidade e tempo de ventilação mecânica.',
         ],
         choices: [
@@ -1893,13 +1893,13 @@ export const NPC_DEFS: NPCDef[] = [
         condition: (s) => !s.completedMissions.includes('protocolo_sepse'),
         text: [
           'Bom dia! Você deve ser a nova enfermeira gerente.',
-          'A UTI do HUAP atende pacientes de altíssima complexidade.',
-          'Precisamos trabalhar juntos no protocolo de sepse — é urgente!',
+          'A UTI atende pacientes críticos e precisa do protocolo de sepse.',
+          'Por favor, vá ao Pronto-Socorro e fale com o Enf. Carlos para implantar o protocolo de sepse primeiro!',
         ],
         choices: [
           {
-            text: 'Pode contar comigo, doutor. Vamos começar!',
-            effect: (s) => ({ prestige: s.prestige + 20 }),
+            text: 'Entendido, doutor! Vou ao PS falar com o Enf. Carlos.',
+            effect: (s) => ({ prestige: s.prestige + 10 }),
           },
         ],
       },

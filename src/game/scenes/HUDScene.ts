@@ -78,35 +78,7 @@ export class HUDScene extends Phaser.Scene {
   public guidanceList: Array<{ id: string; room: string; npc: string; action: string; col: number; row: number; missionKey: string; missionTitle?: string }> = [];
 
   private initGuidanceList() {
-    const list: Array<{ id: string; room: string; npc: string; action: string; col: number; row: number; missionKey: string; missionTitle?: string }> = [];
-    
-    for (const m of MISSIONS) {
-      // Find NPC that handles this mission in NPC_DEFS
-      const npcDef = NPC_DEFS.find(n => n.missionIds && n.missionIds.includes(m.id));
-      if (npcDef) {
-        const col = npcDef.schedule?.[0]?.col ?? 10;
-        const row = npcDef.schedule?.[0]?.row ?? 10;
-        const roomName = NPC_ROOM_MAP[npcDef.id] || 'Hospital';
-        list.push({
-          id: npcDef.id,
-          room: roomName,
-          npc: npcDef.name,
-          action: `Vá até a ${roomName} e fale com ${npcDef.name}`,
-          col,
-          row,
-          missionKey: m.id,
-          missionTitle: m.title
-        });
-      }
-    }
-
-    // Shuffle array (Fisher-Yates) so starting NPC and mission order is random every playthrough
-    for (let i = list.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [list[i], list[j]] = [list[j], list[i]];
-    }
-
-    this.guidanceList = list;
+    this.recomputeGuidanceList();
     this.currentGuidanceIdx = 0;
   }
 
@@ -552,8 +524,70 @@ export class HUDScene extends Phaser.Scene {
     return this.guidanceList[this.currentGuidanceIdx] || null;
   }
 
+  public recomputeGuidanceList(state?: GameState) {
+    const currentState = state || (this.scene.get(SCENES.GAME) as any)?.state || this.lastHudData?.state;
+    if (!currentState || !currentState.completedMissions) return;
+
+    const list: Array<{ id: string; room: string; npc: string; action: string; col: number; row: number; missionKey: string; missionTitle?: string }> = [];
+
+    for (const npcDef of NPC_DEFS) {
+      if (npcDef.role === 'patient') continue;
+
+      for (const d of npcDef.dialogues) {
+        if (d.id === 'idle') continue;
+        const condMet = !d.condition || d.condition(currentState);
+        if (!condMet) continue;
+        if (!d.choices || d.choices.length === 0) continue;
+
+        let missionKey = '';
+        let missionTitle = '';
+
+        for (const choice of d.choices) {
+          if (choice.missionEffect) {
+            const [mId] = choice.missionEffect.split(':');
+            const m = MISSIONS.find(mission => mission.id === mId);
+            if (m && !currentState.completedMissions.includes(m.id)) {
+              missionKey = m.id;
+              missionTitle = m.title;
+              break;
+            }
+          }
+        }
+
+        if (missionKey) {
+          const roomName = NPC_ROOM_MAP[npcDef.id] || 'Hospital';
+          const col = npcDef.schedule?.[0]?.col ?? npcDef.startCol;
+          const row = npcDef.schedule?.[0]?.row ?? npcDef.startRow;
+
+          list.push({
+            id: npcDef.id,
+            room: roomName,
+            npc: npcDef.name,
+            action: `Vá até a ${roomName} e fale com ${npcDef.name}`,
+            col,
+            row,
+            missionKey,
+            missionTitle
+          });
+          break; // Found active dialogue for this NPC
+        }
+      }
+    }
+
+    this.guidanceList = list;
+    if (this.guidanceList.length === 0) {
+      this.currentGuidanceIdx = 0;
+    } else if (this.currentGuidanceIdx >= this.guidanceList.length) {
+      this.currentGuidanceIdx = 0;
+    }
+  }
+
   private nextGuidanceTarget() {
-    this.currentGuidanceIdx = (this.currentGuidanceIdx + 1) % this.guidanceList.length;
+    if (this.guidanceList.length > 0) {
+      this.currentGuidanceIdx = (this.currentGuidanceIdx + 1) % this.guidanceList.length;
+    } else {
+      this.currentGuidanceIdx = 0;
+    }
     this.updateGuidanceDisplay();
     if (this.missionText) {
       this.tweens.killTweensOf(this.missionText);
@@ -586,6 +620,23 @@ export class HUDScene extends Phaser.Scene {
   private updateGuidanceDisplay() {
     if (!this.missionText) return;
 
+    const gameScene = this.scene.get(SCENES.GAME) as any;
+    const currentState = gameScene?.state || this.lastHudData?.state;
+    if (currentState) {
+      this.recomputeGuidanceList(currentState);
+    }
+
+    if (!this.guidanceList || this.guidanceList.length === 0) {
+      const allDoneMsg = '🏆 TODAS AS MISSÕES CONCLUÍDAS! Converse com a equipe para testes práticos.';
+      if (this.missionText.text !== allDoneMsg) {
+        this.missionText.setText(allDoneMsg);
+      }
+      if (this.missionText.style.color !== '#f1c40f') {
+        this.missionText.setColor('#f1c40f');
+      }
+      return;
+    }
+
     const currentObj = this.guidanceList[this.currentGuidanceIdx];
     if (!currentObj) return;
 
@@ -615,7 +666,6 @@ export class HUDScene extends Phaser.Scene {
       newColor = '#38bdf8';
     }
 
-    // Check text property directly on Phaser object so newly created/rebuilt text objects always get updated!
     if (this.missionText.text !== newText) {
       this.missionText.setText(newText);
     }
@@ -626,16 +676,8 @@ export class HUDScene extends Phaser.Scene {
 
   private checkAutoAdvanceGuidance(state: GameState) {
     if (!state || !state.completedMissions) return;
-    const currentObj = this.guidanceList[this.currentGuidanceIdx];
-    if (currentObj && currentObj.missionKey && state.completedMissions.includes(currentObj.missionKey)) {
-      const uncompletedIdx = this.guidanceList.findIndex(
-        (g) => !g.missionKey || !state.completedMissions.includes(g.missionKey)
-      );
-      if (uncompletedIdx !== -1 && uncompletedIdx !== this.currentGuidanceIdx) {
-        this.currentGuidanceIdx = uncompletedIdx;
-        this.updateGuidanceDisplay();
-      }
-    }
+    this.recomputeGuidanceList(state);
+    this.updateGuidanceDisplay();
   }
 
   // ── UPDATE METHOD ─────────────────────────────────────────────────────────
@@ -738,8 +780,20 @@ export class HUDScene extends Phaser.Scene {
 
     // Guidance & direction display is handled in updateGuidanceDisplay()
 
-    // Minimap player dot
+    // Minimap player & target dots
     this.playerDot.clear();
+
+    const targetObj = this.getCurrentGuidanceTarget();
+    if (targetObj) {
+      const targetDotX = this.mmX + targetObj.col * MM_SCALE;
+      const targetDotY = MM_Y + targetObj.row * MM_SCALE;
+      const targetPulse = 0.5 + 0.5 * Math.sin(this.time.now / 300);
+      this.playerDot.fillStyle(0xf1c40f, 1);
+      this.playerDot.fillCircle(targetDotX, targetDotY, 4);
+      this.playerDot.fillStyle(0xe67e22, targetPulse);
+      this.playerDot.fillCircle(targetDotX, targetDotY, 7);
+    }
+
     const dotX = this.mmX + (playerX / TILE_SIZE) * MM_SCALE;
     const dotY = MM_Y + (playerY / TILE_SIZE) * MM_SCALE;
     const pulse = 0.5 + 0.5 * Math.sin(this.time.now / 300);

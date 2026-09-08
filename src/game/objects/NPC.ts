@@ -123,18 +123,19 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // Only show exclamation mark if there is an active mission that is unlocked
-    // AND the NPC actually has a non-idle dialogue with decision choices available.
-    const anyAvailable = this.def.missionIds.some(id => {
-      if (state.completedMissions.includes(id)) return false;
-      const m = MISSIONS.find(mission => mission.id === id);
-      if (!m) return false;
-      const preMet = m.prerequisiteIds.every(reqId => state.completedMissions.includes(reqId));
-      if (!preMet) return false;
+    // Show exclamation mark IF AND ONLY IF the NPC has an active dialogue
+    // with choices that advance or complete an uncompleted mission.
+    const anyAvailable = this.def.dialogues.some(d => {
+      if (d.id === 'idle') return false;
+      const condMet = !d.condition || d.condition(state);
+      if (!condMet) return false;
+      if (!d.choices || d.choices.length === 0) return false;
 
-      // Ensure NPC has a matching active non-idle dialogue with choices
-      const d = this.def.dialogues.find(dialogue => dialogue.id !== 'idle' && (!dialogue.condition || dialogue.condition(state)));
-      return d && d.choices && d.choices.length > 0;
+      return d.choices.some(c => {
+        if (!c.missionEffect) return false;
+        const [mId] = c.missionEffect.split(':');
+        return !state.completedMissions.includes(mId);
+      });
     });
 
     this.setHasMission(anyAvailable);

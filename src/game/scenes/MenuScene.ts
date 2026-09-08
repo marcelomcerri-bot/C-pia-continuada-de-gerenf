@@ -54,16 +54,15 @@ export class MenuScene extends Phaser.Scene {
     // ── Background: exact pixel art hospital image ───────────────────────────
     const bgKey = this.textures.exists('huap_pixelart')
       ? 'huap_pixelart'
-      : this.textures.exists('huap_pixel') ? 'huap_pixel'
-      : this.textures.exists('huap_photo') ? 'huap_photo' : null;
+      : this.textures.exists('huap_bg')
+      ? 'huap_bg'
+      : this.textures.exists('huap_pixel') ? 'huap_pixel' : null;
 
     if (bgKey) {
       const bg = this.add.image(cx, cy, bgKey).setOrigin(0.5).setDepth(0);
-      // Fit to screen maintaining exact 100% image aspect ratio and proportions
-      const scale = Math.max(W / bg.width, H / bg.height);
-      bg.setScale(scale);
+      bg.setDisplaySize(W, H);
     } else {
-      this.add.rectangle(cx, cy, W, H, 0x040c1c).setDepth(0);
+      this.add.rectangle(cx, cy, W, H, 0x071324).setDepth(0);
     }
 
     // ── Title overlay (clean & crisp at top) ──────────────────────────────────
