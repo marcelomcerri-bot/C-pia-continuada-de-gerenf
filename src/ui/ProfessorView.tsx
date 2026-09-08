@@ -93,17 +93,22 @@ function StatBar({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Canvas Gameplay Live Spectator Viewport
+// Canvas Gameplay Live Spectator Viewport (Pixel-Art Hospital Room)
 // ─────────────────────────────────────────────────────────────────────────────
 function LiveGameplayCanvas({ player }: { player: PlayerData }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
-  const posRef = useRef({ x: player.x ?? 320, y: player.y ?? 200, targetX: player.x ?? 320, targetY: player.y ?? 200 });
+
+  // Normalize raw Phaser coordinates (0..1600, 0..1200) to Canvas (80..480, 60..220)
+  const normX = Math.max(70, Math.min(490, ((player.x ?? 400) % 1200) / 1200 * 420 + 70));
+  const normY = Math.max(70, Math.min(210, ((player.y ?? 300) % 900) / 900 * 140 + 70));
+
+  const posRef = useRef({ x: normX, y: normY, targetX: normX, targetY: normY });
 
   useEffect(() => {
-    posRef.current.targetX = player.x ?? 320;
-    posRef.current.targetY = player.y ?? 200;
-  }, [player.x, player.y]);
+    posRef.current.targetX = normX;
+    posRef.current.targetY = normY;
+  }, [normX, normY]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -118,125 +123,206 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
       const w = canvas.width;
       const h = canvas.height;
 
-      // Smooth position lerp
-      posRef.current.x += (posRef.current.targetX - posRef.current.x) * 0.12;
-      posRef.current.y += (posRef.current.targetY - posRef.current.y) * 0.12;
+      // Smooth position lerp towards target
+      posRef.current.x += (posRef.current.targetX - posRef.current.x) * 0.08;
+      posRef.current.y += (posRef.current.targetY - posRef.current.y) * 0.08;
 
       const px = posRef.current.x;
       const py = posRef.current.y;
 
-      // Background Hospital Room Floor
-      ctx.fillStyle = "#0c1829";
+      // 1. HOSPITAL TILE FLOOR
+      ctx.fillStyle = "#0c1f38";
       ctx.fillRect(0, 0, w, h);
 
-      // Floor tiles grid pattern
-      ctx.strokeStyle = "rgba(26, 188, 156, 0.08)";
+      // Floor Tiles Grid
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.08)";
       ctx.lineWidth = 1;
       const tileSize = 32;
       for (let x = 0; x < w; x += tileSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
       }
       for (let y = 0; y < h; y += tileSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
       }
 
-      // Room walls and decorative furniture
+      // 2. WALLS & ROOM BOUNDARIES
       ctx.fillStyle = "#1e293b";
-      ctx.fillRect(0, 0, w, 16); // Top wall
-      ctx.fillRect(0, h - 12, w, 12); // Bottom wall
-      ctx.fillRect(0, 0, 12, h); // Left wall
-      ctx.fillRect(w - 12, 0, 12, h); // Right wall
+      ctx.fillRect(0, 0, w, 28); // Top wall
+      ctx.fillRect(0, h - 14, w, 14); // Bottom wall
+      ctx.fillRect(0, 0, 14, h); // Left wall
+      ctx.fillRect(w - 14, 0, 14, h); // Right wall
 
-      // Medical Props in Room (Desk, Bed, Monitor)
-      ctx.fillStyle = "#334155";
-      ctx.fillRect(24, 28, 64, 40); // Desk
-      ctx.fillStyle = "#0284c7";
-      ctx.fillRect(30, 32, 20, 16); // Computer Monitor
-
-      // Hospital Bed
-      ctx.fillStyle = "#0284c7";
-      ctx.fillRect(w - 90, 40, 60, 90);
-      ctx.fillStyle = "#f8fafc";
-      ctx.fillRect(w - 86, 44, 52, 24); // Pillow
-
-      // Corridor Doorway
+      // Wall trim line (Teal accent)
       ctx.fillStyle = "#1abc9c";
-      ctx.fillRect(w / 2 - 30, h - 14, 60, 8);
+      ctx.fillRect(0, 26, w, 3);
 
-      // Player Radar Scanner Sweep Effect
-      const sweepAngle = (frameCount * 0.03) % (Math.PI * 2);
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.fillStyle = "rgba(26, 188, 156, 0.05)";
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, 90, sweepAngle, sweepAngle + 0.5);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+      // Doorway Arch to Corridor (Center Bottom)
+      ctx.fillStyle = "#0284c7";
+      ctx.fillRect(w / 2 - 35, h - 14, 70, 14);
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = "bold 9px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("SAÍDA CORREDOR", w / 2, h - 3);
 
-      // Path trail
-      ctx.strokeStyle = "rgba(52, 152, 219, 0.4)";
-      ctx.setLineDash([4, 4]);
+      // 3. HOSPITAL ROOM FURNITURE & EQUIPMENT
+
+      // ── NURSE RECEPTION DESK (Top Left) ──
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(24, 38, 90, 45); // Wood Desk
+      ctx.fillStyle = "#475569";
+      ctx.fillRect(28, 42, 82, 37);
+
+      // Computer Monitor & Green Status LED
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(36, 45, 28, 20); // Monitor
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillRect(38, 47, 24, 14); // Screen glow
+      ctx.fillStyle = "#22c65e";
+      ctx.fillRect(66, 60, 3, 3); // Power LED
+
+      // Prontuários / Clipboard on desk
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillRect(72, 48, 14, 18);
+      ctx.fillStyle = "#f43f5e";
+      ctx.fillRect(74, 50, 10, 3); // Red header line
+
+      // ── HOSPITAL BED 1 (Top Right) ──
+      ctx.fillStyle = "#64748b";
+      ctx.fillRect(w - 110, 38, 85, 48); // Bed frame
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillRect(w - 106, 42, 77, 40); // White mattress/sheets
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillRect(w - 106, 42, 22, 40); // Pillow
+
+      // Patient 1 in Bed
+      ctx.fillStyle = "#fecdd3"; // Patient head
+      ctx.beginPath(); ctx.arc(w - 95, 62, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#38bdf8"; // Blue hospital blanket
+      ctx.fillRect(w - 86, 44, 55, 36);
+
+      // Vital Signs ECG Monitor 1
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(w - 128, 38, 16, 26);
+      ctx.fillStyle = "#22c65e"; // Screen pulse
+      ctx.fillRect(w - 126, 40, 12, 16);
+      // Animated ECG Sine Wave
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(w / 2, h / 2);
-      ctx.lineTo(px, py);
+      const ecgX = (frameCount * 2) % 12;
+      ctx.moveTo(w - 126, 48);
+      ctx.lineTo(w - 126 + ecgX, 48);
+      ctx.lineTo(w - 126 + ecgX + 2, 43);
+      ctx.lineTo(w - 126 + ecgX + 4, 53);
+      ctx.lineTo(w - 126 + ecgX + 6, 48);
       ctx.stroke();
-      ctx.setLineDash([]);
 
-      // Draw Player Character Sprite
-      const bounce = Math.sin(frameCount * 0.15) * (player.isMoving ? 3 : 1);
+      // ── HOSPITAL BED 2 (Bottom Right) ──
+      ctx.fillStyle = "#64748b";
+      ctx.fillRect(w - 110, 120, 85, 48);
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillRect(w - 106, 124, 77, 40);
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillRect(w - 106, 124, 22, 40);
 
-      // Shadow
+      // Patient 2 in Bed
+      ctx.fillStyle = "#fde047"; // Patient 2 head
+      ctx.beginPath(); ctx.arc(w - 95, 144, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#a855f7"; // Purple hospital blanket
+      ctx.fillRect(w - 86, 126, 55, 36);
+
+      // IV Drip Stand (Soro Fisiológico)
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillRect(w - 122, 120, 3, 35); // Pole
+      ctx.fillStyle = "#e0f2fe";
+      ctx.fillRect(w - 125, 116, 9, 12); // IV Bag
+      // Drip animation particle
+      if ((frameCount % 30) < 15) {
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillRect(w - 121, 130 + (frameCount % 15), 1.5, 3);
+      }
+
+      // 4. RADAR / SECTOR LOCATION BANNER
+      ctx.fillStyle = "rgba(10, 22, 40, 0.85)";
+      ctx.fillRect(14, 4, 180, 18);
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = "bold 9px font-mono, monospace";
+      ctx.textAlign = "left";
+      ctx.fillText(`📍 ${player.currentRoom || "Enfermaria HUAP"}`, 18, 16);
+
+      // 5. PLAYER CHARACTER (NURSE / DOCTOR)
+      const bounce = Math.sin(frameCount * 0.2) * 2;
+
+      // Shadow under feet
       ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
       ctx.beginPath();
-      ctx.ellipse(px, py + 14, 12, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(px, py + 12, 11, 4, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Body / Uniform
-      ctx.fillStyle = "#008080"; // Teal nursing scrubs
-      ctx.fillRect(px - 8, py - 4 + bounce, 16, 16);
+      // Uniform (Teal Scrubs)
+      ctx.fillStyle = "#0d9488";
+      ctx.fillRect(px - 7, py - 4 + bounce, 14, 15);
 
-      // Head Base
+      // Head / Skin
       ctx.fillStyle = "#fecdd3";
-      ctx.beginPath();
-      ctx.arc(px, py - 12 + bounce, 9, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py - 11 + bounce, 8, 0, Math.PI * 2); ctx.fill();
 
-      // Nurse Cap
+      // Nurse Cap / Hair
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(px - 7, py - 20 + bounce, 14, 5);
+      ctx.fillRect(px - 6, py - 18 + bounce, 12, 4);
       ctx.fillStyle = "#e11d48";
-      ctx.fillRect(px - 1, py - 19 + bounce, 3, 3); // Red cross
+      ctx.fillRect(px - 1, py - 17 + bounce, 2, 2); // Red cross
 
       // Eyes
       ctx.fillStyle = "#0f172a";
-      ctx.fillRect(px - 4, py - 13 + bounce, 2, 3);
-      ctx.fillRect(px + 2, py - 13 + bounce, 2, 3);
+      ctx.fillRect(px - 3, py - 12 + bounce, 2, 3);
+      ctx.fillRect(px + 1, py - 12 + bounce, 2, 3);
 
-      // Action Thought Bubble over player head
-      ctx.fillStyle = "rgba(10, 22, 40, 0.85)";
-      ctx.strokeStyle = "#1abc9c";
+      // Stethoscope
+      ctx.strokeStyle = "#38bdf8";
       ctx.lineWidth = 1.5;
-      const bubbleW = Math.min(180, (player.lastActivity || "").length * 7 + 20);
-      const bubbleX = Math.max(10, Math.min(w - bubbleW - 10, px - bubbleW / 2));
-      const bubbleY = Math.max(20, py - 40);
-
       ctx.beginPath();
-      ctx.roundRect(bubbleX, bubbleY, bubbleW, 20, 6);
+      ctx.arc(px, py - 3 + bounce, 5, 0, Math.PI);
+      ctx.stroke();
+
+      // Player Name Badge
+      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+      ctx.fillRect(px - 35, py - 32 + bounce, 70, 12);
+      ctx.strokeStyle = "#1abc9c";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px - 35, py - 32 + bounce, 70, 12);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 8px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(player.playerName.split(" ")[0].slice(0, 10), px, py - 23 + bounce);
+
+      // 6. ACTION THOUGHT BUBBLE OVER PLAYER HEAD
+      const actionText = player.lastActivity || "Avaliando paciente no leito";
+      const bubbleW = Math.min(220, actionText.length * 6.5 + 20);
+      const bubbleX = Math.max(20, Math.min(w - bubbleW - 20, px - bubbleW / 2));
+      const bubbleY = Math.max(30, py - 52 + bounce);
+
+      ctx.fillStyle = "#0f172a";
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(bubbleX, bubbleY, bubbleW, 18, 5);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 10px monospace";
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "bold 9px monospace";
       ctx.textAlign = "center";
-      ctx.fillText((player.lastActivity || "Explorando").slice(0, 24), bubbleX + bubbleW / 2, bubbleY + 13);
+      ctx.fillText(actionText.slice(0, 32), bubbleX + bubbleW / 2, bubbleY + 12);
+
+      // 7. CCTV OVERLAY SCANLINES & HUD STAMPS
+      ctx.fillStyle = "rgba(225, 29, 72, 0.9)";
+      ctx.beginPath(); ctx.arc(w - 24, 14, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 9px monospace";
+      ctx.textAlign = "right";
+      ctx.fillText("LIVE ● CAM-01", w - 32, 17);
 
       animFrameRef.current = requestAnimationFrame(render);
     };
@@ -246,24 +332,18 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [player]);
+  }, [player, normX, normY]);
 
   return (
-    <div className="relative w-full h-full min-h-[220px] bg-[#050c18] rounded-xl overflow-hidden border border-teal-500/30">
+    <div className="relative w-full h-full min-h-[260px] bg-[#050c18] rounded-xl overflow-hidden border border-teal-500/40 shadow-2xl">
       <canvas
         ref={canvasRef}
         width={560}
         height={260}
         className="w-full h-full object-cover block"
       />
-      {/* CCTV Scanlines & Corner reticles */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] opacity-10 [background-size:12px_12px]" />
-      <div className="absolute top-2 left-2 text-[9px] font-mono text-teal-400/80 bg-black/60 px-2 py-0.5 rounded border border-teal-500/30">
-        CAM-REC ● 1080P/60FPS
-      </div>
-      <div className="absolute bottom-2 right-2 text-[9px] font-mono text-slate-400 bg-black/60 px-2 py-0.5 rounded border border-white/10">
-        SETORES HUAP / UFF
-      </div>
+      {/* CCTV Grid Scanlines */}
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] opacity-10 [background-size:14px_14px]" />
     </div>
   );
 }
