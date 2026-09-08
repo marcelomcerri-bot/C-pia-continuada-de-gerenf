@@ -93,7 +93,7 @@ function StatBar({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Canvas Gameplay Live Spectator Viewport (Full Hospital Floorplan & NPCs)
+// Canvas Gameplay Live Spectator Viewport (Full Hospital Floorplan & Real NPCs)
 // ─────────────────────────────────────────────────────────────────────────────
 function LiveGameplayCanvas({ player }: { player: PlayerData }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -132,14 +132,19 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
 
     let frameCount = 0;
 
-    // Hospital NPCs situated in various sectors
+    // Real HUAP Hospital NPCs situated at their exact Phaser map coordinates
+    // Formula: canvasX = 20 + ((col * 32) / 2432) * 520, canvasY = 20 + ((row * 32) / 1600) * 240
     const npcs = [
-      { id: '1', name: 'Dra. Teresa', role: 'Diretora Médica', x: 480, y: 55, color: '#ec4899' },
-      { id: '2', name: 'Enf. Roberto', role: 'Supervisor', x: 410, y: 135, color: '#10b981' },
-      { id: '3', name: 'Dr. Marcos', role: 'Intensivista', x: 310, y: 130, color: '#3b82f6' },
-      { id: '4', name: 'Dra. Helena', role: 'Farmacêutica', x: 200, y: 55, color: '#8b5cf6' },
-      { id: '5', name: 'Seu Arnaldo', role: 'Paciente em Alta', x: 260, y: 195, color: '#eab308' },
-      { id: '6', name: 'Dona Francisca', role: 'Paciente', x: 90, y: 195, color: '#f43f5e' },
+      { id: 'ana', name: 'Ana Beatriz', role: 'Recepcionista', col: 6, row: 3, x: 61, y: 34, color: '#f43f5e' },
+      { id: 'carlos', name: 'Enf. Carlos', role: 'Pronto-Socorro', col: 18, row: 6, x: 143, y: 49, color: '#14b8a6' },
+      { id: 'helena', name: 'Dra. Helena', role: 'Farmacêutica', col: 31, row: 6, x: 232, y: 49, color: '#8b5cf6' },
+      { id: 'joaquim', name: 'Sr. Joaquim', role: 'Laboratório', col: 43, row: 6, x: 314, y: 49, color: '#06b6d4' },
+      { id: 'teresa', name: 'Dra. Teresa', role: 'Diretoria', col: 68, row: 6, x: 485, y: 49, color: '#f59e0b' },
+      { id: 'amanda', name: 'Téc. Amanda', role: 'CME', col: 6, row: 21, x: 61, y: 121, color: '#64748b' },
+      { id: 'maria', name: 'Dona Maria', role: 'Enfermaria', col: 30, row: 21, x: 225, y: 121, color: '#6366f1' },
+      { id: 'marcos', name: 'Dr. Marcos', role: 'UTI Adulto', col: 45, row: 21, x: 328, y: 121, color: '#3b82f6' },
+      { id: 'roberto', name: 'Enf. Roberto', role: 'Posto Enfermagem', col: 63, row: 21, x: 451, y: 121, color: '#10b981' },
+      { id: 'luciana', name: 'Dra. Luciana', role: 'Maternidade', col: 20, row: 36, x: 157, y: 193, color: '#ec4899' },
     ];
 
     const render = () => {
@@ -161,120 +166,145 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
       const facing = posRef.current.facing;
       const isCurrentlyMoving = posRef.current.isMoving || dist > 1.5;
 
-      // ── 1. BACKGROUND & HOSPITAL FLOOR TILES ──
-      ctx.fillStyle = "#09121f";
+      // ── 1. BACKGROUND CANVAS & MEDICAL GRID ──
+      ctx.fillStyle = "#030712";
       ctx.fillRect(0, 0, w, h);
 
-      // Floor grid tiles
-      ctx.strokeStyle = "rgba(56, 189, 248, 0.06)";
+      // Fine grid background
+      ctx.strokeStyle = "rgba(14, 165, 233, 0.05)";
       ctx.lineWidth = 1;
-      const tileSize = 28;
-      for (let x = 0; x < w; x += tileSize) {
+      for (let x = 0; x < w; x += 16) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
       }
-      for (let y = 0; y < h; y += tileSize) {
+      for (let y = 0; y < h; y += 16) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
       }
 
-      // ── 2. SECTOR ZONES (COLOR CODED HOSPITAL FLOORS) ──
-      // Top Wing: Reception, Emergency, Pharmacy, Admin (y: 20..90)
-      ctx.fillStyle = "rgba(239, 68, 68, 0.08)"; ctx.fillRect(20, 20, 110, 70); // Emergency (Red)
-      ctx.fillStyle = "rgba(139, 92, 246, 0.08)"; ctx.fillRect(130, 20, 120, 70); // Pharmacy (Purple)
-      ctx.fillStyle = "rgba(14, 165, 233, 0.08)"; ctx.fillRect(250, 20, 130, 70); // Lab/Radiology (Blue)
-      ctx.fillStyle = "rgba(236, 72, 153, 0.08)"; ctx.fillRect(380, 20, 160, 70); // Admin (Pink)
+      // ── 2. SECTORS DEFINITION & COLOR-CODED FLOORS ──
+      const sectors = [
+        // North Wing (y: 30, h: 48)
+        { name: 'Recepção', x: 34, y: 30, w: 68, h: 48, fill: 'rgba(244, 63, 94, 0.10)', border: '#f43f5e' },
+        { name: 'Pronto-Socorro', x: 109, y: 30, w: 75, h: 48, fill: 'rgba(239, 68, 68, 0.14)', border: '#ef4444' },
+        { name: 'Farmácia', x: 198, y: 30, w: 68, h: 48, fill: 'rgba(139, 92, 246, 0.10)', border: '#8b5cf6' },
+        { name: 'Laboratório', x: 280, y: 30, w: 75, h: 48, fill: 'rgba(6, 182, 212, 0.10)', border: '#06b6d4' },
+        { name: 'Radiologia', x: 369, y: 30, w: 68, h: 48, fill: 'rgba(168, 85, 247, 0.10)', border: '#a855f7' },
+        { name: 'Diretoria', x: 451, y: 30, w: 68, h: 48, fill: 'rgba(245, 158, 11, 0.10)', border: '#f59e0b' },
 
-      // Central Corridor (y: 90..115)
-      ctx.fillStyle = "rgba(248, 250, 252, 0.05)"; ctx.fillRect(20, 90, 520, 25);
+        // Corridor 1 (y: 83, h: 12)
+        { name: 'Corredor Norte', x: 20, y: 83, w: 520, h: 12, fill: 'rgba(248, 250, 252, 0.04)', border: '#334155' },
 
-      // Middle Wing: CME, Break, Ward, ICU, Nursing (y: 115..180)
-      ctx.fillStyle = "rgba(234, 179, 8, 0.08)"; ctx.fillRect(20, 115, 110, 65); // CME (Amber)
-      ctx.fillStyle = "rgba(99, 102, 241, 0.08)"; ctx.fillRect(130, 115, 120, 65); // Ward (Indigo)
-      ctx.fillStyle = "rgba(59, 130, 246, 0.12)"; ctx.fillRect(250, 115, 130, 65); // ICU (Blue)
-      ctx.fillStyle = "rgba(16, 185, 129, 0.10)"; ctx.fillRect(380, 115, 160, 65); // Nursing (Teal)
+        // Middle Wing (y: 97, h: 48)
+        { name: 'CME', x: 34, y: 97, w: 55, h: 48, fill: 'rgba(100, 116, 139, 0.12)', border: '#64748b' },
+        { name: 'Copa / Nutrição', x: 102, y: 97, w: 68, h: 48, fill: 'rgba(234, 179, 8, 0.10)', border: '#eab308' },
+        { name: 'Enfermaria', x: 184, y: 97, w: 89, h: 48, fill: 'rgba(99, 102, 241, 0.12)', border: '#6366f1' },
+        { name: 'UTI Adulto', x: 286, y: 97, w: 89, h: 48, fill: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6' },
+        { name: 'Posto Enfermagem', x: 389, y: 97, w: 130, h: 48, fill: 'rgba(16, 185, 129, 0.12)', border: '#10b981' },
 
-      // Bottom Wing: Outpatient, Maternity, Oncology (y: 180..250)
-      ctx.fillStyle = "rgba(244, 63, 94, 0.08)"; ctx.fillRect(20, 180, 170, 70); // Outpatient/Maternity
-      ctx.fillStyle = "rgba(20, 184, 166, 0.08)"; ctx.fillRect(190, 180, 170, 70); // Oncology
-      ctx.fillStyle = "rgba(168, 85, 247, 0.08)"; ctx.fillRect(360, 180, 180, 70); // Rehab/Psych
+        // Corridor 2 (y: 150, h: 12)
+        { name: 'Corredor Central', x: 20, y: 150, w: 520, h: 12, fill: 'rgba(248, 250, 252, 0.04)', border: '#334155' },
 
-      // Wall Dividers between sectors
-      ctx.strokeStyle = "#1e293b";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(20, 20, 520, 230); // Outer boundary
-      ctx.beginPath();
-      // Internal sector divider lines
-      ctx.moveTo(20, 90); ctx.lineTo(540, 90);
-      ctx.moveTo(20, 115); ctx.lineTo(540, 115);
-      ctx.moveTo(20, 180); ctx.lineTo(540, 180);
-      ctx.stroke();
+        // South Wing (y: 164, h: 53)
+        { name: 'Ambulatório', x: 34, y: 164, w: 75, h: 53, fill: 'rgba(14, 165, 233, 0.10)', border: '#0ea5e9' },
+        { name: 'Maternidade', x: 122, y: 164, w: 75, h: 53, fill: 'rgba(236, 72, 153, 0.12)', border: '#ec4899' },
+        { name: 'Oncologia', x: 211, y: 164, w: 89, h: 53, fill: 'rgba(20, 184, 166, 0.10)', border: '#14b8a6' },
+        { name: 'Reabilitação', x: 314, y: 164, w: 82, h: 53, fill: 'rgba(234, 179, 8, 0.10)', border: '#eab308' },
+        { name: 'Saúde Mental', x: 410, y: 164, w: 109, h: 53, fill: 'rgba(168, 85, 247, 0.10)', border: '#a855f7' },
 
-      // Sector Labels
-      ctx.fillStyle = "rgba(148, 163, 184, 0.7)";
-      ctx.font = "bold 8px font-mono, monospace";
-      ctx.textAlign = "left";
-      ctx.fillText("PRONTO-SOCORRO", 25, 32);
-      ctx.fillText("FARMÁCIA", 135, 32);
-      ctx.fillText("LABORATÓRIO", 255, 32);
-      ctx.fillText("DIRETORIA", 385, 32);
+        // Garden (y: 222, h: 22)
+        { name: 'Jardim Central', x: 20, y: 222, w: 520, h: 22, fill: 'rgba(34, 197, 94, 0.12)', border: '#22c55e' }
+      ];
 
-      ctx.fillText("CORREDOR PRINCIPAL HUAP", 25, 106);
+      // Draw all sectors with floor color & wall outline
+      sectors.forEach((sec) => {
+        // Check if student is inside this sector
+        const isCurrentSector = px >= sec.x && px <= sec.x + sec.w && py >= sec.y && py <= sec.y + sec.h;
 
-      ctx.fillText("CME", 25, 127);
-      ctx.fillText("ENFERMARIA", 135, 127);
-      ctx.fillText("UTI ADULTO", 255, 127);
-      ctx.fillText("POSTO ENFERMAGEM", 385, 127);
+        ctx.fillStyle = isCurrentSector ? sec.fill.replace('0.10', '0.28').replace('0.12', '0.30').replace('0.14', '0.32').replace('0.15', '0.35') : sec.fill;
+        ctx.fillRect(sec.x, sec.y, sec.w, sec.h);
 
-      ctx.fillText("MATERNIDADE / TRIAGEM", 25, 192);
-      ctx.fillText("ONCOLOGIA", 195, 192);
-      ctx.fillText("REABILITAÇÃO", 365, 192);
+        // Border outline
+        ctx.strokeStyle = isCurrentSector ? "#38bdf8" : sec.border;
+        ctx.lineWidth = isCurrentSector ? 2 : 1;
+        ctx.strokeRect(sec.x, sec.y, sec.w, sec.h);
 
-      // ── 3. DRAW HOSPITAL NPCs ──
+        // If student is inside, draw glowing active room outline
+        if (isCurrentSector) {
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(sec.x - 1, sec.y - 1, sec.w + 2, sec.h + 2);
+        }
+
+        // Room Label
+        ctx.fillStyle = isCurrentSector ? "#ffffff" : "rgba(148, 163, 184, 0.85)";
+        ctx.font = isCurrentSector ? "bold 8px monospace" : "bold 7px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(sec.name.toUpperCase(), sec.x + sec.w / 2, sec.y + 11);
+      });
+
+      // ── 3. INTERNAL FURNITURE & ROOM PROPS FOR REALISM ──
+      // Reception desk
+      ctx.fillStyle = "rgba(244, 63, 94, 0.4)"; ctx.fillRect(45, 48, 20, 6);
+      // PS Emergency stretchers
+      ctx.fillStyle = "rgba(239, 68, 68, 0.5)"; ctx.fillRect(120, 50, 12, 6); ctx.fillRect(150, 50, 12, 6);
+      // Pharmacy Shelves
+      ctx.fillStyle = "rgba(139, 92, 246, 0.5)"; ctx.fillRect(205, 46, 24, 4); ctx.fillRect(205, 56, 24, 4);
+      // ICU Hospital Beds & Vital Sign Monitor
+      ctx.fillStyle = "rgba(59, 130, 246, 0.5)"; ctx.fillRect(295, 118, 14, 8); ctx.fillRect(340, 118, 14, 8);
+      // ECG Vital Monitor Pulse Dot
+      const ecgPulse = Math.sin(frameCount * 0.2) > 0.5 ? '#22c55e' : '#15803d';
+      ctx.fillStyle = ecgPulse; ctx.beginPath(); ctx.arc(358, 110, 2, 0, Math.PI * 2); ctx.fill();
+
+      // ── 4. DRAW ALL 10 REAL HOSPITAL NPCs AT EXACT MAP COORDINATES ──
       npcs.forEach((npc, idx) => {
-        // Micro roaming movement for NPCs
-        const npcOffset = Math.sin(frameCount * 0.05 + idx) * 8;
+        // Micro roaming movement
+        const npcOffset = Math.sin(frameCount * 0.04 + idx) * 4;
         const nx = npc.x + (idx % 2 === 0 ? npcOffset : 0);
         const ny = npc.y + (idx % 2 !== 0 ? npcOffset : 0);
 
         // Shadow
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
-        ctx.beginPath(); ctx.ellipse(nx, ny + 8, 7, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.beginPath(); ctx.ellipse(nx, ny + 6, 6, 2.5, 0, 0, Math.PI * 2); ctx.fill();
 
         // Body
         ctx.fillStyle = npc.color;
-        ctx.fillRect(nx - 5, ny - 3, 10, 11);
+        ctx.fillRect(nx - 4, ny - 3, 8, 9);
 
         // Head
         ctx.fillStyle = "#fde047";
-        ctx.beginPath(); ctx.arc(nx, ny - 8, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(nx, ny - 7, 4, 0, Math.PI * 2); ctx.fill();
+
+        // Role Indicator Dot
+        ctx.fillStyle = npc.color;
+        ctx.beginPath(); ctx.arc(nx, ny - 13, 2.5, 0, Math.PI * 2); ctx.fill();
 
         // Name tag above NPC
-        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-        ctx.fillRect(nx - 28, ny - 22, 56, 10);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.fillRect(nx - 26, ny - 20, 52, 9);
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 7px monospace";
+        ctx.font = "bold 6.5px monospace";
         ctx.textAlign = "center";
-        ctx.fillText(npc.name, nx, ny - 14);
+        ctx.fillText(npc.name, nx, ny - 13);
 
         // Check if student player is near NPC (interaction range)
         const distToPlayer = Math.hypot(px - nx, py - ny);
-        if (distToPlayer < 40) {
+        if (distToPlayer < 35) {
           // Connection beam to NPC
-          ctx.strokeStyle = "rgba(56, 189, 248, 0.6)";
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.7)";
           ctx.lineWidth = 1.5;
-          ctx.setLineDash([3, 3]);
+          ctx.setLineDash([2, 2]);
           ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(nx, ny); ctx.stroke();
           ctx.setLineDash([]);
 
           // Interaction halo
-          ctx.fillStyle = "rgba(56, 189, 248, 0.2)";
-          ctx.beginPath(); ctx.arc(nx, ny, 14, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
+          ctx.beginPath(); ctx.arc(nx, ny, 12, 0, Math.PI * 2); ctx.fill();
         }
       });
 
-      // ── 4. DRAW STUDENT PLAYER CHARACTER (DYNAMIC DIRECTION & STEP ANIMATION) ──
-      const bounce = isCurrentlyMoving ? Math.sin(frameCount * 0.3) * 3 : Math.sin(frameCount * 0.1) * 1;
+      // ── 5. DRAW STUDENT PLAYER CHARACTER (DYNAMIC DIRECTION & STEP ANIMATION) ──
+      const bounce = isCurrentlyMoving ? Math.sin(frameCount * 0.3) * 2.5 : Math.sin(frameCount * 0.1) * 1;
 
-      // Flashlight / Direction beam cone
+      // Direction cone / Flashlight beam
       ctx.save();
       ctx.translate(px, py);
       let angle = Math.PI / 2; // default down
@@ -282,92 +312,92 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
       else if (facing === 'left') angle = Math.PI;
       else if (facing === 'right') angle = 0;
 
-      ctx.fillStyle = "rgba(56, 189, 248, 0.12)";
+      ctx.fillStyle = "rgba(56, 189, 248, 0.15)";
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.arc(0, 0, 45, angle - 0.35, angle + 0.35);
+      ctx.arc(0, 0, 40, angle - 0.4, angle + 0.4);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
 
       // Foot dust particles when moving
       if (isCurrentlyMoving && (frameCount % 6 < 3)) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-        ctx.beginPath(); ctx.arc(px - 6 + Math.random() * 12, py + 10, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.beginPath(); ctx.arc(px - 5 + Math.random() * 10, py + 9, 2, 0, Math.PI * 2); ctx.fill();
       }
 
-      // Feet Shadow
-      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-      ctx.beginPath(); ctx.ellipse(px, py + 11, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
+      // Shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.beginPath(); ctx.ellipse(px, py + 9, 8, 3.5, 0, 0, Math.PI * 2); ctx.fill();
 
       // Uniform (Teal Scrubs)
       ctx.fillStyle = "#0d9488";
-      ctx.fillRect(px - 7, py - 4 + bounce, 14, 15);
+      ctx.fillRect(px - 6, py - 3 + bounce, 12, 12);
 
       // Head
       ctx.fillStyle = "#fecdd3";
-      ctx.beginPath(); ctx.arc(px, py - 11 + bounce, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py - 9 + bounce, 7, 0, Math.PI * 2); ctx.fill();
 
-      // Nurse Cap
+      // Nurse Cap with Red Cross
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(px - 6, py - 18 + bounce, 12, 4);
+      ctx.fillRect(px - 5, py - 15 + bounce, 10, 3.5);
       ctx.fillStyle = "#e11d48";
-      ctx.fillRect(px - 1, py - 17 + bounce, 2, 2); // Red cross
+      ctx.fillRect(px - 1, py - 14 + bounce, 2, 2);
 
       // Eyes based on facing direction
       ctx.fillStyle = "#0f172a";
       if (facing === 'down') {
-        ctx.fillRect(px - 4, py - 12 + bounce, 2, 3);
-        ctx.fillRect(px + 2, py - 12 + bounce, 2, 3);
+        ctx.fillRect(px - 3, py - 10 + bounce, 1.5, 2.5);
+        ctx.fillRect(px + 1.5, py - 10 + bounce, 1.5, 2.5);
       } else if (facing === 'left') {
-        ctx.fillRect(px - 6, py - 12 + bounce, 2, 3);
+        ctx.fillRect(px - 5, py - 10 + bounce, 1.5, 2.5);
       } else if (facing === 'right') {
-        ctx.fillRect(px + 4, py - 12 + bounce, 2, 3);
-      } // 'up' has no eyes visible
+        ctx.fillRect(px + 3.5, py - 10 + bounce, 1.5, 2.5);
+      }
 
       // Stethoscope
       ctx.strokeStyle = "#38bdf8";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(px, py - 3 + bounce, 5, 0, Math.PI); ctx.stroke();
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(px, py - 2 + bounce, 4, 0, Math.PI); ctx.stroke();
 
       // Player Name Badge
-      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-      ctx.fillRect(px - 38, py - 32 + bounce, 76, 12);
-      ctx.strokeStyle = "#1abc9c";
+      ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
+      ctx.fillRect(px - 36, py - 28 + bounce, 72, 11);
+      ctx.strokeStyle = "#38bdf8";
       ctx.lineWidth = 1;
-      ctx.strokeRect(px - 38, py - 32 + bounce, 76, 12);
+      ctx.strokeRect(px - 36, py - 28 + bounce, 72, 11);
 
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 8px monospace";
+      ctx.font = "bold 7.5px monospace";
       ctx.textAlign = "center";
-      ctx.fillText(player.playerName.split(" ")[0].slice(0, 12), px, py - 23 + bounce);
+      ctx.fillText(player.playerName.split(" ")[0].slice(0, 11), px, py - 20 + bounce);
 
-      // ── 5. ACTION THOUGHT BUBBLE OVER PLAYER HEAD ──
-      const actionText = player.lastActivity || "Explorando dependências do hospital";
-      const bubbleW = Math.min(230, actionText.length * 6.5 + 20);
-      const bubbleX = Math.max(20, Math.min(w - bubbleW - 20, px - bubbleW / 2));
-      const bubbleY = Math.max(30, py - 52 + bounce);
+      // ── 6. ACTION THOUGHT BUBBLE OVER PLAYER HEAD ──
+      const actionText = player.lastActivity || "Explorando setores do hospital";
+      const bubbleW = Math.min(220, actionText.length * 6 + 18);
+      const bubbleX = Math.max(15, Math.min(w - bubbleW - 15, px - bubbleW / 2));
+      const bubbleY = Math.max(25, py - 46 + bounce);
 
       ctx.fillStyle = "#0f172a";
       ctx.strokeStyle = "#38bdf8";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.roundRect(bubbleX, bubbleY, bubbleW, 18, 5);
+      ctx.roundRect(bubbleX, bubbleY, bubbleW, 16, 4);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = "#f8fafc";
-      ctx.font = "bold 9px monospace";
+      ctx.font = "bold 8.5px monospace";
       ctx.textAlign = "center";
-      ctx.fillText(actionText.slice(0, 34), bubbleX + bubbleW / 2, bubbleY + 12);
+      ctx.fillText(actionText.slice(0, 32), bubbleX + bubbleW / 2, bubbleY + 11);
 
-      // ── 6. CCTV OVERLAY STAMPS ──
+      // ── 7. CCTV OVERLAY STAMPS ──
       ctx.fillStyle = "rgba(225, 29, 72, 0.9)";
       ctx.beginPath(); ctx.arc(w - 20, 14, 4, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 9px monospace";
+      ctx.font = "bold 8.5px monospace";
       ctx.textAlign = "right";
-      ctx.fillText("LIVE ● MAPA HUAP UFF", w - 28, 17);
+      ctx.fillText("LIVE ● PLANTA HUAP 1:1", w - 28, 17);
 
       animFrameRef.current = requestAnimationFrame(render);
     };
@@ -377,18 +407,16 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [player, normX, normY]);
+  }, [normX, normY, player.facing, player.isMoving, player.lastActivity, player.playerName]);
 
   return (
-    <div className="relative w-full h-full min-h-[280px] bg-[#050c18] rounded-xl overflow-hidden border border-teal-500/40 shadow-2xl">
-      <canvas
-        ref={canvasRef}
-        width={560}
-        height={280}
-        className="w-full h-full object-cover block"
-      />
-      {/* CCTV Grid Scanlines */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] opacity-10 [background-size:14px_14px]" />
+    <div className="relative w-full aspect-[2/1] bg-[#030712] rounded-xl overflow-hidden border border-teal-500/30 shadow-inner">
+      <canvas ref={canvasRef} width={560} height={280} className="w-full h-full block" />
+      <div className="absolute top-2 left-2 flex items-center gap-2 px-2 py-0.5 rounded bg-slate-900/80 border border-teal-500/40 text-[10px] font-mono text-teal-300">
+        <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
+        <span>RADAR HOSPITALAR HUAP ENFERMAGEM</span>
+      </div>
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] opacity-5 [background-size:12px_12px]" />
     </div>
   );
 }
@@ -595,7 +623,20 @@ export function ProfessorView() {
     };
   }, [fetchPlayers]);
 
-  const activePool = useDemo || players.length === 0 ? demoList : players;
+  const handleResetRoom = useCallback(async () => {
+    try {
+      await fetch("/api/rooms/GLOBAL/reset", { method: "POST" });
+      setPlayers([]);
+      setManualSelectedId(null);
+      fetchPlayers();
+    } catch (err) {
+      console.error("Error resetting room", err);
+    }
+  }, [fetchPlayers]);
+
+  // Real active online players filter
+  const realOnlinePlayers = players.filter((p) => p.online);
+  const activePool = useDemo ? demoList : realOnlinePlayers;
 
   // Determine top scorer (player with highest score > 0)
   const sortedByScore = [...activePool].sort(
@@ -607,12 +648,15 @@ export function ProfessorView() {
     topScorerCandidate && (topScorerCandidate.score > 0 || topScorerCandidate.prestige > 0)
   );
 
-  // If professor picked someone manually, use them; otherwise auto-transmit candidate IF score > 0
+  // If professor picked someone manually, use them; otherwise auto-transmit top candidate
   let transmittedPlayer: PlayerData | null = null;
   if (manualSelectedId) {
     transmittedPlayer = activePool.find((p) => p.playerId === manualSelectedId) || null;
   } else if (hasLeaderWithPoints) {
     transmittedPlayer = topScorerCandidate;
+  } else if (activePool.length > 0) {
+    // If no score yet, transmit the first connected student
+    transmittedPlayer = activePool[0];
   }
 
   // Non-transmitted remaining players stay on static cards
@@ -698,13 +742,13 @@ export function ProfessorView() {
               setUseDemo((prev) => !prev);
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition-all cursor-pointer border ${
-              useDemo || players.length === 0
-                ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+              useDemo
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
                 : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
-            <span>{useDemo || players.length === 0 ? "Modo Simulado" : "Conexões Reais"}</span>
+            <span>{useDemo ? "Modo Simulado (Ativo)" : "Alunos Reais"}</span>
           </button>
         </div>
       </div>
@@ -714,21 +758,30 @@ export function ProfessorView() {
         <div className="flex items-center gap-4">
           <span className="text-emerald-400 font-bold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-            {onlineCount} {onlineCount === 1 ? "aluno no server" : "alunos no server"}
+            {onlineCount} {onlineCount === 1 ? "aluno real conectado" : "alunos reais conectados"}
           </span>
+
+          <button
+            onClick={handleResetRoom}
+            className="text-rose-300 bg-rose-500/20 hover:bg-rose-500/30 px-2.5 py-0.5 rounded-full border border-rose-400/40 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+            title="Remove instâncias desconectadas ou duplicadas de alunos"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Limpar Fantasmas / Resetar Sala</span>
+          </button>
 
           {manualSelectedId && (
             <button
               onClick={() => setManualSelectedId(null)}
               className="text-teal-300 bg-teal-500/20 hover:bg-teal-500/30 px-2.5 py-0.5 rounded-full border border-teal-400/40 text-[10px] font-bold flex items-center gap-1 transition-all"
             >
-              <span>⚙ Voltar p/ Auto (Maior Pontuação)</span>
+              <span>⚙ Voltar p/ Transmissão Automática</span>
             </button>
           )}
 
-          {players.length === 0 && (
+          {useDemo && (
             <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[10px]">
-              ℹ️ Exibindo turma simulada para demonstração pedagógica
+              ℹ️ Modo Simulação Ativo (Alunos Virtuais em Ação)
             </span>
           )}
         </div>

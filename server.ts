@@ -37,14 +37,18 @@ const sseClients: Record<string, any[]> = {
   GLOBAL: []
 };
 
-// Clean up inactive players (offline after 12s) and broadcast updates
+// Clean up inactive players (offline after 10s -> purged after 15s) and broadcast updates
 function cleanInactivePlayers(roomCode: string) {
   const now = Date.now();
   let updated = false;
   const roomPlayers = rooms[roomCode] || {};
   
   for (const [playerId, player] of Object.entries(roomPlayers)) {
-    if (player.online && now - player.lastSeen > 12000) {
+    // Purge player if not seen in 15s to remove ghost sessions
+    if (now - player.lastSeen > 15000) {
+      delete roomPlayers[playerId];
+      updated = true;
+    } else if (player.online && now - player.lastSeen > 8000) {
       player.online = false;
       updated = true;
     }
@@ -55,21 +59,24 @@ function cleanInactivePlayers(roomCode: string) {
   }
 }
 
-// Check for inactive players every 4 seconds
+// Check for inactive players every 3 seconds
 setInterval(() => {
   for (const roomCode of Object.keys(rooms)) {
     cleanInactivePlayers(roomCode);
   }
-}, 4000);
+}, 3000);
 
 // Helper to broadcast to all SSE clients in a room
 function broadcastRoomUpdate(roomCode: string) {
   const roomPlayers = rooms[roomCode] || {};
   const now = Date.now();
-  const playersList = Object.values(roomPlayers).map(p => ({
-    ...p,
-    online: now - p.lastSeen <= 12000
-  }));
+  // Only broadcast online/active players
+  const playersList = Object.values(roomPlayers)
+    .filter(p => now - p.lastSeen <= 12000)
+    .map(p => ({
+      ...p,
+      online: true,
+    }));
   
   const payload = JSON.stringify({ players: playersList });
   const clients = sseClients[roomCode] || [];
@@ -190,12 +197,22 @@ app.get("/api/rooms/:roomCode/players", (req, res) => {
   const roomPlayers = rooms[roomCode] || {};
   const now = Date.now();
   
-  const playersList = Object.values(roomPlayers).map(p => ({
-    ...p,
-    online: now - p.lastSeen <= 12000
-  }));
+  // Filter out ghost/stale players older than 12s
+  const playersList = Object.values(roomPlayers)
+    .filter(p => now - p.lastSeen <= 12000)
+    .map(p => ({
+      ...p,
+      online: true
+    }));
   
   res.json({ players: playersList });
+});
+
+app.post("/api/rooms/:roomCode/reset", (req, res) => {
+  const { roomCode } = req.params;
+  rooms[roomCode] = {};
+  broadcastRoomUpdate(roomCode);
+  res.json({ status: "ok", message: "Room reset successfully" });
 });
 
 app.get("/api/rooms/:roomCode/stream", (req, res) => {
