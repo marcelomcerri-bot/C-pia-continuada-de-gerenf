@@ -1,0 +1,8 @@
+{
+  "name": "Remix Gestor de Enfermagem",
+  "description": "Simulador 2D de gerenciamento hospitalar e enfermagem baseado em tomada de decisões e Phaser.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
