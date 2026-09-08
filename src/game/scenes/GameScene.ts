@@ -2127,7 +2127,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Server heartbeat for Teacher/Spectator mode
-    if (time - this.lastServerHeartbeat > 1000) {
+    const isMoving = this.player?.isCurrentlyMoving();
+    const interval = isMoving ? 150 : 1000;
+    if (time - this.lastServerHeartbeat > interval) {
       this.lastServerHeartbeat = time;
       this.broadcastState();
     }
@@ -2174,7 +2176,7 @@ export class GameScene extends Phaser.Scene {
           shiftTime: Math.floor(this.state.gameTime / 60),
           x: Math.round(this.player.x),
           y: Math.round(this.player.y),
-          facing: (this.player as any).facing || 'down',
+          facing: this.player.getDirection() || 'down',
           isMoving: this.player.isCurrentlyMoving(),
           avatar: this.state.playerProfile || null,
         }),

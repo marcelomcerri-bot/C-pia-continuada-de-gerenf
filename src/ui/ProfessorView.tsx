@@ -93,22 +93,36 @@ function StatBar({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Canvas Gameplay Live Spectator Viewport (Pixel-Art Hospital Room)
+// Canvas Gameplay Live Spectator Viewport (Full Hospital Floorplan & NPCs)
 // ─────────────────────────────────────────────────────────────────────────────
 function LiveGameplayCanvas({ player }: { player: PlayerData }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Normalize raw Phaser coordinates (0..1600, 0..1200) to Canvas (80..480, 60..220)
-  const normX = Math.max(70, Math.min(490, ((player.x ?? 400) % 1200) / 1200 * 420 + 70));
-  const normY = Math.max(70, Math.min(210, ((player.y ?? 300) % 900) / 900 * 140 + 70));
+  // Map real Phaser world coordinates (0..2432 x 0..1600) to Canvas (560 x 280)
+  // Map dimensions in GameScene: cols=76 * 32 = 2432, rows=50 * 32 = 1600
+  const realX = player.x ?? 400;
+  const realY = player.y ?? 300;
 
-  const posRef = useRef({ x: normX, y: normY, targetX: normX, targetY: normY });
+  // Scale to canvas usable interior (left: 20, top: 20, width: 520, height: 240)
+  const normX = Math.max(25, Math.min(535, 20 + (realX / 2432) * 520));
+  const normY = Math.max(25, Math.min(255, 20 + (realY / 1600) * 240));
+
+  const posRef = useRef({
+    x: normX,
+    y: normY,
+    targetX: normX,
+    targetY: normY,
+    facing: player.facing || 'down',
+    isMoving: Boolean(player.isMoving),
+  });
 
   useEffect(() => {
     posRef.current.targetX = normX;
     posRef.current.targetY = normY;
-  }, [normX, normY]);
+    posRef.current.facing = player.facing || 'down';
+    posRef.current.isMoving = Boolean(player.isMoving);
+  }, [normX, normY, player.facing, player.isMoving]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -118,26 +132,43 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
 
     let frameCount = 0;
 
+    // Hospital NPCs situated in various sectors
+    const npcs = [
+      { id: '1', name: 'Dra. Teresa', role: 'Diretora Médica', x: 480, y: 55, color: '#ec4899' },
+      { id: '2', name: 'Enf. Roberto', role: 'Supervisor', x: 410, y: 135, color: '#10b981' },
+      { id: '3', name: 'Dr. Marcos', role: 'Intensivista', x: 310, y: 130, color: '#3b82f6' },
+      { id: '4', name: 'Dra. Helena', role: 'Farmacêutica', x: 200, y: 55, color: '#8b5cf6' },
+      { id: '5', name: 'Seu Arnaldo', role: 'Paciente em Alta', x: 260, y: 195, color: '#eab308' },
+      { id: '6', name: 'Dona Francisca', role: 'Paciente', x: 90, y: 195, color: '#f43f5e' },
+    ];
+
     const render = () => {
       frameCount++;
       const w = canvas.width;
       const h = canvas.height;
 
-      // Smooth position lerp towards target
-      posRef.current.x += (posRef.current.targetX - posRef.current.x) * 0.08;
-      posRef.current.y += (posRef.current.targetY - posRef.current.y) * 0.08;
+      // Distance remaining to lerp target
+      const dx = posRef.current.targetX - posRef.current.x;
+      const dy = posRef.current.targetY - posRef.current.y;
+      const dist = Math.hypot(dx, dy);
+
+      // Smooth position lerp
+      posRef.current.x += dx * 0.18;
+      posRef.current.y += dy * 0.18;
 
       const px = posRef.current.x;
       const py = posRef.current.y;
+      const facing = posRef.current.facing;
+      const isCurrentlyMoving = posRef.current.isMoving || dist > 1.5;
 
-      // 1. HOSPITAL TILE FLOOR
-      ctx.fillStyle = "#0c1f38";
+      // ── 1. BACKGROUND & HOSPITAL FLOOR TILES ──
+      ctx.fillStyle = "#09121f";
       ctx.fillRect(0, 0, w, h);
 
-      // Floor Tiles Grid
-      ctx.strokeStyle = "rgba(56, 189, 248, 0.08)";
+      // Floor grid tiles
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.06)";
       ctx.lineWidth = 1;
-      const tileSize = 32;
+      const tileSize = 28;
       for (let x = 0; x < w; x += tileSize) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
       }
@@ -145,161 +176,175 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
       }
 
-      // 2. WALLS & ROOM BOUNDARIES
-      ctx.fillStyle = "#1e293b";
-      ctx.fillRect(0, 0, w, 28); // Top wall
-      ctx.fillRect(0, h - 14, w, 14); // Bottom wall
-      ctx.fillRect(0, 0, 14, h); // Left wall
-      ctx.fillRect(w - 14, 0, 14, h); // Right wall
+      // ── 2. SECTOR ZONES (COLOR CODED HOSPITAL FLOORS) ──
+      // Top Wing: Reception, Emergency, Pharmacy, Admin (y: 20..90)
+      ctx.fillStyle = "rgba(239, 68, 68, 0.08)"; ctx.fillRect(20, 20, 110, 70); // Emergency (Red)
+      ctx.fillStyle = "rgba(139, 92, 246, 0.08)"; ctx.fillRect(130, 20, 120, 70); // Pharmacy (Purple)
+      ctx.fillStyle = "rgba(14, 165, 233, 0.08)"; ctx.fillRect(250, 20, 130, 70); // Lab/Radiology (Blue)
+      ctx.fillStyle = "rgba(236, 72, 153, 0.08)"; ctx.fillRect(380, 20, 160, 70); // Admin (Pink)
 
-      // Wall trim line (Teal accent)
-      ctx.fillStyle = "#1abc9c";
-      ctx.fillRect(0, 26, w, 3);
+      // Central Corridor (y: 90..115)
+      ctx.fillStyle = "rgba(248, 250, 252, 0.05)"; ctx.fillRect(20, 90, 520, 25);
 
-      // Doorway Arch to Corridor (Center Bottom)
-      ctx.fillStyle = "#0284c7";
-      ctx.fillRect(w / 2 - 35, h - 14, 70, 14);
-      ctx.fillStyle = "#38bdf8";
-      ctx.font = "bold 9px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("SAÍDA CORREDOR", w / 2, h - 3);
+      // Middle Wing: CME, Break, Ward, ICU, Nursing (y: 115..180)
+      ctx.fillStyle = "rgba(234, 179, 8, 0.08)"; ctx.fillRect(20, 115, 110, 65); // CME (Amber)
+      ctx.fillStyle = "rgba(99, 102, 241, 0.08)"; ctx.fillRect(130, 115, 120, 65); // Ward (Indigo)
+      ctx.fillStyle = "rgba(59, 130, 246, 0.12)"; ctx.fillRect(250, 115, 130, 65); // ICU (Blue)
+      ctx.fillStyle = "rgba(16, 185, 129, 0.10)"; ctx.fillRect(380, 115, 160, 65); // Nursing (Teal)
 
-      // 3. HOSPITAL ROOM FURNITURE & EQUIPMENT
+      // Bottom Wing: Outpatient, Maternity, Oncology (y: 180..250)
+      ctx.fillStyle = "rgba(244, 63, 94, 0.08)"; ctx.fillRect(20, 180, 170, 70); // Outpatient/Maternity
+      ctx.fillStyle = "rgba(20, 184, 166, 0.08)"; ctx.fillRect(190, 180, 170, 70); // Oncology
+      ctx.fillStyle = "rgba(168, 85, 247, 0.08)"; ctx.fillRect(360, 180, 180, 70); // Rehab/Psych
 
-      // ── NURSE RECEPTION DESK (Top Left) ──
-      ctx.fillStyle = "#334155";
-      ctx.fillRect(24, 38, 90, 45); // Wood Desk
-      ctx.fillStyle = "#475569";
-      ctx.fillRect(28, 42, 82, 37);
-
-      // Computer Monitor & Green Status LED
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(36, 45, 28, 20); // Monitor
-      ctx.fillStyle = "#38bdf8";
-      ctx.fillRect(38, 47, 24, 14); // Screen glow
-      ctx.fillStyle = "#22c65e";
-      ctx.fillRect(66, 60, 3, 3); // Power LED
-
-      // Prontuários / Clipboard on desk
-      ctx.fillStyle = "#e2e8f0";
-      ctx.fillRect(72, 48, 14, 18);
-      ctx.fillStyle = "#f43f5e";
-      ctx.fillRect(74, 50, 10, 3); // Red header line
-
-      // ── HOSPITAL BED 1 (Top Right) ──
-      ctx.fillStyle = "#64748b";
-      ctx.fillRect(w - 110, 38, 85, 48); // Bed frame
-      ctx.fillStyle = "#f8fafc";
-      ctx.fillRect(w - 106, 42, 77, 40); // White mattress/sheets
-      ctx.fillStyle = "#e2e8f0";
-      ctx.fillRect(w - 106, 42, 22, 40); // Pillow
-
-      // Patient 1 in Bed
-      ctx.fillStyle = "#fecdd3"; // Patient head
-      ctx.beginPath(); ctx.arc(w - 95, 62, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#38bdf8"; // Blue hospital blanket
-      ctx.fillRect(w - 86, 44, 55, 36);
-
-      // Vital Signs ECG Monitor 1
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(w - 128, 38, 16, 26);
-      ctx.fillStyle = "#22c65e"; // Screen pulse
-      ctx.fillRect(w - 126, 40, 12, 16);
-      // Animated ECG Sine Wave
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1;
+      // Wall Dividers between sectors
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(20, 20, 520, 230); // Outer boundary
       ctx.beginPath();
-      const ecgX = (frameCount * 2) % 12;
-      ctx.moveTo(w - 126, 48);
-      ctx.lineTo(w - 126 + ecgX, 48);
-      ctx.lineTo(w - 126 + ecgX + 2, 43);
-      ctx.lineTo(w - 126 + ecgX + 4, 53);
-      ctx.lineTo(w - 126 + ecgX + 6, 48);
+      // Internal sector divider lines
+      ctx.moveTo(20, 90); ctx.lineTo(540, 90);
+      ctx.moveTo(20, 115); ctx.lineTo(540, 115);
+      ctx.moveTo(20, 180); ctx.lineTo(540, 180);
       ctx.stroke();
 
-      // ── HOSPITAL BED 2 (Bottom Right) ──
-      ctx.fillStyle = "#64748b";
-      ctx.fillRect(w - 110, 120, 85, 48);
-      ctx.fillStyle = "#f8fafc";
-      ctx.fillRect(w - 106, 124, 77, 40);
-      ctx.fillStyle = "#e2e8f0";
-      ctx.fillRect(w - 106, 124, 22, 40);
+      // Sector Labels
+      ctx.fillStyle = "rgba(148, 163, 184, 0.7)";
+      ctx.font = "bold 8px font-mono, monospace";
+      ctx.textAlign = "left";
+      ctx.fillText("PRONTO-SOCORRO", 25, 32);
+      ctx.fillText("FARMÁCIA", 135, 32);
+      ctx.fillText("LABORATÓRIO", 255, 32);
+      ctx.fillText("DIRETORIA", 385, 32);
 
-      // Patient 2 in Bed
-      ctx.fillStyle = "#fde047"; // Patient 2 head
-      ctx.beginPath(); ctx.arc(w - 95, 144, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#a855f7"; // Purple hospital blanket
-      ctx.fillRect(w - 86, 126, 55, 36);
+      ctx.fillText("CORREDOR PRINCIPAL HUAP", 25, 106);
 
-      // IV Drip Stand (Soro Fisiológico)
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillRect(w - 122, 120, 3, 35); // Pole
-      ctx.fillStyle = "#e0f2fe";
-      ctx.fillRect(w - 125, 116, 9, 12); // IV Bag
-      // Drip animation particle
-      if ((frameCount % 30) < 15) {
-        ctx.fillStyle = "#38bdf8";
-        ctx.fillRect(w - 121, 130 + (frameCount % 15), 1.5, 3);
+      ctx.fillText("CME", 25, 127);
+      ctx.fillText("ENFERMARIA", 135, 127);
+      ctx.fillText("UTI ADULTO", 255, 127);
+      ctx.fillText("POSTO ENFERMAGEM", 385, 127);
+
+      ctx.fillText("MATERNIDADE / TRIAGEM", 25, 192);
+      ctx.fillText("ONCOLOGIA", 195, 192);
+      ctx.fillText("REABILITAÇÃO", 365, 192);
+
+      // ── 3. DRAW HOSPITAL NPCs ──
+      npcs.forEach((npc, idx) => {
+        // Micro roaming movement for NPCs
+        const npcOffset = Math.sin(frameCount * 0.05 + idx) * 8;
+        const nx = npc.x + (idx % 2 === 0 ? npcOffset : 0);
+        const ny = npc.y + (idx % 2 !== 0 ? npcOffset : 0);
+
+        // Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.beginPath(); ctx.ellipse(nx, ny + 8, 7, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+        // Body
+        ctx.fillStyle = npc.color;
+        ctx.fillRect(nx - 5, ny - 3, 10, 11);
+
+        // Head
+        ctx.fillStyle = "#fde047";
+        ctx.beginPath(); ctx.arc(nx, ny - 8, 5, 0, Math.PI * 2); ctx.fill();
+
+        // Name tag above NPC
+        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+        ctx.fillRect(nx - 28, ny - 22, 56, 10);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 7px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(npc.name, nx, ny - 14);
+
+        // Check if student player is near NPC (interaction range)
+        const distToPlayer = Math.hypot(px - nx, py - ny);
+        if (distToPlayer < 40) {
+          // Connection beam to NPC
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.6)";
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(nx, ny); ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Interaction halo
+          ctx.fillStyle = "rgba(56, 189, 248, 0.2)";
+          ctx.beginPath(); ctx.arc(nx, ny, 14, 0, Math.PI * 2); ctx.fill();
+        }
+      });
+
+      // ── 4. DRAW STUDENT PLAYER CHARACTER (DYNAMIC DIRECTION & STEP ANIMATION) ──
+      const bounce = isCurrentlyMoving ? Math.sin(frameCount * 0.3) * 3 : Math.sin(frameCount * 0.1) * 1;
+
+      // Flashlight / Direction beam cone
+      ctx.save();
+      ctx.translate(px, py);
+      let angle = Math.PI / 2; // default down
+      if (facing === 'up') angle = -Math.PI / 2;
+      else if (facing === 'left') angle = Math.PI;
+      else if (facing === 'right') angle = 0;
+
+      ctx.fillStyle = "rgba(56, 189, 248, 0.12)";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, 45, angle - 0.35, angle + 0.35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Foot dust particles when moving
+      if (isCurrentlyMoving && (frameCount % 6 < 3)) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+        ctx.beginPath(); ctx.arc(px - 6 + Math.random() * 12, py + 10, 2, 0, Math.PI * 2); ctx.fill();
       }
 
-      // 4. RADAR / SECTOR LOCATION BANNER
-      ctx.fillStyle = "rgba(10, 22, 40, 0.85)";
-      ctx.fillRect(14, 4, 180, 18);
-      ctx.fillStyle = "#38bdf8";
-      ctx.font = "bold 9px font-mono, monospace";
-      ctx.textAlign = "left";
-      ctx.fillText(`📍 ${player.currentRoom || "Enfermaria HUAP"}`, 18, 16);
-
-      // 5. PLAYER CHARACTER (NURSE / DOCTOR)
-      const bounce = Math.sin(frameCount * 0.2) * 2;
-
-      // Shadow under feet
+      // Feet Shadow
       ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-      ctx.beginPath();
-      ctx.ellipse(px, py + 12, 11, 4, 0, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.ellipse(px, py + 11, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
 
       // Uniform (Teal Scrubs)
       ctx.fillStyle = "#0d9488";
       ctx.fillRect(px - 7, py - 4 + bounce, 14, 15);
 
-      // Head / Skin
+      // Head
       ctx.fillStyle = "#fecdd3";
       ctx.beginPath(); ctx.arc(px, py - 11 + bounce, 8, 0, Math.PI * 2); ctx.fill();
 
-      // Nurse Cap / Hair
+      // Nurse Cap
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(px - 6, py - 18 + bounce, 12, 4);
       ctx.fillStyle = "#e11d48";
       ctx.fillRect(px - 1, py - 17 + bounce, 2, 2); // Red cross
 
-      // Eyes
+      // Eyes based on facing direction
       ctx.fillStyle = "#0f172a";
-      ctx.fillRect(px - 3, py - 12 + bounce, 2, 3);
-      ctx.fillRect(px + 1, py - 12 + bounce, 2, 3);
+      if (facing === 'down') {
+        ctx.fillRect(px - 4, py - 12 + bounce, 2, 3);
+        ctx.fillRect(px + 2, py - 12 + bounce, 2, 3);
+      } else if (facing === 'left') {
+        ctx.fillRect(px - 6, py - 12 + bounce, 2, 3);
+      } else if (facing === 'right') {
+        ctx.fillRect(px + 4, py - 12 + bounce, 2, 3);
+      } // 'up' has no eyes visible
 
       // Stethoscope
       ctx.strokeStyle = "#38bdf8";
       ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(px, py - 3 + bounce, 5, 0, Math.PI);
-      ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, py - 3 + bounce, 5, 0, Math.PI); ctx.stroke();
 
       // Player Name Badge
-      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-      ctx.fillRect(px - 35, py - 32 + bounce, 70, 12);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+      ctx.fillRect(px - 38, py - 32 + bounce, 76, 12);
       ctx.strokeStyle = "#1abc9c";
       ctx.lineWidth = 1;
-      ctx.strokeRect(px - 35, py - 32 + bounce, 70, 12);
+      ctx.strokeRect(px - 38, py - 32 + bounce, 76, 12);
 
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 8px monospace";
       ctx.textAlign = "center";
-      ctx.fillText(player.playerName.split(" ")[0].slice(0, 10), px, py - 23 + bounce);
+      ctx.fillText(player.playerName.split(" ")[0].slice(0, 12), px, py - 23 + bounce);
 
-      // 6. ACTION THOUGHT BUBBLE OVER PLAYER HEAD
-      const actionText = player.lastActivity || "Avaliando paciente no leito";
-      const bubbleW = Math.min(220, actionText.length * 6.5 + 20);
+      // ── 5. ACTION THOUGHT BUBBLE OVER PLAYER HEAD ──
+      const actionText = player.lastActivity || "Explorando dependências do hospital";
+      const bubbleW = Math.min(230, actionText.length * 6.5 + 20);
       const bubbleX = Math.max(20, Math.min(w - bubbleW - 20, px - bubbleW / 2));
       const bubbleY = Math.max(30, py - 52 + bounce);
 
@@ -314,15 +359,15 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
       ctx.fillStyle = "#f8fafc";
       ctx.font = "bold 9px monospace";
       ctx.textAlign = "center";
-      ctx.fillText(actionText.slice(0, 32), bubbleX + bubbleW / 2, bubbleY + 12);
+      ctx.fillText(actionText.slice(0, 34), bubbleX + bubbleW / 2, bubbleY + 12);
 
-      // 7. CCTV OVERLAY SCANLINES & HUD STAMPS
+      // ── 6. CCTV OVERLAY STAMPS ──
       ctx.fillStyle = "rgba(225, 29, 72, 0.9)";
-      ctx.beginPath(); ctx.arc(w - 24, 14, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(w - 20, 14, 4, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 9px monospace";
       ctx.textAlign = "right";
-      ctx.fillText("LIVE ● CAM-01", w - 32, 17);
+      ctx.fillText("LIVE ● MAPA HUAP UFF", w - 28, 17);
 
       animFrameRef.current = requestAnimationFrame(render);
     };
@@ -335,11 +380,11 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
   }, [player, normX, normY]);
 
   return (
-    <div className="relative w-full h-full min-h-[260px] bg-[#050c18] rounded-xl overflow-hidden border border-teal-500/40 shadow-2xl">
+    <div className="relative w-full h-full min-h-[280px] bg-[#050c18] rounded-xl overflow-hidden border border-teal-500/40 shadow-2xl">
       <canvas
         ref={canvasRef}
         width={560}
-        height={260}
+        height={280}
         className="w-full h-full object-cover block"
       />
       {/* CCTV Grid Scanlines */}
@@ -442,25 +487,50 @@ export function ProfessorView() {
   // Manual spectator override (null = auto broadcast top scorer)
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
 
-  // Periodic score simulation for demo mode so scores change and leaders swap!
+  // Periodic position and score simulation for demo mode so students walk and leaders swap!
   useEffect(() => {
     const simTimer = setInterval(() => {
       setDemoList((prev) => {
-        const next = [...prev];
-        // Pick a random student to gain points
-        const randIdx = Math.floor(Math.random() * next.length);
-        const p = { ...next[randIdx] };
-        const gained = Math.floor(Math.random() * 25) + 10;
-        p.score = (p.score || 0) + gained;
-        p.prestige = p.score;
-        p.completedMissions = (p.completedMissions || 0) + 1;
-        p.lastActivity = `Concluiu caso clínico (+${gained} pts)`;
-        p.x = Math.max(40, Math.min(500, (p.x || 300) + (Math.random() * 60 - 30)));
-        p.y = Math.max(40, Math.min(220, (p.y || 150) + (Math.random() * 60 - 30)));
-        next[randIdx] = p;
-        return next;
+        return prev.map((p) => {
+          const nextP = { ...p };
+          
+          // Random movement steps on Phaser map scale (100..2300, 100..1500)
+          const deltaX = Math.floor(Math.random() * 200 - 100);
+          const deltaY = Math.floor(Math.random() * 200 - 100);
+          const newX = Math.max(150, Math.min(2250, (nextP.x ?? 800) + deltaX));
+          const newY = Math.max(150, Math.min(1450, (nextP.y ?? 600) + deltaY));
+          
+          let facing: 'up' | 'down' | 'left' | 'right' = 'down';
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            facing = deltaX > 0 ? 'right' : 'left';
+          } else {
+            facing = deltaY > 0 ? 'down' : 'up';
+          }
+
+          nextP.x = newX;
+          nextP.y = newY;
+          nextP.facing = facing;
+          nextP.isMoving = true;
+
+          // Occasional score/activity boost
+          if (Math.random() < 0.3) {
+            const gained = Math.floor(Math.random() * 20) + 10;
+            nextP.score = (nextP.score || 0) + gained;
+            nextP.prestige = nextP.score;
+            nextP.completedMissions = (nextP.completedMissions || 0) + 1;
+            const activities = [
+              `Dimensionamento de Pessoal COFEN 543/2017 (+${gained} pts)`,
+              `Atendimento no Leito com Prescrição (+${gained} pts)`,
+              `Auditoria de Processos CME RDC 15 (+${gained} pts)`,
+              `Acolhimento com Classificação de Risco (+${gained} pts)`,
+            ];
+            nextP.lastActivity = activities[Math.floor(Math.random() * activities.length)];
+          }
+
+          return nextP;
+        });
       });
-    }, 9000);
+    }, 1800);
 
     return () => clearInterval(simTimer);
   }, []);
