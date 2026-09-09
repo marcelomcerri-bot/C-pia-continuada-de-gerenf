@@ -26,6 +26,7 @@ import {
   Check,
   ClipboardList,
   FileText,
+  Lock,
   X
 } from "lucide-react";
 import { playSound } from "../game/utils/audio";
@@ -527,6 +528,12 @@ const INITIAL_DEMO_PLAYERS: PlayerData[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 export function ProfessorView() {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return sessionStorage.getItem("prof_authenticated") === "true";
+  });
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [demoList, setDemoList] = useState<PlayerData[]>(INITIAL_DEMO_PLAYERS);
   const [useDemo, setUseDemo] = useState(false);
@@ -755,6 +762,90 @@ export function ProfessorView() {
 
   const onlineCount = activePool.filter((p) => p.online).length;
 
+  if (!isAuthenticated) {
+    const handleLogin = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (passwordInput === "prof231@2") {
+        sessionStorage.setItem("prof_authenticated", "true");
+        setIsAuthenticated(true);
+        setPasswordError("");
+      } else {
+        setPasswordError("Senha incorreta! Digite a senha cadastrada para o Modo Professor.");
+        try { playSound("error"); } catch {}
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 z-[300] flex items-center justify-center bg-[#050c18] p-4 text-slate-100 font-sans select-none pointer-events-auto">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="w-full max-w-md bg-[#0a182b] border-2 border-teal-500/80 rounded-2xl p-6 sm:p-8 shadow-2xl flex flex-col gap-5 text-center relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-teal-500 via-emerald-400 to-teal-600" />
+          
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-teal-500/20 border-2 border-teal-400/50 flex items-center justify-center text-teal-300 shadow-lg">
+            <Lock className="w-7 h-7" />
+          </div>
+
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide uppercase font-mono">
+              MODO PROFESSOR
+            </h2>
+            <p className="text-xs text-slate-400 mt-1.5 font-mono leading-relaxed">
+              Digite a senha de acesso restrito para visualizar o Painel Docente e Monitoria em Tempo Real.
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="flex flex-col gap-4 text-left">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-mono font-bold text-teal-300 uppercase tracking-wider">
+                Senha de Acesso:
+              </label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  setPasswordError("");
+                }}
+                placeholder="Digite a senha..."
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl bg-slate-900 border-2 border-teal-500/50 text-white font-mono text-sm focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/30 transition-all placeholder:text-slate-600"
+              />
+            </div>
+
+            {passwordError && (
+              <p className="text-xs text-red-400 font-mono font-bold bg-red-950/60 border border-red-500/40 p-2.5 rounded-xl leading-snug">
+                ⚠️ {passwordError}
+              </p>
+            )}
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  try { playSound("click"); } catch {}
+                  navigate("/");
+                }}
+                className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-mono font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-700 transition-all cursor-pointer"
+              >
+                VOLTAR AO JOGO
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-3 px-4 bg-teal-500 hover:bg-teal-400 active:bg-teal-600 text-slate-950 font-mono font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>ENTRAR</span>
+                <Check className="w-4 h-4 stroke-[3]" />
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       key="professor-dashboard"
@@ -768,6 +859,7 @@ export function ProfessorView() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
+              sessionStorage.removeItem("prof_authenticated");
               try {
                 playSound("click");
               } catch {}
