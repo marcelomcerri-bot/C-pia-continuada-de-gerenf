@@ -859,7 +859,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'intro',
         condition: (s) => !s.missionProgress['triagem_ps'],
-        topic: 'Classificação de Risco & Protocolo Manchester',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Bom dia! O Pronto-Socorro está com fila grande hoje.',
           'Temos 12 pacientes aguardando triagem desde as 6h.',
@@ -903,7 +903,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'fluxo_start',
         condition: (s) => s.completedMissions.includes('triagem_ps') && s.completedMissions.length >= 3 && !s.missionProgress['fluxo_recepcao'],
-        topic: 'Acolhimento com Classificação de Risco & PNH',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Com o Manchester funcionando bem, a triagem melhorou muito!',
           'Agora precisamos organizar o fluxo de agendamentos no ambulatório.',
@@ -946,7 +946,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Gestão da Recepção & Acolhimento',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'A recepção está muito mais organizada, obrigada!',
           'O fluxo de atendimento é o coração do hospital.',
@@ -958,7 +958,7 @@ export const NPC_DEFS: NPCDef[] = [
       // Pool 1: Classificação de Risco de Manchester (Kurcgant cap.6)
       [{
         id: 'pool1',
-        topic: 'Classificação de Risco & Protocolo Manchester',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Precisamos de uma decisão rápida aqui na triagem!',
           'Paciente chegou com dor torácica há 30 minutos, sudorese fria, PA 90x60.',
@@ -974,7 +974,7 @@ export const NPC_DEFS: NPCDef[] = [
       // Pool 2: Acolhimento com Classificação de Risco — PNH (cap.6)
       [{
         id: 'pool2',
-        topic: 'Acolhimento na Saúde & Diretrizes PNH',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Chegou uma senhora idosa sozinha, confusa, sem cartão do SUS.',
           'A fila está grande e a equipe está sobrecarregada.',
@@ -990,7 +990,7 @@ export const NPC_DEFS: NPCDef[] = [
       // Pool 3: Fluxo de Atendimento — gestão de filas (Kurcgant cap.4)
       [{
         id: 'pool3',
-        topic: 'Gestão de Processos & Mapeamento de Fluxo',
+        topic: 'Gestão da Qualidade',
         text: [
           'O tempo médio de espera na recepção subiu para 4 horas.',
           'Pacientes estão saindo sem ser atendidos — evasão hospitalar.',
@@ -1024,7 +1024,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'sepse_intro',
         condition: (s) => !s.missionProgress['protocolo_sepse'],
-        topic: 'Segurança do Paciente & Bundle de Sepse',
+        topic: 'Segurança do Paciente',
         text: [
           'Precisamos urgente de um protocolo de sepse aqui no PS!',
           'Já tivemos 3 casos este mês com diagnóstico tardio.',
@@ -1068,7 +1068,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'superlot_intro',
         condition: (s) => s.completedMissions.includes('protocolo_sepse') && s.completedMissions.length >= 3 && !s.missionProgress['superlotacao_ps'],
-        topic: 'Gestão de Contingência & Superlotação no PS',
+        topic: 'Tomada de Decisão',
         text: [
           'Protocolo de sepse funcionando. Mas o PS está cheio de novo!',
           'Precisamos de um plano de contingência para superlotação.',
@@ -1111,7 +1111,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Urgência & Emergência Assistencial',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'O PS está mais organizado agora.',
           'Cada segundo importa aqui. Obrigado pelo apoio!',
@@ -1122,7 +1122,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialoguePools: [
       [{
         id: 'pool1_carlos',
-        topic: 'Segurança do Paciente & Bundle de Sepse',
+        topic: 'Segurança do Paciente',
         text: [
           'Temos um paciente com suspeita de sepse — PA 80x50, febre 39°C, lactato 3,2.',
           'O residente pediu para aguardar mais exames antes de iniciar antibiótico.',
@@ -1137,7 +1137,7 @@ export const NPC_DEFS: NPCDef[] = [
       }],
       [{
         id: 'pool2_carlos',
-        topic: 'Dimensionamento de Pessoal em Urgência (Res. COFEN 543/2017)',
+        topic: 'Dimensionamento de Enfermagem',
         text: [
           'A equipe está com 3 técnicos de enfermagem para atender 18 pacientes no PS.',
           'Segundo o COFEN, qual é o dimensionamento mínimo para o Pronto-Socorro?',
@@ -1152,7 +1152,7 @@ export const NPC_DEFS: NPCDef[] = [
       }],
       [{
         id: 'pool3_carlos',
-        topic: 'Gestão de Conflitos Multiprofissionais & Comunicação SBAR',
+        topic: 'Negociação de Conflitos',
         text: [
           'Acabei de discutir com a médica plantonista sobre a conduta de um paciente.',
           'Ela ignorou minha observação sobre o risco de broncoaspiração.',
@@ -1186,7 +1186,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'estoque_intro',
         condition: (s) => !s.missionProgress['estoque_farmacia'],
-        topic: 'Gestão de Estoques & Curva ABC',
+        topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Oi! Estamos com estoque crítico de medicamentos vasoativos.',
           'Norepinefrina, Vasopressina e Midazolam abaixo de 20%.',
@@ -1230,7 +1230,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'reconciliacao_intro',
         condition: (s) => s.completedMissions.includes('estoque_farmacia') && s.completedMissions.length >= 3 && !s.missionProgress['reconciliacao_medicamentosa'],
-        topic: 'Segurança do Paciente & Reconciliação Medicamentosa',
+        topic: 'Segurança do Paciente',
         text: [
           'Obrigado pela agilidade no estoque!',
           'Agora preciso de apoio para implementar a Reconciliação Medicamentosa.',
@@ -1273,7 +1273,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Farmácia Hospitalar & Rastreabilidade',
+        topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'A farmácia agora tem rastreabilidade total dos medicamentos!',
           'Use-me como referência em dúvidas de fármacos.',
@@ -1284,7 +1284,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialoguePools: [
       [{
         id: 'pool1_joao',
-        topic: 'Gestão de Estoques & Curva ABC (Kurcgant Cap. 12)',
+        topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Precisamos revisar o estoque de medicamentos da UTI.',
           'Temos itens A, B e C com perfis de custo e giro muito diferentes.',
@@ -1299,7 +1299,7 @@ export const NPC_DEFS: NPCDef[] = [
       }],
       [{
         id: 'pool2_joao',
-        topic: 'Segurança na Transição do Cuidado (Meta 3 OMS)',
+        topic: 'Segurança do Paciente',
         text: [
           'Um paciente chegou da enfermaria usando 12 medicamentos crônicos diferentes.',
           'Na admissão, o prescritor só registrou 7 no sistema hospitalar.',
@@ -1314,7 +1314,7 @@ export const NPC_DEFS: NPCDef[] = [
       }],
       [{
         id: 'pool3_joao',
-        topic: 'Medicamentos de Alta Vigilância & Armazenamento (ISMP)',
+        topic: 'Segurança do Paciente',
         text: [
           'A equipe de enfermagem quer guardar medicamentos vasoativos na gaveta da enfermaria.',
           'Qual é a regulamentação sobre armazenamento de medicamentos de alta vigilância?',
@@ -1348,7 +1348,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'criticos_intro',
         condition: (s) => !s.missionProgress['resultados_criticos'],
-        topic: 'Comunicação Efetiva & Valores Críticos no Laboratório',
+        topic: 'Competências Gerenciais e Assistenciais',
         text: [
           'Bom dia! Temos um problema sério com comunicação de resultados críticos.',
           'Os enfermeiros às vezes demoram horas para receber resultados urgentes.',
@@ -1392,7 +1392,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'coleta_intro',
         condition: (s) => s.completedMissions.includes('resultados_criticos') && s.completedMissions.length >= 3 && !s.missionProgress['coleta_sistematizada'],
-        topic: 'Identificação do Paciente & Fase Pré-Analítica',
+        topic: 'Segurança do Paciente',
         text: [
           'Protocolo de valores críticos funcionando bem!',
           'Agora precisamos padronizar a coleta de sangue nos leitos.',
@@ -1435,7 +1435,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Diagnóstico Laboratorial & Qualidade',
+        topic: 'Gestão da Qualidade',
         text: [
           'O laboratório está com tempo de entrega muito melhor!',
           'Identificação correta do paciente é vital na coleta.',
@@ -1507,7 +1507,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'laudo_intro',
         condition: (s) => !s.missionProgress['laudo_urgente'],
-        topic: 'Gestão de Fluxos Diagnósticos & Priorização',
+        topic: 'Tomada de Decisão',
         text: [
           'Boa tarde. Temos acúmulo de exames aguardando laudo urgente.',
           'O fluxo de solicitação está desorganizado.',
@@ -1550,9 +1550,9 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Radiologia & Apoio Diagnóstico',
+        topic: 'Competências Gerenciais e Assistenciais',
         text: [
-          'Com a priorização, os exames críticos saem em menos de 2 horas.',
+          'Com a priorização, os exames críticos saem em menos de 2 horas!',
           'A enfermagem é fundamental no fluxo diagnóstico.',
         ],
         choices: [{ text: 'Ótima parceria, doutor!' }],
@@ -1622,7 +1622,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'escala_intro',
         condition: (s) => !s.missionProgress['escala_plantao'],
-        topic: 'Dimensionamento de Pessoal (Res. COFEN 543/2017)',
+        topic: 'Dimensionamento de Enfermagem',
         text: [
           'Bom dia! Seja bem-vinda ao HUAP.',
           'Sou a Diretora de Enfermagem. Temos muito trabalho pela frente.',
@@ -1667,7 +1667,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'pesquisa_indicadores_intro',
         condition: (s) => s.completedMissions.length >= 9 && !s.missionProgress['pesquisa_indicadores'],
-        topic: 'Indicadores de Qualidade Assistencial & Donabedian',
+        topic: 'Indicadores de Saúde: Ferramentas que Subsidiam a Tomada de Decisão',
         text: [
           'Um grande favor — o MEC exige relatório de pesquisa e indicadores do HUAP.',
           'Queremos consolidar os indicadores de qualidade assistencial para auditoria e publicação.',
@@ -1711,7 +1711,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'orcamento_intro',
         condition: (s) => s.completedMissions.length >= 3 && !s.missionProgress['orcamento'],
-        topic: 'Gestão Financeira & Análise de Custos em Enfermagem',
+        topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Excelente progresso! Preciso de mais um favor de gestão.',
           'Os custos operacionais estão 18% acima do orçado este trimestre.',
@@ -1755,7 +1755,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'acreditacao_intro',
         condition: (s) => s.completedMissions.length >= 6 && !s.missionProgress['acreditacao_ona'],
-        topic: 'Acreditação Hospitalar & Qualidade (ONA/JCI)',
+        topic: 'Acreditação Hospitalar',
         text: [
           'A ONA fará visita de acreditação em 60 dias!',
           'Precisamos organizar toda a documentação, protocolos e indicadores.',
@@ -1798,7 +1798,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Diretoria de Enfermagem & Liderança',
+        topic: 'Liderança em Enfermagem',
         text: [
           'Continue o excelente trabalho.',
           'O HUAP precisa de enfermeiras gerentes como você.',
@@ -1870,7 +1870,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'cme_intro',
         condition: (s) => !s.missionProgress['cme_protocolo'],
-        topic: 'Processamento de Materiais & RDC 15/2012 ANVISA',
+        topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Oi! Temos problema com o controle de materiais na CME.',
           'Os kits cirúrgicos não estão sendo rastreados e validados corretamente.',
@@ -1914,7 +1914,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'rastreabilidade_intro',
         condition: (s) => s.completedMissions.includes('cme_protocolo') && s.completedMissions.length >= 3 && !s.missionProgress['rastreabilidade_esterilizacao'],
-        topic: 'Rastreabilidade de Materiais & Biossegurança',
+        topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Com o protocolo de reprocessamento aprovado, podemos avançar.',
           'Próxima etapa: implantar rastreabilidade eletrônica por código de barras.',
@@ -1957,7 +1957,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Central de Material e Esterilização (CME)',
+        topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'A rastreabilidade da CME é uma questão de segurança do paciente!',
           'Material mal esterilizado causa infecções graves.',
@@ -2029,7 +2029,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'nutricao_intro',
         condition: (s) => !s.missionProgress['terapia_nutricional'],
-        topic: 'Terapia Nutricional Enteral (ASPEN/ESPEN)',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Bom dia! Você é a nova gerente de enfermagem?',
           'Precisamos urgente do protocolo de Terapia Nutricional na UTI.',
@@ -2073,7 +2073,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'protocolo_dieta_intro',
         condition: (s) => s.completedMissions.includes('terapia_nutricional') && s.completedMissions.length >= 3 && !s.missionProgress['protocolo_dieta'],
-        topic: 'Prescrição Dietética & Protocolos Multiprofissionais',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Com o protocolo ASPEN em vigor, a equipe precisa de um guia prático de dietas.',
           'Precisamos de um protocolo de prescrição dietética por patologia (renal, hepática, diabética).',
@@ -2116,7 +2116,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Terapia Nutricional & Nutrição Clínica',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'A nutrição adequada reduz complicações e tempo de internação!',
           'Descanse um pouco — a copa está sempre disponível.',
@@ -2188,7 +2188,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'escala_help',
         condition: (s) => s.missionProgress['escala_plantao'] === 1,
-        topic: 'Dimensionamento de Pessoal & Escala de Plantão',
+        topic: 'Dimensionamento de Enfermagem',
         text: [
           'Estava esperando por você! Temos 7 enfermeiros disponíveis amanhã.',
           'Mas 3 precisam de folga compensatória por horas extras acumuladas.',
@@ -2233,7 +2233,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'ronda_intro',
         condition: (s) => !s.missionProgress['ronda_enfermaria'],
-        topic: 'Sistematização da Assistência & Ronda de Enfermagem',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'A ronda de enfermagem está atrasada hoje.',
           'Os 28 pacientes da Enfermaria Clínica precisam de avaliação sistemática.',
@@ -2277,7 +2277,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'capacitacao_intro',
         condition: (s) => s.completedMissions.length >= 3 && !s.missionProgress['capacitacao_sae'],
-        topic: 'Processo de Enfermagem & SAE (Res. COFEN 358/2009)',
+        topic: 'Competências Gerenciais e Assistenciais',
         text: [
           'A equipe precisa muito de capacitação em SAE (Sistematização da Assistência).',
           'A implementação do Processo de Enfermagem é obrigatória pelo COFEN.',
@@ -2321,7 +2321,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'passagem_plantao_intro',
         condition: (s) => s.completedMissions.includes('ronda_enfermaria') && s.completedMissions.length >= 3 && !s.missionProgress['passagem_plantao'],
-        topic: 'Comunicação Efetiva & Protocolo SBAR na Transição',
+        topic: 'Tomada de Decisão',
         text: [
           'A passagem de plantão é nossa maior vulnerabilidade em segurança do paciente.',
           'Falta padronização — cada enfermeiro usa um formato diferente.',
@@ -2364,7 +2364,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Supervisão de Enfermagem & Gestão de Unidades',
+        topic: 'Competências Gerenciais e Assistenciais',
         text: [
           'O plantão está bem organizado hoje. Obrigada!',
           'A comunicação entre turnos é a base da segurança.',
@@ -2436,7 +2436,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'protocolo_start',
         condition: (s) => s.completedMissions.includes('protocolo_sepse') && s.completedMissions.length >= 2 && !s.completedMissions.includes('indicadores_qualidade'),
-        topic: 'Indicadores Epidemiológicos & Qualidade em UTI',
+        topic: 'Indicadores de Saúde: Ferramentas que Subsidiam a Tomada de Decisão',
         text: [
           'Excelente trabalho com o protocolo de sepse no PS!',
           'Agora precisamos monitorar os indicadores de qualidade assistencial da UTI.',
@@ -2480,7 +2480,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'intro',
         condition: (s) => !s.completedMissions.includes('protocolo_sepse'),
-        topic: 'Pronto-Socorro & Protocolo de Sepse (ILAS)',
+        topic: 'Segurança do Paciente',
         text: [
           'Bom dia! Você deve ser a nova enfermeira gerente.',
           'A UTI atende pacientes críticos, mas a triagem e o reconhecimento da Sepse começam na emergência.',
@@ -2519,7 +2519,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Terapia Intensiva (UTI) & Medicina Intensiva',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'A UTI está bem gerenciada. Continue assim!',
           'O enfermeiro gerente é essencial na terapia intensiva.',
@@ -2591,7 +2591,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'quimio_intro',
         condition: (s) => !s.missionProgress['quimioterapia_segura'],
-        topic: 'Quimioterapia Segura & Medicamentos de Alta Vigilância',
+        topic: 'Segurança do Paciente',
         text: [
           'Precisamos implementar o protocolo de quimioterapia segura na Oncologia.',
           'O INCA e o ISMP recomendam dupla checagem obrigatória antes de toda administração.',
@@ -2635,7 +2635,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'paliativos_intro',
         condition: (s) => s.completedMissions.includes('quimioterapia_segura') && s.completedMissions.length >= 3 && !s.missionProgress['cuidados_paliativos'],
-        topic: 'Cuidados Paliativos & Manejo do Conforto na Terminalidade',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Precisamos de um protocolo de cuidados paliativos para pacientes em fase avançada.',
           'Muitos ficam com sintomas refratários de dor, dispneia e ansiedade.',
@@ -2678,7 +2678,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Oncologia & Hematologia Clínica',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'A oncologia precisa de enfermagem especializada e compassiva.',
           'Obrigada pelo suporte à nossa equipe!',
@@ -2750,7 +2750,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'banco_leite_intro',
         condition: (s) => !s.missionProgress['banco_leite'],
-        topic: 'Banco de Leite Humano & RDC 171/2006 ANVISA',
+        topic: 'Gestão da Qualidade',
         text: [
           'Bom dia! O Banco de Leite do HUAP precisa de reestruturação.',
           'A coleta, processamento, pasteurização e distribuição exigem rigor de boas práticas.',
@@ -2794,7 +2794,7 @@ export const NPC_DEFS: NPCDef[] = [
       {
         id: 'humanizacao_intro',
         condition: (s) => s.completedMissions.includes('banco_leite') && s.completedMissions.length >= 3 && !s.missionProgress['humanizacao_parto'],
-        topic: 'Assistência Humanizada ao Parto & Diretrizes do MS',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Precisamos implementar práticas de humanização do parto aqui no HUAP!',
           'As diretrizes do Ministério da Saúde orientam práticas baseadas em evidências para o parto normal.',
@@ -2837,7 +2837,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'idle',
-        topic: 'Enfermagem Obstétrica & Neonatal',
+        topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'A maternidade é lugar de vida e emoção.',
           'Humanização é a essência da nossa prática aqui.',
@@ -3633,7 +3633,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'escala_plantao',
     title: 'Escala de Plantão',
     description: 'Organizar a escala de enfermagem conforme a Resolução COFEN 543/2017.',
-    category: 'Dimensionamento de Pessoal',
+    category: 'Dimensionamento de Enfermagem',
     prestige: 120,
     steps: 2,
     prerequisiteIds: [],
@@ -3666,7 +3666,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'estoque_farmacia',
     title: 'Gestão de Estoque Farmacêutico',
     description: 'Garantir o resuprimento de medicamentos críticos com ponto de pedido definido.',
-    category: 'Gestão de Materiais',
+    category: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
     prestige: 110,
     steps: 1,
     prerequisiteIds: [],
@@ -3677,7 +3677,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'ronda_enfermaria',
     title: 'Ronda de Enfermagem Estruturada',
     description: 'Implementar ronda sistematizada com protocolo SOAP em todos os leitos.',
-    category: 'Qualidade Assistencial',
+    category: 'Gestão do Cuidado em Enfermagem',
     prestige: 90,
     steps: 1,
     prerequisiteIds: [],
@@ -3688,7 +3688,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'cme_protocolo',
     title: 'Protocolo CME — RDC 15/2012',
     description: 'Adequar a Central de Material Esterilizado às exigências da ANVISA.',
-    category: 'Controle de Infecção',
+    category: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
     prestige: 115,
     steps: 1,
     prerequisiteIds: ['estoque_farmacia'],
@@ -3721,7 +3721,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'capacitacao_sae',
     title: 'Capacitação em SAE',
     description: 'Treinar toda a equipe de enfermagem na Sistematização da Assistência de Enfermagem.',
-    category: 'Educação e Desenvolvimento',
+    category: 'Educação Continuada e Permanente',
     prestige: 140,
     steps: 1,
     prerequisiteIds: ['escala_plantao'],
@@ -3732,7 +3732,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'fluxo_recepcao',
     title: 'Fluxo de Acolhimento Integrado',
     description: 'Organizar o sistema de acolhimento e agendamento do ambulatório do HUAP.',
-    category: 'Gestão de Fluxo',
+    category: 'Gestão do Cuidado em Enfermagem',
     prestige: 100,
     steps: 1,
     prerequisiteIds: ['triagem_ps'],
@@ -3743,7 +3743,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'superlotacao_ps',
     title: 'Plano de Contingência — Superlotação',
     description: 'Desenvolver protocolo de contingência para situações de overcrowding no PS.',
-    category: 'Gestão de Crise',
+    category: 'Tomada de Decisão',
     prestige: 135,
     steps: 1,
     prerequisiteIds: ['triagem_ps'],
@@ -3754,7 +3754,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'laudo_urgente',
     title: 'Priorização de Exames Urgentes',
     description: 'Criar sistema de priorização por criticidade para laudos radiológicos.',
-    category: 'Gestão de Fluxo',
+    category: 'Tomada de Decisão',
     prestige: 95,
     steps: 1,
     prerequisiteIds: [],
@@ -3765,7 +3765,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'orcamento',
     title: 'Auditoria de Custos Hospitalares',
     description: 'Realizar análise ABC de custos operacionais e propor plano de eficiência.',
-    category: 'Gestão Financeira',
+    category: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
     prestige: 150,
     steps: 1,
     prerequisiteIds: ['estoque_farmacia', 'escala_plantao'],
@@ -3776,7 +3776,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'indicadores_qualidade',
     title: 'Dashboard de Indicadores de Qualidade',
     description: 'Implementar monitoramento contínuo de indicadores assistenciais na UTI.',
-    category: 'Qualidade e Segurança',
+    category: 'Indicadores de Saúde: Ferramentas que Subsidiam a Tomada de Decisão',
     prestige: 160,
     steps: 1,
     prerequisiteIds: ['protocolo_sepse', 'ronda_enfermaria'],
@@ -3787,7 +3787,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'acreditacao_ona',
     title: 'Preparação para Acreditação ONA',
     description: 'Preparar o HUAP para visita de acreditação da Organização Nacional de Acreditação.',
-    category: 'Qualidade e Acreditação',
+    category: 'Acreditação Hospitalar',
     prestige: 220,
     steps: 1,
     prerequisiteIds: ['indicadores_qualidade', 'cme_protocolo'],
@@ -3798,7 +3798,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'terapia_nutricional',
     title: 'Protocolo de Nutrição Enteral Precoce',
     description: 'Implementar protocolo ASPEN de nutrição enteral nas primeiras 48h para pacientes da UTI.',
-    category: 'Cuidado Clínico',
+    category: 'Gestão do Cuidado em Enfermagem',
     prestige: 110,
     steps: 1,
     prerequisiteIds: [],
@@ -3820,7 +3820,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'banco_leite',
     title: 'Reestruturação do Banco de Leite',
     description: 'Adequar o Banco de Leite Humano às normas da ANVISA (RDC 171/2006).',
-    category: 'Saúde Materno-Infantil',
+    category: 'Gestão da Qualidade',
     prestige: 120,
     steps: 1,
     prerequisiteIds: [],
@@ -3831,7 +3831,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'cuidados_paliativos',
     title: 'Equipe de Cuidados Paliativos',
     description: 'Estruturar equipe multiprofissional para cuidados paliativos no HUAP.',
-    category: 'Humanização e Ética',
+    category: 'Gestão do Cuidado em Enfermagem',
     prestige: 165,
     steps: 1,
     prerequisiteIds: ['quimioterapia_segura'],
@@ -3842,7 +3842,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'humanizacao_parto',
     title: 'Humanização do Parto',
     description: 'Implementar práticas de humanização no pré-parto e parto do HUAP.',
-    category: 'Humanização e Ética',
+    category: 'Gestão do Cuidado em Enfermagem',
     prestige: 130,
     steps: 1,
     prerequisiteIds: ['banco_leite'],
@@ -3853,7 +3853,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'coleta_sistematizada',
     title: 'Padronização da Coleta Laboratorial',
     description: 'Treinar equipe de enfermagem em técnicas corretas de coleta e identificação de amostras.',
-    category: 'Educação e Desenvolvimento',
+    category: 'Educação Continuada e Permanente',
     prestige: 95,
     steps: 1,
     prerequisiteIds: ['resultados_criticos'],
@@ -3864,7 +3864,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'passagem_plantao',
     title: 'Protocolo de Passagem de Plantão SBAR',
     description: 'Implementar o modelo SBAR (Situação-Background-Avaliação-Recomendação) na passagem de plantão.',
-    category: 'Comunicação Segura',
+    category: 'Tomada de Decisão',
     prestige: 105,
     steps: 1,
     prerequisiteIds: [],
@@ -3875,7 +3875,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'pesquisa_indicadores',
     title: 'Pesquisa em Indicadores de Enfermagem',
     description: 'Conduzir pesquisa sobre indicadores de qualidade para apresentação na Semana de Monitoria da UFF.',
-    category: 'Pesquisa e Ensino',
+    category: 'Indicadores de Saúde: Ferramentas que Subsidiam a Tomada de Decisão',
     prestige: 200,
     steps: 1,
     prerequisiteIds: ['indicadores_qualidade', 'capacitacao_sae'],

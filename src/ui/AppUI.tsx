@@ -1018,7 +1018,7 @@ function DialogueChoicesOverlay({
         <div className="flex flex-col gap-1.5 border-b border-[#1abc9c]/30 pb-2 mb-0.5">
           {activeData?.topic && (
             <div className="bg-[#f1c40f]/15 border border-[#f1c40f]/70 rounded-md px-2.5 py-1 text-[#f1c40f] font-mono text-[11px] font-bold uppercase tracking-wider text-center">
-              📚 MATÉRIA: {activeData.topic}
+              📚 CONTEÚDO: {activeData.topic}
             </div>
           )}
           <div className="flex items-center justify-between">

@@ -144,7 +144,7 @@ export class DialogScene extends Phaser.Scene {
       const badgeY = boxY - BOX_H / 2 - 18;
       const badgeGraphics = this.add.graphics();
 
-      const badgeTxt = this.add.text(boxX - W / 2 + 16, badgeY, `📚 MATÉRIA: ${topicText.toUpperCase()}`, {
+      const badgeTxt = this.add.text(boxX - W / 2 + 16, badgeY, `📚 CONTEÚDO: ${topicText.toUpperCase()}`, {
         fontFamily: "'Rajdhani', 'Press Start 2P', monospace",
         fontSize: '13px',
         color: '#f1c40f',
