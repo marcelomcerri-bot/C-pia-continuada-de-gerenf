@@ -17,11 +17,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(10);
     this.setCollideWorldBounds(true);
     const body = this.body as Phaser.Physics.Arcade.Body;
-    // Body aligned with character's visual feet (drawn at groundY=68 in the 128px canvas)
-    // 18px width x 16px height fits smoothly through doors while firmly blocking wall penetration
-    body.setSize(18, 16);
-    body.setOffset(13, 58);
+    // Solid 22x22 body centered at feet (groundY=68) prevents tile seam penetration or wall clipping
+    body.setSize(22, 22);
+    body.setOffset(11, 52);
     body.allowRotation = false;
+    body.setBounce(0, 0);
+    body.setMaxVelocity(PLAYER_SPRINT_SPEED, PLAYER_SPRINT_SPEED);
     this.setFrame(0);
     this.setRotation(0);
     this.setAngle(0);

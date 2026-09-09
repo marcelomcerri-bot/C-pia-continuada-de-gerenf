@@ -56,6 +56,8 @@ export class GameScene extends Phaser.Scene {
   constructor() { super({ key: SCENES.GAME }); }
 
   create() {
+    this.physics.world.OVERLAP_BIAS = 16;
+    this.physics.world.TILE_BIAS = 32;
     this.state = loadGame();
     this.mapData = generateMapTiles();
     this.doorTileKeys = getDoorTileKeys();
@@ -244,57 +246,24 @@ export class GameScene extends Phaser.Scene {
 
         if (isWall && (hasFloorBelow || isHorizontalIntersection)) {
            const FACE_Y = by;
-           // When the face is above a corridor, draw baseboard accent inside the wall tile
-           const faceInCorridor = belowTid === TILE_ID.CORRIDOR;
+           const FACE_H = 32;
 
-           if (faceInCorridor) {
-             // Baseboard accent inside the wall tile
-             this.ambientGfx.fillStyle(0x0ea5e9, 0.85);
-             this.ambientGfx.fillRect(bx, by + TILE_SIZE - 4, TILE_SIZE, 3);
-             this.ambientGfx.fillStyle(0xffffff, 0.5);
-             this.ambientGfx.fillRect(bx, by + TILE_SIZE - 1, TILE_SIZE, 1);
-           } else {
-             // Full 32 px decorative wainscoting face directly on the wall tile
-             const FACE_H = 32;
-             this.ambientGfx.fillStyle(0xd2ccc1, 1);
-             this.ambientGfx.fillRect(bx, FACE_Y, TILE_SIZE, FACE_H);
+           // Full decorative wainscoting face directly on the real wall tile
+           this.ambientGfx.fillStyle(0xd2ccc1, 1);
+           this.ambientGfx.fillRect(bx, FACE_Y, TILE_SIZE, FACE_H);
 
-             this.ambientGfx.fillStyle(0x0ea5e9, 1);
-             this.ambientGfx.fillRect(bx, FACE_Y + 16, TILE_SIZE, 3);
-             this.ambientGfx.fillStyle(0xffffff, 1);
-             this.ambientGfx.fillRect(bx, FACE_Y + 14, TILE_SIZE, 2);
-             this.ambientGfx.fillRect(bx, FACE_Y + 19, TILE_SIZE, 2);
+           // Blue medical accent wainscoting stripe
+           this.ambientGfx.fillStyle(0x0ea5e9, 1);
+           this.ambientGfx.fillRect(bx, FACE_Y + 16, TILE_SIZE, 3);
+           this.ambientGfx.fillStyle(0xffffff, 1);
+           this.ambientGfx.fillRect(bx, FACE_Y + 14, TILE_SIZE, 2);
+           this.ambientGfx.fillRect(bx, FACE_Y + 19, TILE_SIZE, 2);
 
-             const wallType = c % 13;
-             if (wallType === 3) {
-               this.ambientGfx.fillStyle(0xe74c3c, 1);
-               this.ambientGfx.fillRoundedRect(bx + 12, FACE_Y + 4, 8, 12, 2);
-               this.ambientGfx.fillStyle(0xc0392b, 1);
-               this.ambientGfx.fillRect(bx + 14, FACE_Y + 5, 4, 3);
-               this.ambientGfx.fillStyle(0x000000, 1);
-               this.ambientGfx.fillRect(bx + 12, FACE_Y + 2, 8, 2);
-             } else if (wallType === 7) {
-               this.ambientGfx.fillStyle(0xffffff, 1);
-               this.ambientGfx.fillRect(bx + 8, FACE_Y + 2, 16, 12);
-               this.ambientGfx.fillStyle(0x3498db, 1);
-               this.ambientGfx.fillRect(bx + 10, FACE_Y + 4, 12, 2);
-               this.ambientGfx.fillStyle(0xbdc3c7, 1);
-               this.ambientGfx.fillRect(bx + 10, FACE_Y + 7, 12, 1);
-               this.ambientGfx.fillRect(bx + 10, FACE_Y + 9, 8, 1);
-               this.ambientGfx.fillRect(bx + 10, FACE_Y + 11, 10, 1);
-             } else if (wallType === 10) {
-               this.ambientGfx.fillStyle(0xecf0f1, 1);
-               this.ambientGfx.fillRect(bx + 14, FACE_Y + 24, 6, 4);
-               this.ambientGfx.fillStyle(0x000000, 1);
-               this.ambientGfx.fillRect(bx + 15, FACE_Y + 25, 2, 1);
-               this.ambientGfx.fillRect(bx + 18, FACE_Y + 25, 2, 1);
-             }
-
-             this.ambientGfx.fillStyle(0x94a3b8, 1);
-             this.ambientGfx.fillRect(bx, FACE_Y + 28, TILE_SIZE, 4);
-             this.ambientGfx.fillStyle(0x000000, 0.12);
-             this.ambientGfx.fillRect(bx, FACE_Y + 30, TILE_SIZE, 2);
-           }
+           // Baseboard trim
+           this.ambientGfx.fillStyle(0x94a3b8, 1);
+           this.ambientGfx.fillRect(bx, FACE_Y + 28, TILE_SIZE, 4);
+           this.ambientGfx.fillStyle(0x000000, 0.12);
+           this.ambientGfx.fillRect(bx, FACE_Y + 30, TILE_SIZE, 2);
         }
 
         // ── Horizontal wall top-edge highlight (seen from inside room above) ──
@@ -375,23 +344,26 @@ export class GameScene extends Phaser.Scene {
            }
 
            // Hanging sector sign — only in the first tile row of each horizontal corridor
-           if (r === 14 || r === 28) {
-              if (c % 15 === 0) {
-                 this.ambientGfx.fillStyle(0x34495e, 1);
-                 this.ambientGfx.fillRoundedRect(bx + 4, by - 16, 24, 8, 2);
-                 this.ambientGfx.fillStyle(0xecf0f1, 1);
-                 this.ambientGfx.fillRect(bx + 10, by - 14, 12, 1);
-                 this.ambientGfx.fillRect(bx + 8, by - 12, 16, 1);
-                 // hanging wires
-                 this.ambientGfx.fillStyle(0xbdc3c7, 1);
-                 this.ambientGfx.fillRect(bx + 6, by - 24, 1, 8);
-                 this.ambientGfx.fillRect(bx + 25, by - 24, 1, 8);
-              }
+           const isHangingSignTile = (r === 14 || r === 28) && (c % 15 === 0);
+           if (isHangingSignTile) {
+              this.ambientGfx.fillStyle(0x34495e, 1);
+              this.ambientGfx.fillRoundedRect(bx + 4, by - 16, 24, 8, 2);
+              this.ambientGfx.fillStyle(0xecf0f1, 1);
+              this.ambientGfx.fillRect(bx + 10, by - 14, 12, 1);
+              this.ambientGfx.fillRect(bx + 8, by - 12, 16, 1);
+              // hanging wires
+              this.ambientGfx.fillStyle(0xbdc3c7, 1);
+              this.ambientGfx.fillRect(bx + 6, by - 24, 1, 8);
+              this.ambientGfx.fillRect(bx + 25, by - 24, 1, 8);
            }
 
            // Hand sanitizer on tiles immediately below a north wall — never on a doorway
-           if (this.mapData[r-1] && this.mapData[r-1][c] === TILE_ID.WALL && c % 4 === 0 && !this.isDoorGapTile(r, c)) {
+           if (!isHangingSignTile && this.mapData[r-1] && this.mapData[r-1][c] === TILE_ID.WALL && c % 8 === 2 && !this.isDoorGapTile(r, c)) {
               this.drawHandSanitizer(propsGfx, bx, by);
+           }
+           // Fire Extinguisher station mounted on north corridor walls
+           if (!isHangingSignTile && this.mapData[r-1] && this.mapData[r-1][c] === TILE_ID.WALL && c % 8 === 6 && !this.isDoorGapTile(r, c)) {
+              this.drawFireExtinguisherStation(propsGfx, bx, by);
            }
            // Bench against south walls (tile below is wall) — only in actual corridor
            // rows, hugging the wall, and never on/beside a doorway
@@ -1092,6 +1064,47 @@ export class GameScene extends Phaser.Scene {
     // Metallic nozzle
     g.fillStyle(0x64748b, 1); 
     g.fillRoundedRect(bx + 14, by + 6, 4, 3, 1); 
+  }
+
+  private drawFireExtinguisherStation(g: Phaser.GameObjects.Graphics, bx: number, by: number) {
+    // Wall-mounted Fire Extinguisher Station (Extintor de Incêndio Hospitalar)
+    // 1. Red & White Signage Board on the wall
+    g.fillStyle(0xffffff, 1);
+    g.fillRoundedRect(bx + 10, by - 24, 12, 10, 2);
+    g.fillStyle(0xdc2626, 1);
+    g.fillRoundedRect(bx + 11, by - 23, 10, 8, 1);
+    // White fire extinguisher symbol
+    g.fillStyle(0xffffff, 1);
+    g.fillRect(bx + 14, by - 21, 4, 5);
+    g.fillRect(bx + 15, by - 22, 2, 1);
+
+    // 2. Wall Mounting Bracket
+    g.fillStyle(0x475569, 1);
+    g.fillRect(bx + 13, by - 10, 6, 2);
+
+    // 3. Extinguisher Tank (Red cylinder with realistic gradient shading & metallic highlight)
+    g.fillStyle(0x000000, 0.25);
+    g.fillRoundedRect(bx + 10, by - 10, 12, 18, 3); // drop shadow on wall
+
+    g.fillStyle(0xdc2626, 1); // Primary red body
+    g.fillRoundedRect(bx + 11, by - 12, 10, 18, 3);
+    g.fillStyle(0xef4444, 1); // Highlight
+    g.fillRect(bx + 12, by - 11, 2, 16);
+    g.fillStyle(0xb91c1c, 1); // Shading
+    g.fillRect(bx + 19, by - 11, 1, 16);
+
+    // 4. Pressure Gauge & Valve Handle
+    g.fillStyle(0x1e293b, 1);
+    g.fillRect(bx + 14, by - 15, 4, 3); // Valve neck
+    g.fillStyle(0xe2e8f0, 1);
+    g.fillRect(bx + 15, by - 17, 2, 2); // Gauge
+    g.fillStyle(0x1e293b, 1);
+    g.fillRect(bx + 13, by - 16, 6, 1); // Operating lever
+
+    // 5. Black Hose
+    g.fillStyle(0x0f172a, 1);
+    g.fillRect(bx + 18, by - 14, 2, 8);
+    g.fillRect(bx + 17, by - 6, 2, 2);
   }
 
   // --- Prop drawing routines (isometric-ish / top-down with shadow) ---
@@ -1833,7 +1846,6 @@ export class GameScene extends Phaser.Scene {
     const startX = (7 + 0.5) * TILE_SIZE;
     const startY = (14 + 0.5) * TILE_SIZE;
     this.player = new Player(this, startX, startY);
-    if (this.mapLayer) this.physics.add.collider(this.player, this.mapLayer);
     if (this.wallLayer) this.physics.add.collider(this.player, this.wallLayer);
     if (this.propColliders) this.physics.add.collider(this.player, this.propColliders);
   }
@@ -1841,7 +1853,6 @@ export class GameScene extends Phaser.Scene {
   private spawnNPCs() {
     for (const def of NPC_DEFS) {
       const npc = new NPC(this, def);
-      if (this.mapLayer) this.physics.add.collider(npc, this.mapLayer);
       if (this.wallLayer) this.physics.add.collider(npc, this.wallLayer);
       if (this.propColliders && def.role !== 'patient') this.physics.add.collider(npc, this.propColliders);
       if (def.role === 'patient') {

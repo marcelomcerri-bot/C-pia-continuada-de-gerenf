@@ -28,8 +28,10 @@ export function createGameConfig(
       arcade: {
         gravity: { x: 0, y: 0 },
         debug: false,
-        fixedStep: false,
+        fixedStep: true,
         fps: 60,
+        overlapBias: 16,
+        tileBias: 32,
       },
     },
     scene: [BootScene, MenuScene, GameScene, HUDScene, DialogScene],
