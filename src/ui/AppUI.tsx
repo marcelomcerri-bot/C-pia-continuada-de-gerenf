@@ -282,7 +282,7 @@ function HomeMenu({
 
   // Align buttons with the title in the 16:9 canvas
   const menuCenterX = canvasBounds.left + canvasBounds.width / 2;
-  const menuCenterY = canvasBounds.top + 355 * canvasBounds.scale;
+  const menuCenterY = canvasBounds.top + 440 * canvasBounds.scale;
   const menuScale = Math.min(1, Math.max(0.70, canvasBounds.scale));
 
   return (
@@ -299,18 +299,22 @@ function HomeMenu({
       />
 
       {!showHelp ? (
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: menuScale * 0.92, x: "-50%", y: "-35%" }}
+          animate={{ opacity: 1, scale: menuScale, x: "-50%", y: "-50%" }}
+          transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.15 }}
           style={{
             position: "absolute",
             left: `${menuCenterX}px`,
             top: `${menuCenterY}px`,
-            transform: `translate(-50%, -50%) scale(${menuScale})`,
             transformOrigin: "center center",
           }}
           className="flex flex-col gap-3 w-72 pointer-events-auto select-none"
         >
           {hasSave() && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.04, y: -2 }}
+              whileTap={{ scale: 0.97, y: 1 }}
               type="button"
               onPointerDown={continueGame}
               onClick={continueGame}
@@ -318,10 +322,12 @@ function HomeMenu({
               className="w-full flex items-center justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-sans font-bold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#312e81] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
             >
               ▶ CONTINUAR
-            </button>
+            </motion.button>
           )}
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04, y: -2 }}
+            whileTap={{ scale: 0.97, y: 1 }}
             type="button"
             onPointerDown={openNewGameModal}
             onClick={openNewGameModal}
@@ -329,9 +335,11 @@ function HomeMenu({
             className="w-full flex items-center justify-center gap-2.5 bg-[#1abc9c] hover:bg-[#1dd2af] active:bg-[#16a085] text-white font-sans font-bold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#0e6252] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
             ★ NOVO JOGO
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04, y: -2 }}
+            whileTap={{ scale: 0.97, y: 1 }}
             type="button"
             onPointerDown={() => { try { playSound("click"); } catch {}; setShowHelp(true); }}
             onClick={() => { try { playSound("click"); } catch {}; setShowHelp(true); }}
@@ -339,9 +347,11 @@ function HomeMenu({
             className="w-full flex items-center justify-center gap-2.5 bg-[#f39c12] hover:bg-[#f4a62a] active:bg-[#d68910] text-white font-sans font-bold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#a66705] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
             📖 COMO JOGAR
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04, y: -2 }}
+            whileTap={{ scale: 0.97, y: 1 }}
             type="button"
             onPointerDown={() => { try { playSound("click"); } catch {}; navigate("/professor"); }}
             onClick={() => { try { playSound("click"); } catch {}; navigate("/professor"); }}
@@ -349,8 +359,8 @@ function HomeMenu({
             className="w-full flex items-center justify-center gap-2.5 bg-[#2c3e70] hover:bg-[#344985] active:bg-[#1a2348] text-white font-sans font-bold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#1a2348] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
             🎓 MODO PROFESSOR
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       ) : (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 pointer-events-auto">
           <motion.div
