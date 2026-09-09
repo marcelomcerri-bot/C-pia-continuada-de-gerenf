@@ -20,7 +20,7 @@ export function CharacterCreationModal({
   onClose,
   onConfirm,
 }: CharacterCreationModalProps) {
-  const [name, setName] = useState("Enf. Alex");
+  const [name, setName] = useState("Alex Santos");
   const [gender, setGender] = useState<"female" | "male">("female");
   const [skinTone, setSkinTone] = useState("#f5c5a3");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -81,7 +81,7 @@ export function CharacterCreationModal({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     dismissKeyboard();
-    const finalName = name.trim() || (gender === "female" ? "Enf. Ana" : "Enf. Carlos");
+    const finalName = name.trim() || (gender === "female" ? "Ana Silva" : "Carlos Eduardo");
     try { playSound("click"); } catch {}
     onConfirm({
       name: finalName,
@@ -94,8 +94,8 @@ export function CharacterCreationModal({
     dismissKeyboard();
     try { playSound("click"); } catch {}
     setGender(g);
-    if (name === "Enf. Alex" || name === "Enf. Ana" || name === "Enf. Carlos") {
-      setName(g === "female" ? "Enf. Ana" : "Enf. Carlos");
+    if (name === "Alex Santos" || name === "Enf. Alex" || name === "Ana Silva" || name === "Carlos Eduardo") {
+      setName(g === "female" ? "Ana Silva" : "Carlos Eduardo");
     }
   };
 
@@ -105,7 +105,7 @@ export function CharacterCreationModal({
     setSkinTone(hex);
   };
 
-  const displayName = name.trim() || (gender === "female" ? "Enf. Ana" : "Enf. Carlos");
+  const displayName = name.trim() || (gender === "female" ? "Ana Silva" : "Carlos Eduardo");
 
   return (
     <AnimatePresence>
@@ -204,7 +204,7 @@ export function CharacterCreationModal({
                       onChange={(e) => setName(e.target.value)}
                       onPointerDown={(e) => e.stopPropagation()}
                       onTouchStart={(e) => e.stopPropagation()}
-                      placeholder="Ex: Enf. Carlos ou Enf. Ana"
+                      placeholder="Ex: Carlos Eduardo ou Ana Silva"
                       className="w-full bg-slate-950 border-2 border-slate-700 focus:border-teal-400 text-teal-100 font-sans font-bold text-xs sm:text-sm px-3 py-2 rounded-xl outline-none transition-colors placeholder:text-slate-600 pr-8 shadow-inner touch-manipulation"
                     />
                     {name.length > 0 && (
@@ -222,7 +222,7 @@ export function CharacterCreationModal({
 
                   {/* Sugestões rápidas de nome */}
                   <div className="flex flex-wrap gap-1 pt-0.5">
-                    {["Enf. Ana", "Enf. Carlos", "Enf. Mariana", "Enf. Lucas"].map((preset) => (
+                    {["Ana Silva", "Carlos Eduardo", "Mariana Costa", "Lucas Mendes"].map((preset) => (
                       <button
                         key={preset}
                         type="button"

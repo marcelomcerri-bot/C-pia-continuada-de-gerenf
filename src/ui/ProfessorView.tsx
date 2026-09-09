@@ -27,9 +27,31 @@ import {
   ClipboardList,
   FileText,
   Lock,
-  X
+  X,
+  Crown
 } from "lucide-react";
 import { playSound } from "../game/utils/audio";
+
+export function getDisplayNickname(fullName: string): { nick: string; firstName: string; prefix?: string } {
+  if (!fullName) return { nick: "Estudante", firstName: "Estudante" };
+  const trimmed = fullName.trim();
+
+  // Strip "Enf. ", "Enf ", "Dr. ", "Dra. ", "Téc. " prefixes
+  const prefixMatch = trimmed.match(/^(Enf\.?|Dr\.?|Dra\.?|Téc\.?)\s+/i);
+  let nick = trimmed;
+  let prefix: string | undefined = undefined;
+
+  if (prefixMatch) {
+    prefix = prefixMatch[1];
+    nick = trimmed.replace(/^(Enf\.?|Dr\.?|Dra\.?|Téc\.?)\s+/i, "").trim();
+  }
+
+  if (!nick) nick = trimmed;
+
+  const firstName = nick.split(" ")[0] || nick;
+
+  return { nick, firstName, prefix };
+}
 
 export interface DecisionLog {
   id: string;
@@ -385,16 +407,19 @@ function LiveGameplayCanvas({ player }: { player: PlayerData }) {
       ctx.beginPath(); ctx.arc(px, py - 2 + bounce, 4, 0, Math.PI); ctx.stroke();
 
       // Player Name Badge
-      ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
-      ctx.fillRect(px - 36, py - 28 + bounce, 72, 11);
-      ctx.strokeStyle = "#38bdf8";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px - 36, py - 28 + bounce, 72, 11);
+      const displayNickObj = getDisplayNickname(player.playerName);
+      const nickLabel = (displayNickObj.firstName.length > 12 ? displayNickObj.firstName.slice(0, 11) : displayNickObj.firstName).toUpperCase();
 
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 7.5px monospace";
+      ctx.fillStyle = "rgba(0, 0, 0, 0.92)";
+      ctx.fillRect(px - 40, py - 28 + bounce, 80, 12);
+      ctx.strokeStyle = "#10b981";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px - 40, py - 28 + bounce, 80, 12);
+
+      ctx.fillStyle = "#34d399";
+      ctx.font = "bold 8px monospace";
       ctx.textAlign = "center";
-      ctx.fillText(player.playerName.split(" ")[0].slice(0, 11), px, py - 20 + bounce);
+      ctx.fillText(`👤 ${nickLabel}`, px, py - 19 + bounce);
 
       // ── 6. ACTION THOUGHT BUBBLE OVER PLAYER HEAD ──
       const actionText = player.lastActivity || "Explorando setores do hospital";
@@ -855,7 +880,7 @@ export function ProfessorView() {
       className="fixed inset-0 z-[250] flex flex-col bg-[#050c18] text-slate-100 font-sans overflow-hidden pointer-events-auto select-none"
     >
       {/* Top Bar Header */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 bg-[#0a182b] border-b border-teal-500/40 shadow-lg flex-shrink-0 gap-3 flex-wrap">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 bg-[#081325]/95 backdrop-blur-md border-b border-teal-500/30 shadow-xl flex-shrink-0 gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
@@ -865,25 +890,26 @@ export function ProfessorView() {
               } catch {}
               navigate("/");
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-teal-300 text-xs font-mono font-bold transition-all border border-slate-700 cursor-pointer"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/90 text-teal-300 text-xs font-mono font-bold transition-all border border-slate-700/80 hover:border-teal-500/50 cursor-pointer shadow-sm active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>SAIR DO MODO PROFESSOR</span>
+            <span className="hidden sm:inline">SAIR DO MODO PROFESSOR</span>
+            <span className="sm:hidden">SAIR</span>
           </button>
 
-          <div className="flex items-center gap-2 border-l border-slate-700/80 pl-3">
-            <div className="p-1.5 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-400/30">
+          <div className="flex items-center gap-2.5 border-l border-slate-700/80 pl-3">
+            <div className="p-1.5 rounded-lg bg-teal-500/15 text-teal-300 border border-teal-500/30 shadow-inner">
               <Users className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-xs sm:text-sm font-bold text-white tracking-wider uppercase font-mono flex items-center gap-2">
-                PAINEL DOCENTE & MONITORIA — TRANSMISSÃO
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30">
+              <h1 className="text-xs sm:text-sm font-extrabold text-white tracking-wider uppercase font-mono flex items-center gap-2">
+                <span>PAINEL DOCENTE & MONITORIA</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-teal-500/15 text-teal-300 border border-teal-500/30 font-bold">
                   UFF · Gerência II
                 </span>
               </h1>
-              <p className="text-[10px] text-slate-400 font-mono hidden sm:block">
-                Transmissão ao vivo da gameplay do líder de pontuação no Hospital Antônio Pedro
+              <p className="text-[10px] text-slate-400 font-mono hidden md:block">
+                Transmissão ao vivo do líder de pontuação no Hospital Antônio Pedro
               </p>
             </div>
           </div>
@@ -899,19 +925,13 @@ export function ProfessorView() {
               setShowDecisionLogsModal(true);
               fetchDecisions();
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-[#050c18] font-mono font-bold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:border-amber-400/80 font-mono font-bold text-xs transition-all shadow-sm cursor-pointer active:scale-95 backdrop-blur-sm"
           >
-            <ClipboardList className="w-3.5 h-3.5" />
-            <span>ERROS & ACERTOS ({decisions.length})</span>
-          </button>
-
-          <button
-            onClick={handleClearAllServerRecords}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs transition-all shadow-md cursor-pointer active:scale-95"
-            title="Apaga permanentemente todos os registros e limpa a sala do servidor"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>ZERAR TUDO</span>
+            <ClipboardList className="w-3.5 h-3.5 text-amber-400" />
+            <span>ERROS & ACERTOS</span>
+            <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-200 text-[10px] font-extrabold border border-amber-500/30">
+              {decisions.length}
+            </span>
           </button>
 
           <button
@@ -921,9 +941,9 @@ export function ProfessorView() {
               } catch {}
               window.dispatchEvent(new CustomEvent("opennotebook"));
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-[#050c18] font-mono font-bold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/40 hover:border-teal-400/80 font-mono font-bold text-xs transition-all shadow-sm cursor-pointer active:scale-95 backdrop-blur-sm"
           >
-            <BookOpen className="w-3.5 h-3.5" />
+            <BookOpen className="w-3.5 h-3.5 text-teal-400" />
             <span>CADERNO DE ERROS</span>
           </button>
 
@@ -934,9 +954,9 @@ export function ProfessorView() {
               } catch {}
               setShowClassReport((prev) => !prev);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-mono font-bold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hover:border-indigo-400/80 font-mono font-bold text-xs transition-all shadow-sm cursor-pointer active:scale-95 backdrop-blur-sm"
           >
-            <BarChart3 className="w-3.5 h-3.5" />
+            <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
             <span>RELATÓRIO</span>
           </button>
 
@@ -947,46 +967,58 @@ export function ProfessorView() {
               } catch {}
               setUseDemo((prev) => !prev);
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition-all cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer border backdrop-blur-sm shadow-sm active:scale-95 ${
               useDemo
-                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
-                : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                ? "bg-sky-500/20 text-sky-300 border-sky-400/50 hover:bg-sky-500/30"
+                : "bg-emerald-500/10 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/20"
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
-            <span>{useDemo ? "Modo Simulado (Ativo)" : "Alunos Reais"}</span>
+            <span>{useDemo ? "Modo Simulado" : "Alunos Reais"}</span>
+          </button>
+
+          <button
+            onClick={handleClearAllServerRecords}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:border-rose-400/80 font-mono font-bold text-xs transition-all shadow-sm cursor-pointer active:scale-95 backdrop-blur-sm"
+            title="Apaga permanentemente todos os registros e limpa a sala do servidor"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+            <span>ZERAR TUDO</span>
           </button>
         </div>
       </div>
 
       {/* Sub Stats Ribbon */}
-      <div className="flex items-center justify-between px-6 py-1.5 bg-[#071324] border-b border-slate-800 text-xs font-mono flex-wrap gap-2">
-        <div className="flex items-center gap-4">
-          <span className="text-emerald-400 font-bold flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-            {onlineCount} {onlineCount === 1 ? "aluno real conectado" : "alunos reais conectados"}
-          </span>
+      <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-[#040c17]/90 backdrop-blur border-b border-slate-800/80 text-xs font-mono flex-wrap gap-2.5">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-md text-emerald-300 font-bold text-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>{onlineCount} {onlineCount === 1 ? "aluno real conectado" : "alunos reais conectados"}</span>
+          </div>
 
           <button
             onClick={handleResetRoom}
-            className="text-rose-300 bg-rose-500/20 hover:bg-rose-500/30 px-2.5 py-0.5 rounded-full border border-rose-400/40 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+            className="text-rose-300 hover:text-rose-200 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 hover:border-rose-500/40 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
             title="Remove instâncias desconectadas ou duplicadas de alunos"
           >
-            <RefreshCw className="w-3 h-3" />
+            <RefreshCw className="w-3 h-3 text-rose-400" />
             <span>Limpar Fantasmas / Resetar Sala</span>
           </button>
 
           {manualSelectedId && (
             <button
               onClick={() => setManualSelectedId(null)}
-              className="text-teal-300 bg-teal-500/20 hover:bg-teal-500/30 px-2.5 py-0.5 rounded-full border border-teal-400/40 text-[10px] font-bold flex items-center gap-1 transition-all"
+              className="text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <span>⚙ Voltar p/ Transmissão Automática</span>
             </button>
           )}
 
           {useDemo && (
-            <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[10px]">
+            <span className="text-sky-300 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-md text-[11px] font-medium">
               ℹ️ Modo Simulação Ativo (Alunos Virtuais em Ação)
             </span>
           )}
@@ -994,21 +1026,21 @@ export function ProfessorView() {
 
         <div className="flex items-center gap-3 text-slate-400 text-[11px]">
           {isRealtime ? (
-            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded uppercase font-bold flex items-center gap-1">
+            <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wide">
               <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
               <span>Transmissão SSE Ativa</span>
-            </span>
+            </div>
           ) : (
-            <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded uppercase font-bold">
-              Polling Periódico
-            </span>
+            <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-md text-[11px] font-bold uppercase">
+              <span>Polling Periódico</span>
+            </div>
           )}
 
           {lastRefresh && <span>Atualizado: {lastRefresh.toLocaleTimeString()}</span>}
 
           <button
             onClick={() => fetchPlayers()}
-            className="p-1 text-slate-400 hover:text-teal-300 transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-teal-300 hover:bg-slate-800 rounded transition-colors cursor-pointer"
             title="Recarregar dados"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -1084,9 +1116,13 @@ export function ProfessorView() {
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-teal-500/30 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               {transmittedPlayer ? (
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600/30 border border-rose-500 text-rose-300 text-xs font-mono font-bold animate-pulse">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping inline-block" />
-                  <span>TRANSMITINDO AO VIVO — {manualSelectedId ? "ALUNO SELECIONADO" : "LÍDER DO TURNO"}</span>
+                <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-mono font-bold">
+                  <Crown className="w-4 h-4 text-amber-400 animate-bounce" />
+                  <span>
+                    {manualSelectedId
+                      ? "TRANSMITINDO — ALUNO SELECIONADO"
+                      : `🥇 1º LUGAR — TRANSMISSÃO AO VIVO DO LÍDER (${getDisplayNickname(transmittedPlayer.playerName).nick})`}
+                  </span>
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold">
@@ -1099,7 +1135,7 @@ export function ProfessorView() {
             {transmittedPlayer && (
               <div className="flex items-center gap-2 font-mono text-xs text-slate-300">
                 <Trophy className="w-4 h-4 text-amber-400" />
-                <span>Maior Pontuação:</span>
+                <span>Pontuação do Líder:</span>
                 <span className="text-base font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded border border-amber-500/40">
                   {transmittedPlayer.score ?? transmittedPlayer.prestige ?? 0} PTS
                 </span>
@@ -1130,12 +1166,30 @@ export function ProfessorView() {
                 <div>
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
                     <div>
-                      <h2 className="text-sm font-bold text-white font-mono tracking-wide">
-                        {transmittedPlayer.playerName}
-                      </h2>
-                      <span className="text-[10px] font-mono text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
-                        {transmittedPlayer.level || "Estudante"}
-                      </span>
+                      {(() => {
+                        const tNick = getDisplayNickname(transmittedPlayer.playerName);
+                        return (
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-[10px] font-mono font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40 flex items-center gap-1">
+                                <Crown className="w-3 h-3 text-amber-400" />
+                                <span>1º LUGAR NO RANKING</span>
+                              </span>
+                              {tNick.prefix && (
+                                <span className="text-[10px] font-mono text-teal-300 bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">
+                                  {tNick.prefix}
+                                </span>
+                              )}
+                            </div>
+                            <h2 className="text-base sm:text-xl font-extrabold text-white font-mono tracking-wide">
+                              {tNick.nick}
+                            </h2>
+                            <span className="text-[10px] font-mono text-teal-300">
+                              {transmittedPlayer.level || "Estudante"}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="text-right">
                       <span className="text-[10px] text-slate-400 block font-mono">STATUS</span>
@@ -1212,7 +1266,7 @@ export function ProfessorView() {
               <span>Telas Estáticas dos Demais Jogadores ({staticPlayers.length})</span>
             </h2>
             <span className="text-[10px] font-mono text-slate-400">
-              Pontuação atualizada em tempo real via heartbeat
+              Nicknames e pontuações em tempo real
             </span>
           </div>
 
@@ -1222,6 +1276,8 @@ export function ProfessorView() {
                 const color = CARD_COLORS[i % CARD_COLORS.length];
                 const scoreVal = p.score ?? p.prestige ?? 0;
                 const isOnline = Boolean(p.online);
+                const pNickObj = getDisplayNickname(p.playerName);
+                const pRank = sortedByScore.findIndex((sp) => sp.playerId === p.playerId) + 1;
 
                 return (
                   <motion.div
@@ -1230,33 +1286,40 @@ export function ProfessorView() {
                     initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.96 }}
-                    className="relative flex flex-col border-2 overflow-hidden rounded-xl bg-[#07111e] shadow-xl min-h-[220px]"
+                    className="relative flex flex-col border-2 overflow-hidden rounded-xl bg-[#07111e] shadow-xl min-h-[230px]"
                     style={{ borderColor: isOnline ? color : "#334155" }}
                   >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-3 py-2 bg-[#0a182b] border-b border-white/10">
-                      <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center justify-between px-3 py-2 bg-[#0a182b] border-b border-white/10 gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <div
-                          className={`w-2.5 h-2.5 rounded-full ${
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
                             isOnline ? "bg-emerald-400 animate-pulse" : "bg-slate-500"
                           }`}
                         />
-                        <span className="text-white font-mono font-bold text-xs truncate">
-                          {p.playerName}
+                        <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">
+                          #{pRank || i + 2}
+                        </span>
+                        <span className="text-white font-mono font-extrabold text-xs sm:text-sm truncate" title={p.playerName}>
+                          {pNickObj.nick}
                         </span>
                       </div>
-                      <span className="text-[9px] font-mono text-slate-300 bg-black/60 px-1.5 py-0.5 rounded border border-white/10">
+                      <span className="text-[9px] font-mono text-slate-300 bg-black/60 px-1.5 py-0.5 rounded border border-white/10 shrink-0">
                         {p.level || "Estudante"}
                       </span>
                     </div>
 
                     {/* Static Camera Screen Snapshot Display */}
                     <div className="flex-1 flex flex-col items-center justify-center p-3 text-center bg-[#040a12] relative">
-                      <span className="text-[9px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 mb-2">
+                      <span className="text-[9px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 mb-1.5">
                         📷 TELA ESTÁTICA
                       </span>
 
-                      <div className="text-xl font-mono font-bold text-amber-300 flex items-center gap-1 my-1">
+                      <div className="text-xs font-mono font-bold text-teal-200 bg-teal-950/80 border border-teal-500/40 px-2.5 py-1 rounded-lg mb-1.5 shadow-sm max-w-full truncate" title={p.playerName}>
+                        👤 NICK: <span className="text-white">{pNickObj.nick}</span>
+                      </div>
+
+                      <div className="text-xl font-mono font-bold text-amber-300 flex items-center gap-1 my-0.5">
                         <Award className="w-5 h-5 text-amber-400" />
                         <span>{scoreVal} PTS</span>
                       </div>
@@ -1293,13 +1356,118 @@ export function ProfessorView() {
                         className="w-full py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-mono font-bold text-[11px] rounded-lg transition-all shadow flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                       >
                         <Video className="w-3.5 h-3.5" />
-                        <span>Transmitir Este Aluno</span>
+                        <span>Transmitir {pNickObj.firstName}</span>
                       </button>
                     </div>
                   </motion.div>
                 );
               })}
             </AnimatePresence>
+          </div>
+        </div>
+
+        {/* ─────────────────────────────────────────────────────────────────── */}
+        {/* RANKING TABLE SECTION (CLASSIFICAÇÃO GERAL DA TURMA)              */}
+        {/* ─────────────────────────────────────────────────────────────────── */}
+        <div className="bg-[#071325] border-2 border-teal-500/40 rounded-2xl p-4 shadow-xl space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <h2 className="text-xs sm:text-sm font-mono font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span>RANKING GERAL DA TURMA — AO VIVO ({activePool.length} ALUNOS)</span>
+            </h2>
+            <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+              Classificação dinâmica por pontuação acumulada
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-mono text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 text-[10px] uppercase">
+                  <th className="py-2 px-3">Posição</th>
+                  <th className="py-2 px-3">Nick / Nome do Aluno</th>
+                  <th className="py-2 px-3">Nível</th>
+                  <th className="py-2 px-3">Setor Atual</th>
+                  <th className="py-2 px-3">Casos Resolvidos</th>
+                  <th className="py-2 px-3 text-right">Pontuação</th>
+                  <th className="py-2 px-3 text-center">Transmissão</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedByScore.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-6 text-center text-slate-500 font-mono">
+                      Nenhum aluno conectado no momento.
+                    </td>
+                  </tr>
+                ) : (
+                  sortedByScore.map((player, idx) => {
+                    const { nick, prefix } = getDisplayNickname(player.playerName);
+                    const isLeader = idx === 0;
+                    const isTransmitted = player.playerId === transmittedPlayer?.playerId;
+
+                    return (
+                      <tr
+                        key={player.playerId}
+                        className={`border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors ${
+                          isLeader ? "bg-amber-500/10" : ""
+                        }`}
+                      >
+                        <td className="py-2.5 px-3 font-bold">
+                          {idx === 0 ? (
+                            <span className="text-amber-300 font-extrabold flex items-center gap-1">
+                              🥇 1º
+                            </span>
+                          ) : idx === 1 ? (
+                            <span className="text-slate-200 flex items-center gap-1">🥈 2º</span>
+                          ) : idx === 2 ? (
+                            <span className="text-amber-600 flex items-center gap-1">🥉 3º</span>
+                          ) : (
+                            <span className="text-slate-400">{idx + 1}º</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-white text-sm">{nick}</span>
+                            {prefix && <span className="text-[10px] text-slate-400">({prefix})</span>}
+                            {isLeader && (
+                              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/40 font-bold">
+                                👑 LÍDER DO TURNO
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-300">{player.level || "Estudante"}</td>
+                        <td className="py-2.5 px-3 text-teal-300">{player.currentRoom || "Corredor"}</td>
+                        <td className="py-2.5 px-3 text-emerald-400 font-bold">{player.completedMissions || 0}</td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-amber-300 text-sm">
+                          {player.score ?? player.prestige ?? 0} PTS
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          {isTransmitted ? (
+                            <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-1 rounded border border-rose-500/40 font-bold inline-block">
+                              🔴 TRANSMITINDO
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                try {
+                                  playSound("click");
+                                } catch {}
+                                setManualSelectedId(player.playerId);
+                              }}
+                              className="text-[10px] bg-teal-600 hover:bg-teal-500 text-white px-2.5 py-1 rounded font-bold cursor-pointer transition-all active:scale-95"
+                            >
+                              Assistir
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
