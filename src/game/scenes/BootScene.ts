@@ -134,6 +134,12 @@ const CHAR_VISUALS: Record<string, CharVisual> = {
   npc_tech_f:    { gender: 'female', hairStyle: 'bob',              build: 'slim',   groundYOff:  2, age: 'adult',  accessory: 'none',         nurseCap: false },
   npc_guard:     { gender: 'male',   hairStyle: 'low_fade',         build: 'stocky', groundYOff:  0, age: 'adult',  accessory: 'none',         nurseCap: false },
   npc_cleaner:   { gender: 'female', hairStyle: 'updo',             build: 'stocky', groundYOff:  4, age: 'adult',  accessory: 'mask',         nurseCap: false },
+  
+  // Specific distinct character visuals
+  npc_tiago:     { gender: 'male',   hairStyle: 'curly_top',        build: 'slim',   groundYOff:  0, age: 'young',  accessory: 'none',         nurseCap: false },
+  npc_roberto:   { gender: 'male',   hairStyle: 'low_fade',         build: 'medium', groundYOff: -2, age: 'adult',  accessory: 'none',         nurseCap: false },
+  npc_marcos:    { gender: 'male',   hairStyle: 'short_wavy',       build: 'stocky', groundYOff:  0, age: 'adult',  accessory: 'none',         nurseCap: false },
+  npc_samuel:    { gender: 'male',   hairStyle: 'afro_short',       build: 'medium', groundYOff:  0, age: 'adult',  accessory: 'none',         nurseCap: false },
   npc_pat_gest:  { gender: 'female', hairStyle: 'loose_long',       build: 'stocky', groundYOff:  4, age: 'young',  accessory: 'none',         nurseCap: false },
   npc_pat_boy:   { gender: 'male',   hairStyle: 'afro_short',       build: 'slim',   groundYOff:  0, age: 'young',  accessory: 'none',         nurseCap: false },
   npc_pat_girl:  { gender: 'female', hairStyle: 'long_tied',        build: 'slim',   groundYOff:  0, age: 'young',  accessory: 'none',         nurseCap: false },
@@ -1096,14 +1102,31 @@ export class BootScene extends Phaser.Scene {
 
     if (style === 'bald') return;
 
-    // ── SIDE PROFILE VIEW (isLR): Keep face and eye completely clear! ──────
+    // ── SIDE PROFILE VIEW (isLR): Keep face and eye completely clear while rendering distinct silhouettes! ──────
     if (isLR) {
       const backX = facing > 0 ? cx - hrx : cx - 1;
-      // 1. Top cap (skull crown)
-      drawHairChunk(cx - hrx, hY - 3, hrx * 2, 5, 3);
 
-      // 2. Back half of skull hair coverage
-      drawHairChunk(backX, hY, hrx + 1, hry * 2 - 4, 3);
+      if (style === 'curly_top' || style === 'afro_short') {
+        // Puffy rounded top afro/curls (for Estudante Tiago, João, etc.)
+        drawHairChunk(cx - hrx - 1, hY - 6, hrx * 2 + 2, 8, 4);
+        drawHairChunk(backX - 1, hY - 1, hrx + 2, hry * 2 - 3, 4);
+      } else if (style === 'low_fade') {
+        // High top fade with clean tapered sides (for Dr. Roberto)
+        drawHairChunk(cx - hrx, hY - 4, hrx * 2, 5, 2);
+        drawHairChunk(backX, hY, hrx, hry - 2, 2);
+      } else if (style === 'receding') {
+        // Receding hair line (for Dr. Oliveira)
+        drawHairChunk(backX - 1, hY + 3, hrx + 1, hry * 2 - 5, 3);
+        drawHairChunk(cx - hrx / 2, hY - 2, hrx, 3, 2);
+      } else if (style === 'short_wavy') {
+        // Textured wavy top
+        drawHairChunk(cx - hrx, hY - 4, hrx * 2, 6, 3);
+        drawHairChunk(backX, hY + 1, hrx + 1, hry * 2 - 4, 3);
+      } else {
+        // Standard cap and back
+        drawHairChunk(cx - hrx, hY - 3, hrx * 2, 5, 3);
+        drawHairChunk(backX, hY, hrx + 1, hry * 2 - 4, 3);
+      }
 
       // 3. Sideburn / Ear anchor
       const sbX = facing > 0 ? cx - 2 : cx;
@@ -1113,10 +1136,8 @@ export class BootScene extends Phaser.Scene {
       // 4. Style-specific back attachments (ponytail, bun, long hair)
       if (style === 'ponytail' || style === 'high_pony' || style === 'long_tied') {
         const ponyX = facing > 0 ? cx - hrx - 3 : cx + hrx - 3;
-        // Scrunchie / Tie
         ctx.fillStyle = '#f43f5e';
         ctx.fillRect(ponyX + 1, hY + 3, 5, 2);
-        // Ponytail strand hanging behind the head
         drawHairChunk(ponyX, hY + 5, 6, 12, 2);
       } else if (style === 'bun' || style === 'updo') {
         const bunX = facing > 0 ? cx - hrx - 2 : cx + hrx - 4;
