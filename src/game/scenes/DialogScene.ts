@@ -35,6 +35,8 @@ export class DialogScene extends Phaser.Scene {
   private onClose!: (s: Partial<GameState>) => void;
   private inputReady = false;
   private domPointerdownListener?: (e: PointerEvent) => void;
+  private hasChosen = false;
+  private pendingStateUpdate: Partial<GameState> = {};
 
   constructor() { super({ key: SCENES.DIALOG, active: false }); }
 
@@ -48,6 +50,8 @@ export class DialogScene extends Phaser.Scene {
     this.charIdx = 0;
     this.isTyping = false;
     this.showingChoices = false;
+    this.hasChosen = false;
+    this.pendingStateUpdate = {};
     this.choiceButtons = [];
   }
 
@@ -206,8 +210,12 @@ export class DialogScene extends Phaser.Scene {
       this.bodyText.setText(currentLine);
 
       if (this.lineIdx >= this.lines.length - 1) {
-        this.cursor.setVisible(false);
-        this.time.delayedCall(180, () => this.showChoices());
+        if (!this.hasChosen) {
+          this.cursor.setVisible(false);
+          this.time.delayedCall(180, () => this.showChoices());
+        } else {
+          this.cursor.setVisible(true);
+        }
       }
     }
   }
@@ -221,11 +229,20 @@ export class DialogScene extends Phaser.Scene {
       this.charIdx = this.lines[this.lineIdx].length + 1;
       this.isTyping = false;
       if (this.lineIdx >= this.lines.length - 1) {
-        this.cursor.setVisible(false);
-        this.time.delayedCall(180, () => this.showChoices());
+        if (!this.hasChosen) {
+          this.cursor.setVisible(false);
+          this.time.delayedCall(180, () => this.showChoices());
+        } else {
+          this.cursor.setVisible(true);
+        }
       } else {
         this.cursor.setVisible(true);
       }
+      return;
+    }
+
+    if (this.hasChosen) {
+      this.closeDialog(this.pendingStateUpdate);
       return;
     }
 
@@ -237,10 +254,13 @@ export class DialogScene extends Phaser.Scene {
   private handleEsc() {
     if (this.showingChoices) {
       this.selectChoice(this.dialogue.choices.length - 1);
+    } else {
+      this.closeDialog(this.pendingStateUpdate);
     }
   }
 
   private showChoices() {
+    if (this.hasChosen) return;
     this.showingChoices = true;
     this.cursor.setVisible(false);
 
@@ -358,6 +378,9 @@ export class DialogScene extends Phaser.Scene {
   }
 
   private selectChoice(idx: number) {
+    if (this.hasChosen) return;
+    this.hasChosen = true;
+
     (window as any).activeChoices = null;
     window.dispatchEvent(new CustomEvent('hidechoices'));
 
@@ -398,6 +421,10 @@ export class DialogScene extends Phaser.Scene {
     const rel = { ...this.state.relationships };
     rel[this.npcDef.id] = (rel[this.npcDef.id] ?? 0) + 1;
     stateUpdate.relationships = rel;
+
+    // Apply updates locally to this.state
+    this.state = { ...this.state, ...stateUpdate };
+    this.pendingStateUpdate = stateUpdate;
 
     // Log error if choice is incorrect
     const isIncorrectChoice = (choice as any).correct === false ||
@@ -500,33 +527,9 @@ export class DialogScene extends Phaser.Scene {
     this.lines = [fbStr];
     this.startLine(0);
     
-    // Gated by a short grace period so the touch release on choice button doesn't immediately skip or close feedback text
+    // Gated by a short grace period so touch release on choice button doesn't immediately advance
     this.inputReady = false;
     this.time.delayedCall(300, () => { this.inputReady = true; });
-    
-    this.handleAdvance = () => {
-      if (!this.inputReady) return;
-      if (this.isTyping) {
-        this.bodyText.setText(this.lines[this.lineIdx]);
-        this.charIdx = this.lines[this.lineIdx].length + 1;
-        this.isTyping = false;
-        this.cursor.setVisible(true);
-      } else {
-        // Actually close
-        this.closeDialog(stateUpdate);
-      }
-    };
-
-    this.input.keyboard?.off('keydown-E');
-    this.input.keyboard?.off('keydown-SPACE');
-    this.input.keyboard?.off('keydown-ESC');
-    this.input.off('pointerdown');
-    
-    this.input.keyboard?.on('keydown-E', this.handleAdvance, this);
-    this.input.keyboard?.on('keydown-SPACE', this.handleAdvance, this);
-    this.input.keyboard?.on('keydown-ESC', () => this.closeDialog(stateUpdate), this);
-    this.input.on('pointerdown', this.handleAdvance, this);
-
   }
 
   private showPedagogyNote(missionTitle: string, pedagogy: string, pedagogyRef: string, pts: number) {

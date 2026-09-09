@@ -239,9 +239,6 @@ export function CharacterCreationModal({
 
                 {/* 2. SELEÇÃO DE GÊNERO */}
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-teal-300 uppercase tracking-wider font-sans select-none">
-                    GÊNERO:
-                  </span>
                   <div className="grid grid-cols-2 gap-2">
                     {/* Mulher */}
                     <button
@@ -301,9 +298,6 @@ export function CharacterCreationModal({
 
                 {/* 3. TOM DE PELE */}
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-teal-300 uppercase tracking-wider font-sans select-none">
-                    TOM DE PELE:
-                  </span>
                   <div className="grid grid-cols-8 gap-1">
                     {SKIN_TONE_PRESETS.map((preset) => {
                       const isSelected = skinTone === preset.hex;
