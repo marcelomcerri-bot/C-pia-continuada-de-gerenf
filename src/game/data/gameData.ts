@@ -880,7 +880,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'fluxo_start',
-        condition: (s) => s.completedMissions.includes('triagem_ps') && !s.missionProgress['fluxo_recepcao'],
+        condition: (s) => s.completedMissions.includes('triagem_ps') && s.completedMissions.length >= 3 && !s.missionProgress['fluxo_recepcao'],
         text: [
           'Com o Manchester funcionando bem, o fluxo melhorou muito!',
           'Agora preciso de ajuda para organizar o sistema de agendamentos.',
@@ -991,7 +991,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'superlot_intro',
-        condition: (s) => s.completedMissions.includes('protocolo_sepse') && !s.missionProgress['superlotacao_ps'],
+        condition: (s) => s.completedMissions.includes('protocolo_sepse') && s.completedMissions.length >= 3 && !s.missionProgress['superlotacao_ps'],
         text: [
           'Protocolo de sepse funcionando. Mas o PS está cheio de novo!',
           'Precisamos de um plano de contingência para superlotação.',
@@ -1099,7 +1099,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'reconciliacao_intro',
-        condition: (s) => s.completedMissions.includes('estoque_farmacia') && !s.missionProgress['reconciliacao_medicamentosa'],
+        condition: (s) => s.completedMissions.includes('estoque_farmacia') && s.completedMissions.length >= 3 && !s.missionProgress['reconciliacao_medicamentosa'],
         text: [
           'Obrigado pela agilidade no estoque!',
           'Agora preciso de apoio para implementar a Reconciliação Medicamentosa.',
@@ -1202,7 +1202,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'coleta_intro',
-        condition: (s) => s.completedMissions.includes('resultados_criticos') && !s.missionProgress['coleta_sistematizada'],
+        condition: (s) => s.completedMissions.includes('resultados_criticos') && s.completedMissions.length >= 3 && !s.missionProgress['coleta_sistematizada'],
         text: [
           'Protocolo de valores críticos funcionando bem!',
           'Agora precisamos padronizar a coleta de sangue nos leitos.',
@@ -1534,7 +1534,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'rastreabilidade_intro',
-        condition: (s) => s.completedMissions.includes('cme_protocolo') && !s.missionProgress['rastreabilidade_esterilizacao'],
+        condition: (s) => s.completedMissions.includes('cme_protocolo') && s.completedMissions.length >= 3 && !s.missionProgress['rastreabilidade_esterilizacao'],
         text: [
           'Com o protocolo de reprocessamento aprovado, podemos avançar.',
           'Próxima etapa: implantar rastreabilidade eletrônica por código de barras.',
@@ -1639,7 +1639,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'protocolo_dieta_intro',
-        condition: (s) => s.completedMissions.includes('terapia_nutricional') && !s.missionProgress['protocolo_dieta'],
+        condition: (s) => s.completedMissions.includes('terapia_nutricional') && s.completedMissions.length >= 3 && !s.missionProgress['protocolo_dieta'],
         text: [
           'Com o protocolo ASPEN em vigor, a equipe precisa de um guia prático de dietas.',
           'Precisamos de um protocolo de prescrição dietética por patologia.',
@@ -1787,7 +1787,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'passagem_plantao_intro',
-        condition: (s) => s.completedMissions.includes('ronda_enfermaria') && !s.missionProgress['passagem_plantao'],
+        condition: (s) => s.completedMissions.includes('ronda_enfermaria') && s.completedMissions.length >= 3 && !s.missionProgress['passagem_plantao'],
         text: [
           'A passagem de plantão é nossa maior vulnerabilidade em segurança do paciente.',
           'Falta padronização — cada enfermeiro usa um formato diferente.',
@@ -1874,7 +1874,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'protocolo_start',
-        condition: (s) => s.completedMissions.includes('protocolo_sepse') && !s.completedMissions.includes('indicadores_qualidade'),
+        condition: (s) => s.completedMissions.includes('protocolo_sepse') && s.completedMissions.length >= 2 && !s.completedMissions.includes('indicadores_qualidade'),
         text: [
           'Excelente trabalho com o protocolo de sepse no PS!',
           'Agora precisamos monitorar os indicadores de qualidade da UTI.',
@@ -1992,7 +1992,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'paliativos_intro',
-        condition: (s) => s.completedMissions.includes('quimioterapia_segura') && !s.missionProgress['cuidados_paliativos'],
+        condition: (s) => s.completedMissions.includes('quimioterapia_segura') && s.completedMissions.length >= 3 && !s.missionProgress['cuidados_paliativos'],
         text: [
           'Precisamos de um protocolo de cuidados paliativos para pacientes terminais.',
           'Muitos ficam sem suporte adequado de dor e conforto.',
@@ -2095,7 +2095,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'humanizacao_intro',
-        condition: (s) => s.completedMissions.includes('banco_leite') && !s.missionProgress['humanizacao_parto'],
+        condition: (s) => s.completedMissions.includes('banco_leite') && s.completedMissions.length >= 3 && !s.missionProgress['humanizacao_parto'],
         text: [
           'Precisamos implementar práticas de humanização do parto aqui!',
           'O projeto Humaniza-HUAP está esperando aprovação da Diretoria.',

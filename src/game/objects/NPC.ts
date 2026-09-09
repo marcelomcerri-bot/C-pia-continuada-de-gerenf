@@ -45,8 +45,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     // Body aligned with character's visual feet (drawn at groundY=68 in the 128px canvas)
-    body.setSize(14, 14);
-    body.setOffset(15, 61);
+    body.setSize(18, 16);
+    body.setOffset(13, 58);
     body.setImmovable(false);
     body.allowRotation = false;
     this.setFrame(0);

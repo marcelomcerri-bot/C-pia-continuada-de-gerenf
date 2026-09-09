@@ -18,9 +18,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     const body = this.body as Phaser.Physics.Arcade.Body;
     // Body aligned with character's visual feet (drawn at groundY=68 in the 128px canvas)
-    // offsetY = 68 - 7 = 61 (centers a 14px body at the feet baseline)
-    body.setSize(14, 14);
-    body.setOffset(15, 61);
+    // 18px width x 16px height fits smoothly through doors while firmly blocking wall penetration
+    body.setSize(18, 16);
+    body.setOffset(13, 58);
     body.allowRotation = false;
     this.setFrame(0);
     this.setRotation(0);

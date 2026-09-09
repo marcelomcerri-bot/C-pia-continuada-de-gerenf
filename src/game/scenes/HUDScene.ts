@@ -62,6 +62,8 @@ export class HUDScene extends Phaser.Scene {
 
   // Guidance objective
   private currentGuidanceIdx: number = 0;
+  private lastCompletedCount: number = -1;
+  private previousTargetNpcId: string | null = null;
   private topBarCfg: {
     isTwoRow: boolean;
     bx: number;
@@ -79,7 +81,10 @@ export class HUDScene extends Phaser.Scene {
 
   private initGuidanceList() {
     this.recomputeGuidanceList();
-    this.currentGuidanceIdx = 0;
+    if (this.guidanceList.length > 0) {
+      this.currentGuidanceIdx = Math.floor(Math.random() * this.guidanceList.length);
+      this.previousTargetNpcId = this.guidanceList[this.currentGuidanceIdx]?.id || null;
+    }
   }
 
   private lastGuidanceTextStr: string = '';
@@ -528,6 +533,12 @@ export class HUDScene extends Phaser.Scene {
     const currentState = state || (this.scene.get(SCENES.GAME) as any)?.state || this.lastHudData?.state;
     if (!currentState || !currentState.completedMissions) return;
 
+    const completedCount = currentState.completedMissions.length;
+    const missionJustCompleted = this.lastCompletedCount >= 0 && completedCount > this.lastCompletedCount;
+    this.lastCompletedCount = completedCount;
+
+    const previousNpcId = this.guidanceList[this.currentGuidanceIdx]?.id || this.previousTargetNpcId;
+
     const list: Array<{ id: string; room: string; npc: string; action: string; col: number; row: number; missionKey: string; missionTitle?: string }> = [];
 
     for (const npcDef of NPC_DEFS) {
@@ -575,16 +586,39 @@ export class HUDScene extends Phaser.Scene {
     }
 
     this.guidanceList = list;
+
     if (this.guidanceList.length === 0) {
       this.currentGuidanceIdx = 0;
-    } else if (this.currentGuidanceIdx >= this.guidanceList.length) {
-      this.currentGuidanceIdx = 0;
+      this.previousTargetNpcId = null;
+      return;
     }
+
+    const currentTarget = this.guidanceList[this.currentGuidanceIdx];
+    const isTargetStillInList = currentTarget && this.guidanceList.some(item => item.id === currentTarget.id && item.missionKey === currentTarget.missionKey);
+
+    if (missionJustCompleted || !isTargetStillInList || this.currentGuidanceIdx >= this.guidanceList.length) {
+      // Prefer picking a different NPC from previous target if other NPCs have available missions
+      let candidates = this.guidanceList.filter(item => item.id !== previousNpcId);
+      if (candidates.length === 0) {
+        candidates = this.guidanceList;
+      }
+
+      const chosenCandidate = candidates[Math.floor(Math.random() * candidates.length)];
+      const newIdx = this.guidanceList.findIndex(item => item.id === chosenCandidate.id && item.missionKey === chosenCandidate.missionKey);
+      this.currentGuidanceIdx = newIdx >= 0 ? newIdx : 0;
+    }
+
+    this.previousTargetNpcId = this.guidanceList[this.currentGuidanceIdx]?.id || null;
   }
 
   private nextGuidanceTarget() {
-    if (this.guidanceList.length > 0) {
-      this.currentGuidanceIdx = (this.currentGuidanceIdx + 1) % this.guidanceList.length;
+    if (this.guidanceList.length > 1) {
+      let randomIdx = Math.floor(Math.random() * this.guidanceList.length);
+      if (randomIdx === this.currentGuidanceIdx) {
+        randomIdx = (this.currentGuidanceIdx + 1) % this.guidanceList.length;
+      }
+      this.currentGuidanceIdx = randomIdx;
+      this.previousTargetNpcId = this.guidanceList[this.currentGuidanceIdx]?.id || null;
     } else {
       this.currentGuidanceIdx = 0;
     }

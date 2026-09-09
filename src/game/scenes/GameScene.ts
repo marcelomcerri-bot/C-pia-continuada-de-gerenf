@@ -17,6 +17,7 @@ export class GameScene extends Phaser.Scene {
   private npcs: NPC[] = [];
   private mapData: number[][] = [];
   private doorTileKeys: Set<string> = new Set();
+  private mapLayer?: Phaser.Tilemaps.TilemapLayer;
   private wallLayer?: Phaser.Physics.Arcade.StaticGroup;
   private state!: GameState;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -153,6 +154,8 @@ export class GameScene extends Phaser.Scene {
     const layer = map.createLayer(0, tileset, 0, 0);
     if (!layer) return;
     layer.setDepth(0);
+    this.mapLayer = layer;
+    this.mapLayer.setCollision([TILE_ID.WALL, TILE_ID.GARDEN]);
     this.physics.world.setBounds(0, 0, MAP_COLS * TILE_SIZE, MAP_ROWS * TILE_SIZE);
   }
 
@@ -312,18 +315,26 @@ export class GameScene extends Phaser.Scene {
           }
         }
 
-        // ── Hide south-facing corridor walls ─────────────────────────────────
-        // Wall tiles with corridor directly above show as gray blocks from
-        // inside the corridor. Paint them corridor-floor colour so they blend in.
-        // The physics wall (buildWalls) still prevents the player from passing.
+        // ── South-facing corridor walls ─────────────────────────────────
+        // Render south-facing walls with a solid wall cap and wainscoting line
+        // so the boundary is unmistakably a solid wall and not mistaken for floor.
         if (isWall && r > 0 && this.mapData[r-1][c] === TILE_ID.CORRIDOR) {
-          this.ambientGfx.fillStyle(0xf8fafc, 1);
-          this.ambientGfx.fillRect(bx, by, TILE_SIZE, TILE_SIZE);
-          // Match the thin teal accent so the corridor looks symmetric
-          this.ambientGfx.fillStyle(0x0ea5e9, 0.85);
-          this.ambientGfx.fillRect(bx, by, TILE_SIZE, 3);
-          this.ambientGfx.fillStyle(0xffffff, 0.5);
-          this.ambientGfx.fillRect(bx, by + 3, TILE_SIZE, 1);
+          // Solid dark wall cap along top edge
+          this.ambientGfx.fillStyle(0x334155, 1);
+          this.ambientGfx.fillRect(bx, by, TILE_SIZE, 6);
+          this.ambientGfx.fillStyle(0x475569, 1);
+          this.ambientGfx.fillRect(bx, by + 1, TILE_SIZE, 1);
+          // Plaster linen wall surface
+          this.ambientGfx.fillStyle(0xe2e8f0, 1);
+          this.ambientGfx.fillRect(bx, by + 6, TILE_SIZE, TILE_SIZE - 6);
+          // Medical teal accent wainscoting stripe
+          this.ambientGfx.fillStyle(0x0ea5e9, 1);
+          this.ambientGfx.fillRect(bx, by + 16, TILE_SIZE, 3);
+          this.ambientGfx.fillStyle(0xffffff, 0.8);
+          this.ambientGfx.fillRect(bx, by + 15, TILE_SIZE, 1);
+          // Baseboard bottom shadow
+          this.ambientGfx.fillStyle(0x0f172a, 0.25);
+          this.ambientGfx.fillRect(bx, by + TILE_SIZE - 2, TILE_SIZE, 2);
         }
 
         if (tid === TILE_ID.GARDEN) {
@@ -1823,6 +1834,7 @@ export class GameScene extends Phaser.Scene {
     const startX = (7 + 0.5) * TILE_SIZE;
     const startY = (14 + 0.5) * TILE_SIZE;
     this.player = new Player(this, startX, startY);
+    if (this.mapLayer) this.physics.add.collider(this.player, this.mapLayer);
     if (this.wallLayer) this.physics.add.collider(this.player, this.wallLayer);
     if (this.propColliders) this.physics.add.collider(this.player, this.propColliders);
   }
@@ -1830,6 +1842,7 @@ export class GameScene extends Phaser.Scene {
   private spawnNPCs() {
     for (const def of NPC_DEFS) {
       const npc = new NPC(this, def);
+      if (this.mapLayer) this.physics.add.collider(npc, this.mapLayer);
       if (this.wallLayer) this.physics.add.collider(npc, this.wallLayer);
       if (this.propColliders && def.role !== 'patient') this.physics.add.collider(npc, this.propColliders);
       if (def.role === 'patient') {
