@@ -999,9 +999,12 @@ function DialogueChoicesOverlay({
 }: {
   choices: { text: string; index: number }[] | null;
 }) {
+  const selectedRef = useRef(false);
   if (!choices) return null;
 
   const handleSelect = (idx: number) => {
+    if (selectedRef.current) return;
+    selectedRef.current = true;
     const data = (window as any).activeChoices;
     if (data?.select) {
       data.select(idx);

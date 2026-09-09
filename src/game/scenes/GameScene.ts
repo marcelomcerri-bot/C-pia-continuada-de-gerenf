@@ -2034,7 +2034,7 @@ export class GameScene extends Phaser.Scene {
     this.detectNearbyNPC();
 
     // Interaction
-    if ((Phaser.Input.Keyboard.JustDown(this.eKey) || vpad.actionJustPressed) && this.nearbyNPC) {
+    if (!this.isDialogOpen && (Phaser.Input.Keyboard.JustDown(this.eKey) || vpad.actionJustPressed) && this.nearbyNPC) {
       if (vpad.actionJustPressed) vpad.actionJustPressed = false;
       this.openDialog(this.nearbyNPC);
     } else {

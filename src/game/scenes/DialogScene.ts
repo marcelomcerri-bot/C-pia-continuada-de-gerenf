@@ -379,6 +379,7 @@ export class DialogScene extends Phaser.Scene {
       } else if (actionType?.startsWith('step')) {
         progress[missionId] = parseInt(actionType.replace('step', ''), 10);
       } else if (actionType === 'complete') {
+        progress[missionId] = 2; // Mark as completed in progress too so condition (!s.missionProgress[id]) evaluates to false!
         const mission = MISSIONS.find(m => m.id === missionId);
         if (mission && !completed.includes(missionId)) {
           completed.push(missionId);
@@ -499,10 +500,12 @@ export class DialogScene extends Phaser.Scene {
     this.lines = [fbStr];
     this.startLine(0);
     
-    // Wait for the feedback reading, then when E/Space is pressed again, it will end the dialog
-    // We override how the end of the line works for this special phase
+    // Gated by a short grace period so the touch release on choice button doesn't immediately skip or close feedback text
+    this.inputReady = false;
+    this.time.delayedCall(300, () => { this.inputReady = true; });
     
     this.handleAdvance = () => {
+      if (!this.inputReady) return;
       if (this.isTyping) {
         this.bodyText.setText(this.lines[this.lineIdx]);
         this.charIdx = this.lines[this.lineIdx].length + 1;
