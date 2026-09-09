@@ -1011,14 +1011,22 @@ function DialogueChoicesOverlay({
     }
   };
 
+  const activeData = (window as any).activeChoices;
   return (
     <div className="fixed inset-0 z-[110] flex flex-col items-center justify-end sm:justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 pointer-events-auto select-none">
-      <div className="flex flex-col gap-2.5 w-full max-w-md p-3.5 sm:p-4 bg-[#0a1628]/98 border-2 border-[#1abc9c] rounded-2xl shadow-2xl max-h-[82vh] overflow-y-auto mb-2 sm:mb-0">
-        <div className="flex items-center justify-between border-b border-[#1abc9c]/30 pb-2 mb-0.5">
-          <h3 className="text-[#1abc9c] font-bold font-mono text-xs sm:text-sm tracking-wider uppercase flex items-center gap-2">
-            <span>💬</span> Resposta ao NPC
-          </h3>
-          <span className="text-[10px] text-slate-400 font-mono">Toque para selecionar</span>
+      <div className="flex flex-col gap-2.5 w-full max-w-lg p-3.5 sm:p-4 bg-[#0a1628]/98 border-2 border-[#1abc9c] rounded-2xl shadow-2xl max-h-[85vh] overflow-y-auto mb-2 sm:mb-0">
+        <div className="flex flex-col gap-1.5 border-b border-[#1abc9c]/30 pb-2 mb-0.5">
+          {activeData?.topic && (
+            <div className="bg-[#f1c40f]/15 border border-[#f1c40f]/70 rounded-md px-2.5 py-1 text-[#f1c40f] font-mono text-[11px] font-bold uppercase tracking-wider text-center">
+              📚 MATÉRIA: {activeData.topic}
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <h3 className="text-[#1abc9c] font-bold font-mono text-xs sm:text-sm tracking-wider uppercase flex items-center gap-2">
+              <span>💬</span> Selecione a melhor conduta
+            </h3>
+            <span className="text-[10px] text-slate-400 font-mono">Toque para selecionar</span>
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           {choices.map((choice) => (

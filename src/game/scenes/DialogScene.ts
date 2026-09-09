@@ -138,6 +138,32 @@ export class DialogScene extends Phaser.Scene {
     }).setVisible(false);
     this.tweens.add({ targets: this.cursor, alpha: 0, duration: 350, yoyo: true, repeat: -1 });
 
+    // ── Matéria / Topic Badge Box above Dialogue Box
+    const topicText = this.dialogue.topic || (this.npcDef as any).sector || 'Gerência Assistencial & Enfermagem';
+    if (topicText) {
+      const badgeY = boxY - BOX_H / 2 - 18;
+      const badgeGraphics = this.add.graphics();
+
+      const badgeTxt = this.add.text(boxX - W / 2 + 16, badgeY, `📚 MATÉRIA: ${topicText.toUpperCase()}`, {
+        fontFamily: "'Rajdhani', 'Press Start 2P', monospace",
+        fontSize: '13px',
+        color: '#f1c40f',
+        fontStyle: '700',
+      }).setOrigin(0, 0.5);
+
+      const badgeW = badgeTxt.width + 24;
+      const badgeH = 28;
+
+      badgeGraphics.fillStyle(0x0a1829, 0.95);
+      badgeGraphics.fillRoundedRect(boxX - W / 2 + 4, badgeY - badgeH / 2, badgeW, badgeH, 6);
+      badgeGraphics.lineStyle(2, 0xf1c40f, 0.9);
+      badgeGraphics.strokeRoundedRect(boxX - W / 2 + 4, badgeY - badgeH / 2, badgeW, badgeH, 6);
+
+      badgeTxt.setPosition(boxX - W / 2 + 16, badgeY);
+
+      this.boxContainer.add([badgeGraphics, badgeTxt]);
+    }
+
     this.boxContainer.add([shadow, bg, header, border, nameTxt, titleTxt, closeHint, this.bodyText, this.cursor]);
 
     // Choice area (rendered separately, on top)
@@ -270,6 +296,7 @@ export class DialogScene extends Phaser.Scene {
     const isMobile = (window as any).__portraitMobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || this.scale.width < 768;
     if (isMobile) {
       (window as any).activeChoices = {
+        topic: this.dialogue.topic || (this.npcDef as any).sector || 'Gerência Assistencial & Enfermagem',
         choices: choices.map((c, i) => ({ text: c.text, index: i })),
         select: (idx: number) => {
           this.selectChoice(idx);
@@ -279,14 +306,14 @@ export class DialogScene extends Phaser.Scene {
       return;
     }
 
-    // Fixed full-width panel, vertically stacked above the dialogue box
+    // Fixed full-width panel, vertically stacked above the dialogue box and matéria badge
     const btnW = Math.min(GAME_WIDTH - 80, this.scale.width - 60);
     const btnH = 48;
     const gap = 6;
     const totalH = choices.length * (btnH + gap) - gap;
-    // Anchor bottom of the stack just above the dialogue box
-    const stackBottom = BOX_Y - 20;
-    const stackTop = stackBottom - totalH;
+    // Anchor bottom of the stack above the dialogue box and matéria badge
+    const stackBottom = BOX_Y - BOX_H / 2 - 40;
+    const stackTop = Math.max(20, stackBottom - totalH);
 
     // Semi-transparent backdrop behind all choices
     const backdrop = this.add.graphics();
