@@ -413,13 +413,29 @@ export class DialogScene extends Phaser.Scene {
 
     const rawChoices = (this.dialogue.choices && this.dialogue.choices.length > 0) ? this.dialogue.choices : [{ text: 'Entendido / Continuar' }];
     const choice = rawChoices[idx] || rawChoices[0];
+
+    const hasExplicitCorrect = rawChoices.some((c: any) => c.correct === true);
+    const isCorrectChoice = (choice as any).correct === true || (!hasExplicitCorrect && (choice as any).correct !== false);
+    const isIncorrectChoice = !isCorrectChoice || ((choice as any).feedback && typeof (choice as any).feedback === 'string' && ((choice as any).feedback.includes('Incorreto') || (choice as any).feedback.includes('Perigoso') || (choice as any).feedback.includes('Ilegal')));
+
     let stateUpdate: Partial<GameState> = {};
 
     if (choice.effect) {
       stateUpdate = choice.effect(this.state);
     }
 
-    if (choice.missionEffect) {
+    // Strictly enforce NO prestige gain on incorrect choices
+    if (isIncorrectChoice) {
+      const currentPrestige = this.state.prestige;
+      let newPrestige = stateUpdate.prestige !== undefined ? stateUpdate.prestige : currentPrestige - 5;
+      if (newPrestige >= currentPrestige) {
+        newPrestige = Math.max(0, currentPrestige - 5);
+      }
+      stateUpdate.prestige = newPrestige;
+    }
+
+    // Only process mission completion / advancement if the choice is CORRECT
+    if (choice.missionEffect && !isIncorrectChoice) {
       const [missionId, actionType] = choice.missionEffect.split(':');
       const progress = { ...this.state.missionProgress };
       const completed = [...this.state.completedMissions];
@@ -450,14 +466,11 @@ export class DialogScene extends Phaser.Scene {
     stateUpdate.relationships = rel;
 
     // Apply updates locally to this.state
+    const prevPrestige = this.state.prestige;
     this.state = { ...this.state, ...stateUpdate };
     this.pendingStateUpdate = stateUpdate;
 
     // Log error if choice is incorrect
-    const isIncorrectChoice = (choice as any).correct === false ||
-      (stateUpdate.prestige !== undefined && stateUpdate.prestige < this.state.prestige) ||
-      ((choice as any).feedback && ((choice as any).feedback.includes('Incorreto') || (choice as any).feedback.includes('Perigoso') || (choice as any).feedback.includes('Ilegal')));
-
     if (isIncorrectChoice) {
       const rightChoice = rawChoices.find((c: any) => c.correct === true) || rawChoices[0];
       addErrorEntry({
@@ -477,7 +490,7 @@ export class DialogScene extends Phaser.Scene {
       const playerId = session?.playerId || sessionStorage.getItem("gestor_player_id") || "anon-student";
       const playerName = this.state.playerProfile?.name || "Estudante";
       const isCorrect = !isIncorrectChoice;
-      const pointsEarned = stateUpdate.prestige !== undefined ? (stateUpdate.prestige - this.state.prestige) : (isCorrect ? 10 : 0);
+      const pointsEarned = isCorrect ? Math.max(0, (stateUpdate.prestige ?? prevPrestige) - prevPrestige) : Math.min(0, (stateUpdate.prestige ?? prevPrestige) - prevPrestige);
       const feedbackText = Array.isArray((choice as any).feedback) 
         ? (choice as any).feedback.join(' ') 
         : ((choice as any).feedback || (isCorrect ? 'Conduta adequada conforme protocolos de gerência.' : 'Decisão em desacordo com os referenciais.'));
