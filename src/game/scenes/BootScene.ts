@@ -908,13 +908,102 @@ export class BootScene extends Phaser.Scene {
         }
       }
       if (c.visual.accessory === 'mask') {
-        const maskColor = '#38bdf8';
-        ctx.fillStyle = maskColor;
+        // High quality pixel-art surgical mask rendering
+        ctx.save();
+        
         if (isLR) {
-          ctx.fillRect(facing > 0 ? hX + hW - 10 : hX, hY + hH - 8, 10, 8);
+          // Side profile view
+          const facingRight = facing > 0;
+          const mW = 10;
+          const mH = 7.5;
+          const mX = facingRight ? hX + 9 : hX + 1;
+          const mY = hY + 11;
+
+          // 1. Elastic Ear Loop (behind mask)
+          const earX = facingRight ? hX + 6 : hX + 14;
+          const earYTop = hY + 12.5;
+          const earYBot = hY + 15.5;
+          const anchorX = facingRight ? mX + 1 : mX + mW - 1;
+
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(anchorX, mY + 1.5);
+          ctx.lineTo(earX, earYTop);
+          ctx.moveTo(anchorX, mY + mH - 1.5);
+          ctx.lineTo(earX, earYBot);
+          ctx.stroke();
+
+          // 2. Mask Base Fill (Medical Blue fabric with shading)
+          ctx.fillStyle = '#38bdf8';
+          rrFill(ctx, mX, mY, mW, mH, 2);
+
+          // Lower fold shadow for depth
+          ctx.fillStyle = '#0284c7';
+          rrFill(ctx, mX, mY + 4, mW, mH - 4, 1.5);
+
+          // 3. Dark Outline
+          ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 1;
+          rrStroke(ctx, mX, mY, mW, mH, 2);
+
+          // 4. Metal Nose Wire Highlight on top edge
+          ctx.fillStyle = '#e0f2fe';
+          const wireX = facingRight ? mX + 2 : mX + 1;
+          ctx.fillRect(wireX, mY + 0.8, mW - 3, 1);
+
+          // 5. Accordion Pleats / Folds
+          ctx.fillStyle = 'rgba(3, 105, 161, 0.6)';
+          ctx.fillRect(mX + 1, mY + 2.8, mW - 2, 0.8);
+          ctx.fillRect(mX + 1, mY + 4.8, mW - 2, 0.8);
+
         } else {
-          ctx.fillRect(hX + 3, hY + hH - 8, hW - 6, 8);
+          // Front view
+          const mW = 16;
+          const mH = 7.5;
+          const mX = cx - mW / 2;
+          const mY = hY + 11;
+
+          // 1. Elastic Ear Loops (left and right)
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          // Left ear loop
+          ctx.moveTo(mX + 1, mY + 1.5);
+          ctx.lineTo(hX + 2, hY + 12.5);
+          ctx.moveTo(mX + 1, mY + mH - 1.5);
+          ctx.lineTo(hX + 2, hY + 15.5);
+          // Right ear loop
+          ctx.moveTo(mX + mW - 1, mY + 1.5);
+          ctx.lineTo(hX + hW - 2, hY + 12.5);
+          ctx.moveTo(mX + mW - 1, mY + mH - 1.5);
+          ctx.lineTo(hX + hW - 2, hY + 15.5);
+          ctx.stroke();
+
+          // 2. Mask Base Fill
+          ctx.fillStyle = '#38bdf8';
+          rrFill(ctx, mX, mY, mW, mH, 2);
+
+          // Lower fold shadow
+          ctx.fillStyle = '#0284c7';
+          rrFill(ctx, mX, mY + 4, mW, mH - 4, 1.5);
+
+          // 3. Dark Outline
+          ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 1;
+          rrStroke(ctx, mX, mY, mW, mH, 2);
+
+          // 4. Metal Nose Wire Highlight
+          ctx.fillStyle = '#e0f2fe';
+          ctx.fillRect(mX + 3, mY + 0.8, mW - 6, 1);
+
+          // 5. Accordion Pleats / Folds
+          ctx.fillStyle = 'rgba(3, 105, 161, 0.6)';
+          ctx.fillRect(mX + 1.5, mY + 2.8, mW - 3, 0.8);
+          ctx.fillRect(mX + 1.5, mY + 4.8, mW - 3, 0.8);
         }
+
+        ctx.restore();
       }
     }
 

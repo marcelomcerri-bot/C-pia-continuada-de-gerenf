@@ -346,6 +346,106 @@ export function drawCharacter(
   // Hair
   drawHair(ctx, c.visual.hairStyle, c.hair, cx, hY, hW / 2, hH / 2, isDown, isUp, isLR, facing, c.skin);
 
+  // Accessories
+  if (!isUp) {
+    if (c.visual.accessory === 'glasses') {
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 1.5;
+      if (isLR) {
+        rrStroke(ctx, facing > 0 ? hX + hW - 10 : hX + 2, hY + hH / 2 - 4, 8, 5, 2);
+        ctx.beginPath();
+        ctx.moveTo(facing > 0 ? hX + hW - 10 : hX + 10, hY + hH / 2 - 2);
+        ctx.lineTo(facing > 0 ? hX + 5 : hX + hW - 5, hY + hH / 2 - 3);
+        ctx.stroke();
+      } else {
+        rrStroke(ctx, hX + 3, hY + hH / 2 - 4, 7, 5, 2);
+        rrStroke(ctx, hX + hW - 10, hY + hH / 2 - 4, 7, 5, 2);
+        ctx.beginPath();
+        ctx.moveTo(hX + 10, hY + hH / 2 - 2);
+        ctx.lineTo(hX + hW - 10, hY + hH / 2 - 2);
+        ctx.stroke();
+      }
+    }
+    if (c.visual.accessory === 'mask') {
+      ctx.save();
+      if (isLR) {
+        const facingRight = facing > 0;
+        const mW = 10;
+        const mH = 7.5;
+        const mX = facingRight ? hX + 9 : hX + 1;
+        const mY = hY + 11;
+
+        const earX = facingRight ? hX + 6 : hX + 14;
+        const earYTop = hY + 12.5;
+        const earYBot = hY + 15.5;
+        const anchorX = facingRight ? mX + 1 : mX + mW - 1;
+
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(anchorX, mY + 1.5);
+        ctx.lineTo(earX, earYTop);
+        ctx.moveTo(anchorX, mY + mH - 1.5);
+        ctx.lineTo(earX, earYBot);
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        rrFill(ctx, mX, mY, mW, mH, 2);
+
+        ctx.fillStyle = '#0284c7';
+        rrFill(ctx, mX, mY + 4, mW, mH - 4, 1.5);
+
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1;
+        rrStroke(ctx, mX, mY, mW, mH, 2);
+
+        ctx.fillStyle = '#e0f2fe';
+        const wireX = facingRight ? mX + 2 : mX + 1;
+        ctx.fillRect(wireX, mY + 0.8, mW - 3, 1);
+
+        ctx.fillStyle = 'rgba(3, 105, 161, 0.6)';
+        ctx.fillRect(mX + 1, mY + 2.8, mW - 2, 0.8);
+        ctx.fillRect(mX + 1, mY + 4.8, mW - 2, 0.8);
+      } else {
+        const mW = 16;
+        const mH = 7.5;
+        const mX = cx - mW / 2;
+        const mY = hY + 11;
+
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(mX + 1, mY + 1.5);
+        ctx.lineTo(hX + 2, hY + 12.5);
+        ctx.moveTo(mX + 1, mY + mH - 1.5);
+        ctx.lineTo(hX + 2, hY + 15.5);
+        ctx.moveTo(mX + mW - 1, mY + 1.5);
+        ctx.lineTo(hX + hW - 2, hY + 12.5);
+        ctx.moveTo(mX + mW - 1, mY + mH - 1.5);
+        ctx.lineTo(hX + hW - 2, hY + 15.5);
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        rrFill(ctx, mX, mY, mW, mH, 2);
+
+        ctx.fillStyle = '#0284c7';
+        rrFill(ctx, mX, mY + 4, mW, mH - 4, 1.5);
+
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1;
+        rrStroke(ctx, mX, mY, mW, mH, 2);
+
+        ctx.fillStyle = '#e0f2fe';
+        ctx.fillRect(mX + 3, mY + 0.8, mW - 6, 1);
+
+        ctx.fillStyle = 'rgba(3, 105, 161, 0.6)';
+        ctx.fillRect(mX + 1.5, mY + 2.8, mW - 3, 0.8);
+        ctx.fillRect(mX + 1.5, mY + 4.8, mW - 3, 0.8);
+      }
+      ctx.restore();
+    }
+  }
+
   // Nurse Cap (Female)
   if (c.visual.nurseCap || (c.role === 'nurse' && c.visual.gender === 'female')) {
     const capColor = '#ffffff';

@@ -28,7 +28,12 @@ import {
   FileText,
   Lock,
   X,
-  Crown
+  Crown,
+  ChevronDown,
+  ChevronRight,
+  User,
+  UserCheck,
+  Layers
 } from "lucide-react";
 import { playSound } from "../game/utils/audio";
 
@@ -570,6 +575,9 @@ export function ProfessorView() {
   const [decisions, setDecisions] = useState<DecisionLog[]>([]);
   const [decisionFilter, setDecisionFilter] = useState<"all" | "correct" | "error">("all");
   const [decisionSearch, setDecisionSearch] = useState("");
+  const [selectedStudentFilter, setSelectedStudentFilter] = useState<string>("all");
+  const [viewGroupMode, setViewGroupMode] = useState<"grouped" | "timeline">("grouped");
+  const [collapsedStudents, setCollapsedStudents] = useState<Record<string, boolean>>({});
 
   // Manual spectator override (null = auto broadcast top scorer)
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
@@ -734,7 +742,7 @@ export function ProfessorView() {
   }, [fetchPlayers, fetchDecisions]);
 
   // Filter decisions log
-  const filteredDecisions = decisions.filter((d) => {
+  const baseFilteredDecisions = decisions.filter((d) => {
     const matchesFilter =
       decisionFilter === "all"
         ? true
@@ -751,8 +759,81 @@ export function ProfessorView() {
       d.selectedOption.toLowerCase().includes(term) ||
       d.category.toLowerCase().includes(term);
 
-    return matchesFilter && matchesSearch;
+    const matchesStudent =
+      selectedStudentFilter === "all" ||
+      d.playerId === selectedStudentFilter ||
+      d.playerName === selectedStudentFilter;
+
+    return matchesFilter && matchesSearch && matchesStudent;
   });
+
+  const filteredDecisions = baseFilteredDecisions;
+
+  // Group decisions by player
+  const groupedByPlayer = decisions.reduce((acc, item) => {
+    const key = item.playerId || item.playerName;
+    if (!acc[key]) {
+      acc[key] = {
+        playerId: item.playerId,
+        playerName: item.playerName,
+        decisions: [],
+      };
+    }
+    acc[key].decisions.push(item);
+    return acc;
+  }, {} as Record<string, { playerId: string; playerName: string; decisions: DecisionLog[] }>);
+
+  const studentGroupsList = Object.values(groupedByPlayer)
+    .map((group) => {
+      const groupDecisions = group.decisions.filter((d) => {
+        const matchesFilter =
+          decisionFilter === "all"
+            ? true
+            : decisionFilter === "correct"
+            ? d.isCorrect
+            : !d.isCorrect;
+
+        const term = decisionSearch.toLowerCase().trim();
+        const matchesSearch =
+          !term ||
+          d.playerName.toLowerCase().includes(term) ||
+          d.npcName.toLowerCase().includes(term) ||
+          d.questionText.toLowerCase().includes(term) ||
+          d.selectedOption.toLowerCase().includes(term) ||
+          d.category.toLowerCase().includes(term);
+
+        return matchesFilter && matchesSearch;
+      });
+
+      const total = groupDecisions.length;
+      const correct = groupDecisions.filter((d) => d.isCorrect).length;
+      const errors = groupDecisions.filter((d) => !d.isCorrect).length;
+      const points = groupDecisions.reduce((acc, d) => acc + (d.pointsEarned || 0), 0);
+      const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+      return {
+        key: group.playerId || group.playerName,
+        playerId: group.playerId,
+        playerName: group.playerName,
+        decisions: groupDecisions,
+        rawDecisions: group.decisions,
+        total,
+        correct,
+        errors,
+        points,
+        accuracy,
+      };
+    })
+    .filter((group) => {
+      if (
+        selectedStudentFilter !== "all" &&
+        group.playerId !== selectedStudentFilter &&
+        group.playerName !== selectedStudentFilter
+      ) {
+        return false;
+      }
+      return group.decisions.length > 0;
+    });
 
   const correctCount = decisions.filter((d) => d.isCorrect).length;
   const errorCount = decisions.filter((d) => !d.isCorrect).length;
@@ -1562,155 +1643,438 @@ export function ProfessorView() {
                 </div>
               </div>
 
-              {/* Filters & Search Bar */}
-              <div className="flex items-center justify-between px-4 py-2.5 bg-[#0a182b] border-b border-slate-800 flex-wrap gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1 min-w-[220px]">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={decisionSearch}
-                      onChange={(e) => setDecisionSearch(e.target.value)}
-                      placeholder="Buscar por aluno, NPC, questão..."
-                      className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#050c18] border border-slate-700 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-teal-400"
-                    />
+              {/* Filters, Mode Switcher & Search Bar */}
+              <div className="flex flex-col bg-[#0a182b] border-b border-slate-800">
+                {/* Upper bar: Search, Mode Switch & Correctness Filters */}
+                <div className="flex items-center justify-between px-4 py-2.5 flex-wrap gap-3 border-b border-slate-800/80">
+                  <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={decisionSearch}
+                        onChange={(e) => setDecisionSearch(e.target.value)}
+                        placeholder="Buscar por aluno, NPC, questão..."
+                        className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#050c18] border border-slate-700 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-teal-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap font-mono text-xs">
+                    {/* View Mode Toggle */}
+                    <div className="flex items-center bg-[#050c18] p-1 rounded-xl border border-slate-700/80">
+                      <button
+                        onClick={() => {
+                          try { playSound("click"); } catch {}
+                          setViewGroupMode("grouped");
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer text-xs font-bold ${
+                          viewGroupMode === "grouped"
+                            ? "bg-teal-500 text-[#050c18] shadow"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Agrupado por Aluno</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          try { playSound("click"); } catch {}
+                          setViewGroupMode("timeline");
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer text-xs font-bold ${
+                          viewGroupMode === "timeline"
+                            ? "bg-teal-500 text-[#050c18] shadow"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Lista Cronológica</span>
+                      </button>
+                    </div>
+
+                    {/* Correctness Filter */}
+                    <div className="flex items-center gap-1 border-l border-slate-700/80 pl-2">
+                      <button
+                        onClick={() => setDecisionFilter("all")}
+                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+                          decisionFilter === "all"
+                            ? "bg-slate-700 text-white font-bold"
+                            : "bg-slate-800/80 text-slate-400 hover:bg-slate-700/60"
+                        }`}
+                      >
+                        Todos ({decisions.length})
+                      </button>
+                      <button
+                        onClick={() => setDecisionFilter("correct")}
+                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+                          decisionFilter === "correct"
+                            ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold"
+                            : "bg-slate-800/80 text-slate-400 hover:bg-slate-700/60"
+                        }`}
+                      >
+                        ✅ Acertos ({correctCount})
+                      </button>
+                      <button
+                        onClick={() => setDecisionFilter("error")}
+                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+                          decisionFilter === "error"
+                            ? "bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold"
+                            : "bg-slate-800/80 text-slate-400 hover:bg-slate-700/60"
+                        }`}
+                      >
+                        ❌ Erros ({errorCount})
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 font-mono text-xs">
-                  <span className="text-slate-400 text-[11px] flex items-center gap-1">
-                    <Filter className="w-3.5 h-3.5 text-teal-400" />
-                    Filtrar:
+                {/* Lower bar: Student Quick Filter Chips */}
+                <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto text-xs font-mono scrollbar-thin">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold shrink-0 flex items-center gap-1">
+                    <User className="w-3 h-3 text-teal-400" /> Alunos:
                   </span>
                   <button
-                    onClick={() => setDecisionFilter("all")}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      decisionFilter === "all"
-                        ? "bg-teal-500 text-[#050c18] font-bold"
-                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    onClick={() => setSelectedStudentFilter("all")}
+                    className={`px-2.5 py-1 rounded-lg shrink-0 font-bold transition-all cursor-pointer ${
+                      selectedStudentFilter === "all"
+                        ? "bg-teal-500/20 text-teal-300 border border-teal-500/50 shadow-sm"
+                        : "bg-slate-800/60 text-slate-400 border border-slate-700/60 hover:text-white"
                     }`}
                   >
-                    Todos ({decisions.length})
+                    👥 Todos os Alunos
                   </button>
-                  <button
-                    onClick={() => setDecisionFilter("correct")}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      decisionFilter === "correct"
-                        ? "bg-emerald-500 text-[#050c18] font-bold"
-                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                    }`}
-                  >
-                    Acertos (✅ {correctCount})
-                  </button>
-                  <button
-                    onClick={() => setDecisionFilter("error")}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      decisionFilter === "error"
-                        ? "bg-rose-500 text-white font-bold"
-                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                    }`}
-                  >
-                    Erros (❌ {errorCount})
-                  </button>
+
+                  {Object.values(groupedByPlayer).map((group) => {
+                    const nick = getDisplayNickname(group.playerName).nick;
+                    const isSelected =
+                      selectedStudentFilter === group.playerId || selectedStudentFilter === group.playerName;
+                    const corr = group.decisions.filter((d) => d.isCorrect).length;
+                    const errs = group.decisions.filter((d) => !d.isCorrect).length;
+
+                    return (
+                      <button
+                        key={group.playerId || group.playerName}
+                        onClick={() => {
+                          try { playSound("click"); } catch {}
+                          setSelectedStudentFilter(
+                            isSelected ? "all" : group.playerId || group.playerName
+                          );
+                        }}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg shrink-0 transition-all cursor-pointer border ${
+                          isSelected
+                            ? "bg-teal-500/25 border-teal-400 text-teal-200 font-bold shadow-md"
+                            : "bg-slate-900/80 border-slate-700/80 text-slate-300 hover:border-slate-500"
+                        }`}
+                      >
+                        <span className="font-extrabold">{nick}</span>
+                        <span className="text-[10px] bg-black/40 px-1.5 py-0.2 rounded text-slate-300">
+                          {group.decisions.length}
+                        </span>
+                        {corr > 0 && <span className="text-[10px] text-emerald-400">+{corr}</span>}
+                        {errs > 0 && <span className="text-[10px] text-rose-400">-{errs}</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Scrollable Decision Logs List */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#050c18]">
-                {filteredDecisions.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-12 text-center text-slate-400 font-mono space-y-3 my-auto">
-                    <ClipboardList className="w-12 h-12 text-slate-600 animate-pulse" />
-                    <h3 className="text-sm font-bold uppercase text-slate-300">
-                      Nenhum registro encontrado
-                    </h3>
-                    <p className="text-xs text-slate-500 max-w-md">
-                      {decisions.length === 0
-                        ? "Nenhum aluno respondeu a questões até o momento. Quando os estudantes tomarem decisões nos diálogos, os registros aparecerão aqui em tempo real."
-                        : "Nenhum resultado atende ao filtro de busca atual."}
-                    </p>
-                  </div>
-                ) : (
-                  filteredDecisions.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`p-4 rounded-xl border transition-all space-y-2.5 ${
-                        item.isCorrect
-                          ? "bg-[#06191d] border-emerald-500/40 shadow-sm"
-                          : "bg-[#180d16] border-rose-500/40 shadow-sm"
-                      }`}
-                    >
-                      {/* Top Header */}
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-white font-mono px-2.5 py-0.5 rounded bg-slate-800 border border-slate-700">
-                            👤 {item.playerName}
-                          </span>
-                          <span className="text-xs font-bold text-teal-300 font-mono">
-                            🗣️ {item.npcName}
-                          </span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/30">
-                            {item.category}
-                          </span>
-                        </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#050c18]">
+                {viewGroupMode === "grouped" ? (
+                  /* ── GROUPED BY STUDENT VIEW ── */
+                  studentGroupsList.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-12 text-center text-slate-400 font-mono space-y-3 my-auto">
+                      <ClipboardList className="w-12 h-12 text-slate-600 animate-pulse" />
+                      <h3 className="text-sm font-bold uppercase text-slate-300">
+                        Nenhum aluno ou resposta encontrada
+                      </h3>
+                      <p className="text-xs text-slate-500 max-w-md">
+                        {decisions.length === 0
+                          ? "Nenhum aluno respondeu a questões até o momento. Quando os estudantes tomarem decisões nos diálogos, os registros aparecerão aqui agrupados por aluno."
+                          : "Nenhum resultado atende aos filtros de busca e aluno selecionados."}
+                      </p>
+                    </div>
+                  ) : (
+                    studentGroupsList.map((group) => {
+                      const groupKey = group.key;
+                      const isCollapsed = Boolean(collapsedStudents[groupKey]);
+                      const nickObj = getDisplayNickname(group.playerName);
+                      const isOnline = activePool.some(
+                        (p) => p.playerId === group.playerId || p.playerName === group.playerName
+                      );
 
-                        <div className="flex items-center gap-3 font-mono">
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(item.timestamp).toLocaleTimeString("pt-BR")}
-                          </span>
-                          {item.isCorrect ? (
-                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-xs font-bold flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                              ACERTO (+{item.pointsEarned} PTS)
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/50 text-xs font-bold flex items-center gap-1">
-                              <XCircle className="w-3.5 h-3.5 text-rose-400" />
-                              ERRO / INADEQUADO
-                            </span>
+                      return (
+                        <div
+                          key={groupKey}
+                          className="border-2 border-slate-700/80 rounded-2xl bg-[#081527] shadow-xl overflow-hidden transition-all"
+                        >
+                          {/* Student Header Bar */}
+                          <div className="flex items-center justify-between p-3 sm:p-4 bg-[#0b1c33] border-b border-slate-700/80 flex-wrap gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300 font-extrabold font-mono text-base shadow-inner">
+                                {nickObj.nick.slice(0, 2).toUpperCase()}
+                              </div>
+
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-sm sm:text-base font-extrabold text-white font-mono tracking-wide">
+                                    {nickObj.nick}
+                                  </h3>
+                                  {nickObj.prefix && (
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                      ({nickObj.prefix})
+                                    </span>
+                                  )}
+                                  <span
+                                    className={`text-[9px] font-mono px-2 py-0.5 rounded-full border font-bold flex items-center gap-1 ${
+                                      isOnline
+                                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                        : "bg-slate-800 text-slate-400 border-slate-700"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        isOnline ? "bg-emerald-400 animate-ping" : "bg-slate-500"
+                                      }`}
+                                    />
+                                    <span>{isOnline ? "CONECTADO" : "OFFLINE"}</span>
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-1 flex-wrap text-[11px] font-mono">
+                                  <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                                    {group.total} {group.total === 1 ? "Resposta" : "Respostas"}
+                                  </span>
+                                  <span className="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold">
+                                    ✅ {group.correct} Acertos ({group.accuracy}%)
+                                  </span>
+                                  <span className="bg-rose-500/15 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded font-bold">
+                                    ❌ {group.errors} Erros
+                                  </span>
+                                  <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold">
+                                    🏆 +{group.points} PTS
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 font-mono">
+                              <button
+                                onClick={() => {
+                                  try { playSound("click"); } catch {}
+                                  setManualSelectedId(group.playerId);
+                                }}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow transition-all active:scale-95 cursor-pointer"
+                                title="Acompanhar gameplay deste aluno na transmissão principal"
+                              >
+                                <Video className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Transmitir Aluno</span>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  try { playSound("click"); } catch {}
+                                  setCollapsedStudents((prev) => ({
+                                    ...prev,
+                                    [groupKey]: !prev[groupKey],
+                                  }));
+                                }}
+                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer border border-slate-700"
+                                title={isCollapsed ? "Expandir respostas" : "Ocultar respostas"}
+                              >
+                                {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Student Decisions Content */}
+                          {!isCollapsed && (
+                            <div className="p-3 sm:p-4 space-y-3 bg-[#050c18]">
+                              {group.decisions.map((item, idx) => (
+                                <div
+                                  key={item.id}
+                                  className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${
+                                    item.isCorrect
+                                      ? "bg-[#06191d] border-emerald-500/40 shadow-sm"
+                                      : "bg-[#180d16] border-rose-500/40 shadow-sm"
+                                  }`}
+                                >
+                                  {/* Item Header */}
+                                  <div className="flex items-center justify-between flex-wrap gap-2 font-mono">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-extrabold text-teal-300 bg-teal-950/80 px-2 py-0.5 rounded border border-teal-500/30">
+                                        Questão #{idx + 1}
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-200">
+                                        🗣️ NPC: <span className="text-teal-300">{item.npcName}</span>
+                                      </span>
+                                      <span className="text-[10px] px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/30 font-semibold">
+                                        {item.category}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="text-[10px] text-slate-400">
+                                        {new Date(item.timestamp).toLocaleTimeString("pt-BR")}
+                                      </span>
+                                      {item.isCorrect ? (
+                                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-xs font-bold flex items-center gap-1">
+                                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                          ACERTO (+{item.pointsEarned} PTS)
+                                        </span>
+                                      ) : (
+                                        <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/50 text-xs font-bold flex items-center gap-1">
+                                          <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                                          ERRO / INADEQUADO
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Scenario / Question */}
+                                  <div className="p-2.5 rounded-lg bg-[#081220] border border-slate-800 text-xs text-slate-200">
+                                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block mb-1">
+                                      Cenário / Pergunta Apresentada
+                                    </span>
+                                    <p className="leading-relaxed">{item.questionText}</p>
+                                  </div>
+
+                                  {/* Choice & Rationale */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                                    <div
+                                      className={`p-2.5 rounded-lg border ${
+                                        item.isCorrect
+                                          ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-200"
+                                          : "bg-rose-950/20 border-rose-500/30 text-rose-200"
+                                      }`}
+                                    >
+                                      <span className="text-[10px] font-bold uppercase block mb-1 flex items-center gap-1">
+                                        {item.isCorrect ? (
+                                          <>
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Opção Escolhida (Correta)
+                                          </>
+                                        ) : (
+                                          <>
+                                            <XCircle className="w-3.5 h-3.5 text-rose-400" /> Opção Escolhida pelo Aluno
+                                          </>
+                                        )}
+                                      </span>
+                                      <p className="font-semibold">{item.selectedOption}</p>
+                                    </div>
+
+                                    <div className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-300">
+                                      <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                                        Feedback & Raciocínio Pedagógico
+                                      </span>
+                                      <p className="leading-relaxed text-[11px]">{item.feedback}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-                      </div>
-
-                      {/* Question Text */}
-                      <div className="p-3 rounded-lg bg-[#081220] border border-slate-800/80 text-xs text-slate-200">
-                        <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                          Cenário / Pergunta Apresentada
-                        </span>
-                        <p className="leading-relaxed">{item.questionText}</p>
-                      </div>
-
-                      {/* Choice & Rationale Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div
-                          className={`p-3 rounded-lg border ${
-                            item.isCorrect
-                              ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-200"
-                              : "bg-rose-950/20 border-rose-500/30 text-rose-200"
-                          }`}
-                        >
-                          <span className="text-[10px] font-bold uppercase tracking-wider block mb-1 flex items-center gap-1">
-                            {item.isCorrect ? (
-                              <>
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Opção Escolhida (Correta)
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="w-3.5 h-3.5 text-rose-400" /> Opção Escolhida pelo Aluno
-                              </>
-                            )}
-                          </span>
-                          <p className="font-semibold">{item.selectedOption}</p>
-                        </div>
-
-                        <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-300">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                            Feedback & Raciocínio Pedagógico
-                          </span>
-                          <p className="leading-relaxed text-[11px]">{item.feedback}</p>
-                        </div>
-                      </div>
+                      );
+                    })
+                  )
+                ) : (
+                  /* ── TIMELINE CHRONOLOGICAL VIEW ── */
+                  filteredDecisions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-12 text-center text-slate-400 font-mono space-y-3 my-auto">
+                      <ClipboardList className="w-12 h-12 text-slate-600 animate-pulse" />
+                      <h3 className="text-sm font-bold uppercase text-slate-300">
+                        Nenhum registro encontrado
+                      </h3>
+                      <p className="text-xs text-slate-500 max-w-md">
+                        {decisions.length === 0
+                          ? "Nenhum aluno respondeu a questões até o momento."
+                          : "Nenhum resultado atende ao filtro de busca atual."}
+                      </p>
                     </div>
-                  ))
+                  ) : (
+                    filteredDecisions.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-4 rounded-xl border transition-all space-y-2.5 ${
+                          item.isCorrect
+                            ? "bg-[#06191d] border-emerald-500/40 shadow-sm"
+                            : "bg-[#180d16] border-rose-500/40 shadow-sm"
+                        }`}
+                      >
+                        {/* Top Header */}
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2 flex-wrap font-mono">
+                            <span className="text-xs font-bold text-white px-2.5 py-0.5 rounded bg-slate-800 border border-slate-700">
+                              👤 {getDisplayNickname(item.playerName).nick}
+                            </span>
+                            <span className="text-xs font-bold text-teal-300">
+                              🗣️ {item.npcName}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/30">
+                              {item.category}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 font-mono">
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(item.timestamp).toLocaleTimeString("pt-BR")}
+                            </span>
+                            {item.isCorrect ? (
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-xs font-bold flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                ACERTO (+{item.pointsEarned} PTS)
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/50 text-xs font-bold flex items-center gap-1">
+                                <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                                ERRO / INADEQUADO
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Question Text */}
+                        <div className="p-3 rounded-lg bg-[#081220] border border-slate-800/80 text-xs text-slate-200">
+                          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                            Cenário / Pergunta Apresentada
+                          </span>
+                          <p className="leading-relaxed">{item.questionText}</p>
+                        </div>
+
+                        {/* Choice & Rationale Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div
+                            className={`p-3 rounded-lg border ${
+                              item.isCorrect
+                                ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-200"
+                                : "bg-rose-950/20 border-rose-500/30 text-rose-200"
+                            }`}
+                          >
+                            <span className="text-[10px] font-bold uppercase tracking-wider block mb-1 flex items-center gap-1">
+                              {item.isCorrect ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Opção Escolhida (Correta)
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3.5 h-3.5 text-rose-400" /> Opção Escolhida pelo Aluno
+                                </>
+                              )}
+                            </span>
+                            <p className="font-semibold">{item.selectedOption}</p>
+                          </div>
+
+                          <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-300">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Feedback & Raciocínio Pedagógico
+                            </span>
+                            <p className="leading-relaxed text-[11px]">{item.feedback}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )
                 )}
               </div>
             </motion.div>
