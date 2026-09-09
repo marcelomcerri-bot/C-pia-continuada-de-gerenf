@@ -243,20 +243,19 @@ export class GameScene extends Phaser.Scene {
                                          this.mapData[r][c-1] === TILE_ID.WALL && this.mapData[r][c+1] === TILE_ID.WALL;
 
         if (isWall && (hasFloorBelow || isHorizontalIntersection)) {
-           const FACE_Y = by + TILE_SIZE;
-           // When the face would project into a corridor we draw ONLY a thin
-           // teal accent line — no 30 px beige block that steals corridor space.
+           const FACE_Y = by;
+           // When the face is above a corridor, draw baseboard accent inside the wall tile
            const faceInCorridor = belowTid === TILE_ID.CORRIDOR;
 
            if (faceInCorridor) {
-             // Thin teal baseboard at wall/corridor boundary (3 px, no block)
+             // Baseboard accent inside the wall tile
              this.ambientGfx.fillStyle(0x0ea5e9, 0.85);
-             this.ambientGfx.fillRect(bx, FACE_Y, TILE_SIZE, 3);
+             this.ambientGfx.fillRect(bx, by + TILE_SIZE - 4, TILE_SIZE, 3);
              this.ambientGfx.fillStyle(0xffffff, 0.5);
-             this.ambientGfx.fillRect(bx, FACE_Y + 3, TILE_SIZE, 1);
+             this.ambientGfx.fillRect(bx, by + TILE_SIZE - 1, TILE_SIZE, 1);
            } else {
-             // Full 30 px decorative wainscoting face for room tiles
-             const FACE_H = 30;
+             // Full 32 px decorative wainscoting face directly on the wall tile
+             const FACE_H = 32;
              this.ambientGfx.fillStyle(0xd2ccc1, 1);
              this.ambientGfx.fillRect(bx, FACE_Y, TILE_SIZE, FACE_H);
 
@@ -294,7 +293,7 @@ export class GameScene extends Phaser.Scene {
              this.ambientGfx.fillStyle(0x94a3b8, 1);
              this.ambientGfx.fillRect(bx, FACE_Y + 28, TILE_SIZE, 4);
              this.ambientGfx.fillStyle(0x000000, 0.12);
-             this.ambientGfx.fillRect(bx, FACE_Y + 32, TILE_SIZE, 3);
+             this.ambientGfx.fillRect(bx, FACE_Y + 30, TILE_SIZE, 2);
            }
         }
 
@@ -2040,8 +2039,16 @@ export class GameScene extends Phaser.Scene {
       this.spawnDustParticle(this.player.x, this.player.y, this.player.isCurrentlySprinting());
     }
 
+    // Dynamic depth sorting for player and NPCs
+    this.player.setDepth(10 + this.player.y / 10000);
+
     // NPC AI update
-    for (const npc of this.npcs) { if (npc.active) npc.update(delta); }
+    for (const npc of this.npcs) {
+      if (npc.active) {
+        npc.setDepth(10 + npc.y / 10000);
+        npc.update(delta);
+      }
+    }
 
     // Detect nearby NPC
     this.detectNearbyNPC();
