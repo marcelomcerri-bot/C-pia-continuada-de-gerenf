@@ -15,7 +15,7 @@ import { playMusic, fadeOutMusic, playSound } from '../utils/audio';
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private npcs: NPC[] = [];
-  private mapData: number[][] = [];
+  public mapData: number[][] = [];
   private doorTileKeys: Set<string> = new Set();
   private mapLayer?: Phaser.Tilemaps.TilemapLayer;
   private wallLayer?: Phaser.Physics.Arcade.StaticGroup;

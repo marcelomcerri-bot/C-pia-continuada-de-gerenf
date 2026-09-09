@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { TILE_SIZE, Direction } from '../constants';
+import { TILE_SIZE, Direction, TILE_ID, MAP_COLS, MAP_ROWS } from '../constants';
 import { MISSIONS } from '../data/gameData';
 import type { NPCDef, GameState, DialogueDef } from '../data/gameData';
 import { AnimationController } from '../utils/AnimationController';
@@ -29,6 +29,9 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
   private slideHorizontalTimer = 0;
   private slideVerticalTimer = 0;
+
+  private currentPath: { col: number; row: number }[] = [];
+  private pathIdx = 0;
 
   // Track how many times the player has talked to this NPC (for dialogue rotation)
   private conversationCount = 0;
@@ -187,6 +190,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.isWaiting = false;
         this.waypointIdx = (this.waypointIdx + 1) % this.def.patrolPoints.length;
         this.interactionBubble?.setVisible(false);
+        this.recalculatePath();
       }
       (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
       this.updateFrame(delta, false);
@@ -194,20 +198,34 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    const target = this.def.patrolPoints[this.waypointIdx];
-    const tx = (target.col + 0.5) * TILE_SIZE;
-    const ty = (target.row + 0.5) * TILE_SIZE;
-    const dx = tx - this.x, dy = ty - this.y;
+    if (this.currentPath.length === 0) {
+      this.recalculatePath();
+    }
+
+    const nextTile = this.currentPath[this.pathIdx];
+    if (!nextTile) {
+      this.recalculatePath();
+      return;
+    }
+
+    const tx = (nextTile.col + 0.5) * TILE_SIZE;
+    const ty = (nextTile.row + 0.5) * TILE_SIZE;
+    const dx = tx - this.x;
+    const dy = ty - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
+
+    const isFinalNode = this.pathIdx === this.currentPath.length - 1;
+    const arrivalThreshold = isFinalNode ? 2.5 : 5.0;
 
     const expectedDist = (NPC_SPEED / 1000) * delta;
     const movedDelta = Math.hypot(this.x - this.lastX, this.y - this.lastY);
-    if (movedDelta < expectedDist * 0.45 && dist > 12) {
+    if (movedDelta < expectedDist * 0.45 && dist > arrivalThreshold) {
       this.stuckTimer += delta;
       if (this.stuckTimer >= this.STUCK_THRESHOLD) {
         this.stuckTimer = 0;
         this.waypointIdx = (this.waypointIdx + 1) % this.def.patrolPoints.length;
         this.lastX = this.x; this.lastY = this.y;
+        this.recalculatePath();
         return;
       }
     } else {
@@ -216,51 +234,52 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.lastX = this.x;
     this.lastY = this.y;
 
-    if (dist < 12) {
-      (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
-      this.setPosition(tx, ty);
-      this.isWaiting = true;
-      this.waitTimer = Phaser.Math.Between(2000, 5000);
+    if (dist < arrivalThreshold) {
+      if (!isFinalNode) {
+        this.pathIdx++;
+      } else {
+        (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+        this.setPosition(tx, ty);
+        this.isWaiting = true;
+        this.waitTimer = Phaser.Math.Between(2000, 5000);
 
-      let facedPoint: any = null;
-      if (this.scene) {
-        const gs = this.scene as any;
-        if (gs.interactionPoints) {
-          for (const pt of gs.interactionPoints) {
-            const ndx = pt.x - this.x;
-            const ndy = pt.y - this.y;
-            if (Math.abs(ndx) <= 34 && Math.abs(ndy) <= 34) {
-              if (Math.abs(ndx) > Math.abs(ndy)) {
-                this.direction = ndx > 0 ? 'right' : 'left';
-              } else {
-                this.direction = ndy > 0 ? 'down' : 'up';
+        let facedPoint: any = null;
+        if (this.scene) {
+          const gs = this.scene as any;
+          if (gs.interactionPoints) {
+            for (const pt of gs.interactionPoints) {
+              const ndx = pt.x - this.x;
+              const ndy = pt.y - this.y;
+              if (Math.abs(ndx) <= 34 && Math.abs(ndy) <= 34) {
+                if (Math.abs(ndx) > Math.abs(ndy)) {
+                  this.direction = ndx > 0 ? 'right' : 'left';
+                } else {
+                  this.direction = ndy > 0 ? 'down' : 'up';
+                }
+                facedPoint = pt;
+                break;
               }
-              facedPoint = pt;
-              break;
             }
           }
         }
-      }
 
-      if (!facedPoint) {
-        // Keep current direction
-      } else {
-        // Keep interaction bubbles hidden to avoid floating computer icons
-        this.interactionBubble?.setVisible(false);
+        if (!facedPoint) {
+          // Keep current direction
+        } else {
+          this.interactionBubble?.setVisible(false);
+        }
+        this.updateFrame(delta, false);
       }
-      this.updateFrame(delta, false);
     } else {
       const body = this.body as Phaser.Physics.Arcade.Body;
 
-      // Check if we just hit a wall in this frame and activate the corresponding sliding timer
       if (body.blocked.left || body.blocked.right) {
-        this.slideHorizontalTimer = 350; // slide vertically for 350ms
+        this.slideHorizontalTimer = 350;
       }
       if (body.blocked.up || body.blocked.down) {
-        this.slideVerticalTimer = 350; // slide horizontally for 350ms
+        this.slideVerticalTimer = 350;
       }
 
-      // If we are close enough to vertical or horizontal alignment, cancel sliding to move directly
       if (Math.abs(dy) < 6) {
         this.slideHorizontalTimer = 0;
       }
@@ -271,9 +290,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       let vx = (dx / dist) * NPC_SPEED;
       let vy = (dy / dist) * NPC_SPEED;
 
-      // Apply sliding vectors based on active timers
       if (this.slideHorizontalTimer > 0 && this.slideVerticalTimer > 0) {
-        // Stuck in a corner (blocked on both axes), stop completely to avoid fluttering
         vx = 0;
         vy = 0;
       } else if (this.slideHorizontalTimer > 0) {
@@ -286,7 +303,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
       body.setVelocity(vx, vy);
 
-      // Use AnimationController to determine the movement direction based on physical velocity vectors
       this.direction = AnimationController.getDirectionFromVelocity(vx, vy, this.direction);
       this.updateFrame(delta, true);
     }
@@ -392,6 +408,24 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.waitTimer = 0;
   }
 
+  private recalculatePath() {
+    const startCol = Math.floor(this.x / TILE_SIZE);
+    const startRow = Math.floor(this.y / TILE_SIZE);
+    const target = this.def.patrolPoints[this.waypointIdx];
+    const mapData = (this.scene as any).mapData;
+
+    if (mapData) {
+      const p = findPath(startCol, startRow, target.col, target.row, mapData);
+      if (p && p.length > 0) {
+        this.currentPath = p;
+        this.pathIdx = 0;
+        return;
+      }
+    }
+    this.currentPath = [{ col: target.col, row: target.row }];
+    this.pathIdx = 0;
+  }
+
   destroy(fromScene?: boolean) {
     this.nameLabel?.destroy();
     this.exclamationMark?.destroy();
@@ -408,4 +442,63 @@ function shuffleArray<T>(arr: T[]): T[] {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+function findPath(
+  startCol: number,
+  startRow: number,
+  endCol: number,
+  endRow: number,
+  mapData: number[][]
+): { col: number; row: number }[] | null {
+  if (startCol === endCol && startRow === endRow) {
+    return [{ col: endCol, row: endRow }];
+  }
+
+  const queue: { col: number; row: number; path: { col: number; row: number }[] }[] = [];
+  const visited: boolean[][] = Array.from({ length: MAP_ROWS }, () => Array(MAP_COLS).fill(false));
+
+  queue.push({ col: startCol, row: startRow, path: [] });
+  if (startRow >= 0 && startRow < MAP_ROWS && startCol >= 0 && startCol < MAP_COLS) {
+    visited[startRow][startCol] = true;
+  }
+
+  while (queue.length > 0) {
+    const curr = queue.shift()!;
+
+    if (curr.col === endCol && curr.row === endRow) {
+      return [...curr.path, { col: endCol, row: endRow }];
+    }
+
+    const dirs = [
+      { dCol: 0, dRow: -1 }, // Up
+      { dCol: 0, dRow: 1 },  // Down
+      { dCol: -1, dRow: 0 }, // Left
+      { dCol: 1, dRow: 0 },  // Right
+    ];
+
+    for (const d of dirs) {
+      const nc = curr.col + d.dCol;
+      const nr = curr.row + d.dRow;
+
+      if (nc >= 0 && nc < MAP_COLS && nr >= 0 && nr < MAP_ROWS) {
+        if (!visited[nr][nc]) {
+          visited[nr][nc] = true;
+
+          const tile = mapData[nr][nc];
+          const isWalkable = tile !== TILE_ID.WALL && tile !== TILE_ID.GARDEN;
+
+          if (isWalkable) {
+            queue.push({
+              col: nc,
+              row: nr,
+              path: [...curr.path, { col: curr.col, row: curr.row }]
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return null;
 }
