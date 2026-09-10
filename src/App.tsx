@@ -128,12 +128,25 @@ export default function App() {
     gameRef.current = game;
     (window as any).phaserGame = game;
 
+    // Force immediate size adjustment on mount
+    applySize();
+
+    // Cascading delayed updates to guarantee full canvas scaling as mobile elements (address/status bars) settle
+    const t1 = setTimeout(applySize, 50);
+    const t2 = setTimeout(applySize, 150);
+    const t3 = setTimeout(applySize, 350);
+    const t4 = setTimeout(applySize, 700);
+
     return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
       game.destroy(true);
       gameRef.current = null;
       delete (window as any).phaserGame;
     };
-  }, []);
+  }, [applySize]);
 
   const handleStartGame = () => {
     try {

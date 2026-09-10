@@ -56,6 +56,8 @@ export class MenuScene extends Phaser.Scene {
     let subContainer: Phaser.GameObjects.Container | null = null;
     let bobTween1: Phaser.Tweens.Tween | null = null;
     let bobTween2: Phaser.Tweens.Tween | null = null;
+    let glow1: Phaser.GameObjects.Image | null = null;
+    let glow2: Phaser.GameObjects.Image | null = null;
 
     // ── Ambient Glowing Particles Texture (Dynamic circular glow canvas) ─────
     if (!this.textures.exists('bubble')) {
@@ -74,6 +76,25 @@ export class MenuScene extends Phaser.Scene {
         ctx.fill();
       }
       this.textures.addCanvas('bubble', canvas);
+    }
+
+    // ── Ultra-soft Sunlight Glow Texture (Dynamic large radial gradient) ──────
+    if (!this.textures.exists('sun_glow')) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+        grad.addColorStop(0, 'rgba(255, 230, 170, 0.45)');  // Golden core
+        grad.addColorStop(0.2, 'rgba(26, 188, 156, 0.22)'); // Soft teal halo
+        grad.addColorStop(1, 'rgba(26, 188, 156, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(128, 128, 128, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      this.textures.addCanvas('sun_glow', canvas);
     }
 
     const bgKey = this.textures.exists('huap_pixelart')
@@ -120,29 +141,60 @@ export class MenuScene extends Phaser.Scene {
       const cx = W / 2;
       const cy = H / 2;
 
-      // 1. Position & cover scale background (guarantees no cropping or distortion)
+      // 1. Position & cover scale background (with cinematic Ken Burns breathing & gentle sway)
       if (bgKey) {
-        const shiftedCy = cy + 70; // Shift down by 70px to reveal more clear sky at the top for title & badge
+        const shiftedCy = cy + 70; // Shift down by 70px to reveal clear sky at top
         if (!bg) {
           bg = this.add.image(cx, shiftedCy, bgKey).setOrigin(0.5).setDepth(0);
           
-          // Smooth entrance cinematic zoom-in effect on first load
           const scaleX = W / bg.width;
           const scaleY = H / bg.height;
           const baseScale = Math.max(scaleX, scaleY);
-          bg.setScale(baseScale * 1.04);
+          
+          // Cinematic camera fade and zoom-in on load
+          bg.setScale(baseScale * 1.05);
+          bg.setPosition(cx - 3, shiftedCy - 2);
           this.tweens.add({
             targets: bg,
             scale: baseScale,
+            x: cx,
+            y: shiftedCy,
             duration: 3000,
-            ease: 'Power2.easeOut'
+            ease: 'Power2.easeOut',
+            onComplete: () => {
+              if (!bg) return;
+              // Initiate a persistent, extremely soothing camera "breathing" and sways (drift)
+              this.tweens.add({
+                targets: bg,
+                scale: baseScale * 1.03, // gentle scale breath
+                x: cx + 6,               // horizontal drift sway
+                y: shiftedCy + 4,        // vertical drift sway
+                duration: 9000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+              });
+            }
           });
         } else {
+          // If resizing, kill any stale tweens, update to new scale and restart sways
+          this.tweens.killTweensOf(bg);
           bg.setPosition(cx, shiftedCy);
           const scaleX = W / bg.width;
           const scaleY = H / bg.height;
           const baseScale = Math.max(scaleX, scaleY);
           bg.setScale(baseScale);
+
+          this.tweens.add({
+            targets: bg,
+            scale: baseScale * 1.03,
+            x: cx + 6,
+            y: shiftedCy + 4,
+            duration: 9000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+          });
         }
       }
 
@@ -221,6 +273,43 @@ export class MenuScene extends Phaser.Scene {
         alpha: { start: 0.5, end: 0 },
         blendMode: 'ADD'
       }).setDepth(2);
+
+      // 7. Ambient Glowing Sun Lights (Slow, hypnotic pulsating lens flares in the upper sky)
+      if (!glow1) {
+        glow1 = this.add.image(W * 0.82, 35, 'sun_glow').setOrigin(0.5).setDepth(1).setBlendMode('ADD');
+        glow1.setScale(1.3);
+        glow1.setAlpha(0.2);
+        this.tweens.add({
+          targets: glow1,
+          alpha: { start: 0.15, to: 0.45 },
+          scale: { start: 1.1, to: 1.45 },
+          angle: 360,
+          duration: 14000,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut'
+        });
+      } else {
+        glow1.setPosition(W * 0.82, 35);
+      }
+
+      if (!glow2) {
+        glow2 = this.add.image(W * 0.14, 60, 'sun_glow').setOrigin(0.5).setDepth(1).setBlendMode('ADD');
+        glow2.setScale(0.8);
+        glow2.setAlpha(0.12);
+        this.tweens.add({
+          targets: glow2,
+          alpha: { start: 0.08, to: 0.32 },
+          scale: { start: 0.7, to: 0.95 },
+          angle: -360,
+          duration: 18000,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut'
+        });
+      } else {
+        glow2.setPosition(W * 0.14, 60);
+      }
     };
 
     // ── Execute master resize immediately to align and scale perfectly ──────
