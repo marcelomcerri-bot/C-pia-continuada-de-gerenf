@@ -6,7 +6,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Play, ClipboardList, LogOut, Pause, BookOpen } from "lucide-react";
 import { hasSave, clearSave, loadGame, saveGame, DEFAULT_STATE } from "../game/utils/save";
 import { PlayerProfile, GameState } from "../game/data/gameData";
@@ -189,7 +189,7 @@ function RoutesWrapper({
       </AnimatePresence>
 
       {isMobile && inGame && <MobileControls />}
-      {isMobile && activeChoices && (
+      {activeChoices && (
         <DialogueChoicesOverlay choices={activeChoices} />
       )}
 
@@ -1010,38 +1010,68 @@ function DialogueChoicesOverlay({
   choices: { text: string; index: number }[] | null;
 }) {
   const selectedRef = useRef(false);
-  if (!choices) return null;
 
-  const handleSelect = (idx: number) => {
+  useEffect(() => {
+    selectedRef.current = false;
+  }, [choices]);
+
+  const handleSelect = useCallback((idx: number) => {
     if (selectedRef.current) return;
     selectedRef.current = true;
     const data = (window as any).activeChoices;
     if (data?.select) {
       data.select(idx);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!choices || choices.length === 0) return;
+      const num = parseInt(e.key, 10);
+      if (!isNaN(num) && num >= 1 && num <= choices.length) {
+        e.preventDefault();
+        handleSelect(choices[num - 1].index);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        handleSelect(choices.length - 1);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [choices, handleSelect]);
+
+  if (!choices || choices.length === 0) return null;
 
   const activeData = (window as any).activeChoices;
+
   return (
-    <div className="fixed inset-0 z-[110] flex flex-col items-center justify-end sm:justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 pointer-events-auto select-none">
-      <div className="flex flex-col gap-2.5 w-full max-w-lg p-3.5 sm:p-4 bg-[#0a1628]/98 border-2 border-[#1abc9c] rounded-2xl shadow-2xl max-h-[85vh] overflow-y-auto mb-2 sm:mb-0">
-        <div className="flex flex-col gap-1.5 border-b border-[#1abc9c]/30 pb-2 mb-0.5">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md pointer-events-auto select-none animate-fadeIn">
+      <div className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-slate-900/95 border border-emerald-500/30 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.85)] overflow-hidden">
+        
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 p-3 sm:p-4 bg-slate-900/90 border-b border-slate-800 flex flex-col gap-2">
           {activeData?.topic && (
-            <div className="bg-[#f1c40f]/15 border border-[#f1c40f]/70 rounded-md px-2.5 py-1 text-[#f1c40f] font-mono text-[11px] font-bold uppercase tracking-wider text-center">
-              📚 CONTEÚDO: {activeData.topic}
+            <div className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 font-mono text-[10px] sm:text-xs font-semibold tracking-wide uppercase max-w-full">
+              <span className="flex-shrink-0">📚</span>
+              <span className="truncate">{activeData.topic}</span>
             </div>
           )}
-          <div className="flex items-center justify-between">
-            <h3 className="text-[#1abc9c] font-bold font-mono text-xs sm:text-sm tracking-wider uppercase flex items-center gap-2">
-              <span>💬</span> Selecione a melhor conduta
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-emerald-400 font-bold font-mono text-xs sm:text-sm tracking-wider uppercase flex items-center gap-2">
+              <span className="text-base leading-none">💬</span> Selecione a melhor conduta
             </h3>
-            <span className="text-[10px] text-slate-400 font-mono">Toque para selecionar</span>
+            <span className="text-[10px] text-slate-400 font-mono hidden xs:inline">
+              Toque ou use o teclado [1-{choices.length}]
+            </span>
           </div>
         </div>
-        <div className="flex flex-col gap-2">
+
+        {/* Scrollable Choice Items Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-900 [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb]:rounded-full">
           {choices.map((choice) => (
             <button
               key={choice.index}
+              type="button"
               onPointerDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1052,15 +1082,21 @@ function DialogueChoicesOverlay({
                 e.stopPropagation();
                 handleSelect(choice.index);
               }}
-              className="w-full text-left px-3 py-2.5 rounded-xl bg-[#0d1f35] border border-[#1abc9c]/70 hover:bg-[#1a3a5c] active:bg-[#1a3a5c] active:border-[#f1c40f] text-slate-100 font-sans text-xs sm:text-sm font-semibold flex items-center gap-2.5 shadow border-l-4 border-l-[#1abc9c] active:border-l-[#f1c40f] transition-all cursor-pointer touch-manipulation min-h-[44px]"
+              className="group relative w-full text-left p-2.5 sm:p-3.5 rounded-xl bg-slate-800/60 hover:bg-slate-800/90 active:bg-emerald-950/50 border border-slate-700/70 hover:border-emerald-500/50 active:border-emerald-400 transition-all duration-150 flex items-start gap-3 cursor-pointer touch-manipulation shadow-sm active:scale-[0.99]"
             >
-              <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded bg-[#1abc9c] text-[#0d1f35] font-bold text-xs">
+              <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 group-hover:bg-emerald-500 group-hover:text-slate-950 font-mono font-bold text-xs flex items-center justify-center transition-colors mt-0.5">
                 {choice.index + 1}
               </span>
-              <span className="flex-1 leading-snug text-sm sm:text-base font-bold text-white">{choice.text}</span>
+              <span className="flex-1 text-xs sm:text-sm text-slate-100 font-sans font-medium leading-relaxed group-hover:text-white transition-colors">
+                {choice.text}
+              </span>
+              <span className="hidden sm:inline-block text-[10px] text-slate-500 font-mono mt-0.5 group-hover:text-emerald-400 transition-colors">
+                [{choice.index + 1}]
+              </span>
             </button>
           ))}
         </div>
+
       </div>
     </div>
   );

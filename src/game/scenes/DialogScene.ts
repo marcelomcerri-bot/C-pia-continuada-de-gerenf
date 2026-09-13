@@ -286,122 +286,21 @@ export class DialogScene extends Phaser.Scene {
   }
 
   private showChoices() {
-    if (this.hasChosen) return;
+    if (this.showingChoices) return;
     this.showingChoices = true;
     this.cursor.setVisible(false);
 
     const rawChoices = this.dialogue.choices;
     const choices = (rawChoices && rawChoices.length > 0) ? rawChoices : [{ text: 'Entendido / Continuar' }];
 
-    const isMobile = (window as any).__portraitMobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || this.scale.width < 768;
-    if (isMobile) {
-      (window as any).activeChoices = {
-        topic: this.dialogue.topic || (this.npcDef as any).sector || 'Gerência Assistencial & Enfermagem',
-        choices: choices.map((c, i) => ({ text: c.text, index: i })),
-        select: (idx: number) => {
-          this.selectChoice(idx);
-        }
-      };
-      window.dispatchEvent(new CustomEvent('showchoices'));
-      return;
-    }
-
-    // Fixed full-width panel, vertically stacked above the dialogue box and matéria badge
-    const btnW = Math.min(GAME_WIDTH - 80, this.scale.width - 60);
-    const btnH = 48;
-    const gap = 6;
-    const totalH = choices.length * (btnH + gap) - gap;
-    // Anchor bottom of the stack above the dialogue box and matéria badge
-    const stackBottom = BOX_Y - BOX_H / 2 - 40;
-    const stackTop = Math.max(20, stackBottom - totalH);
-
-    // Semi-transparent backdrop behind all choices
-    const backdrop = this.add.graphics();
-    backdrop.fillStyle(0x000000, 0.38);
-    backdrop.fillRoundedRect(this.scale.width / 2 - btnW / 2 - 8, stackTop - 10, btnW + 16, totalH + 20, 12);
-    this.choiceArea.add(backdrop);
-
-    choices.forEach((choice, i) => {
-      const cx = this.scale.width / 2;
-      const cy = stackTop + i * (btnH + gap) + btnH / 2;
-
-      const cont = this.add.container(cx, cy + 20);
-
-      const redrawBtn = (hover: boolean) => {
-        btnBg.clear();
-        btnBg.fillStyle(hover ? 0x1a3a5c : 0x0d1f35, 1);
-        btnBg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 8);
-        btnBg.lineStyle(hover ? 2.5 : 1.5, hover ? 0xf1c40f : 0x1abc9c, 1);
-        btnBg.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 8);
-        // Left accent bar
-        if (hover) {
-          btnBg.fillStyle(0xf1c40f, 1);
-          btnBg.fillRoundedRect(-btnW / 2, -btnH / 2 + 4, 4, btnH - 8, 2);
-        } else {
-          btnBg.fillStyle(0x1abc9c, 0.8);
-          btnBg.fillRoundedRect(-btnW / 2, -btnH / 2 + 4, 3, btnH - 8, 2);
-        }
-      };
-
-      const btnBg = this.add.graphics();
-      redrawBtn(false);
-
-      // Number badge
-      const badgeSize = 22;
-      const badgeBg = this.add.graphics();
-      badgeBg.fillStyle(0x1abc9c, 1);
-      badgeBg.fillRoundedRect(-btnW / 2 + 12, -badgeSize / 2, badgeSize, badgeSize, 4);
-
-      const numTxt = this.add.text(-btnW / 2 + 12 + badgeSize / 2, 0, `${i + 1}`, {
-        fontFamily: "'Press Start 2P', monospace",
-        fontSize: '9px',
-        color: '#0d1f35',
-      }).setOrigin(0.5, 0.5);
-
-      const choiceTxt = this.add.text(-btnW / 2 + 46, 0, choice.text, {
-        fontFamily: "'Rajdhani', 'Segoe UI', system-ui, sans-serif",
-        fontSize: '18px',
-        color: '#ecf0f1',
-        fontStyle: '600',
-        wordWrap: { width: btnW - 80 },
-      }).setOrigin(0, 0.5);
-
-      // Keyboard shortcut hint (right side)
-      const keyHint = this.add.text(btnW / 2 - 12, 0, `[${i + 1}]`, {
-        fontFamily: 'monospace', fontSize: '10px', color: '#445566',
-      }).setOrigin(1, 0.5);
-
-      const zone = this.add.zone(-btnW / 2, -btnH / 2, btnW, btnH).setOrigin(0).setInteractive({ cursor: 'pointer' });
-
-      zone.on('pointerover', () => {
-        playSound('hover');
-        redrawBtn(true);
-        badgeBg.clear();
-        badgeBg.fillStyle(0xf1c40f, 1);
-        badgeBg.fillRoundedRect(-btnW / 2 + 12, -badgeSize / 2, badgeSize, badgeSize, 4);
-        numTxt.setColor('#0d1f35');
-        choiceTxt.setColor('#ffffff');
-        keyHint.setColor('#f1c40f');
-      });
-      zone.on('pointerout', () => {
-        redrawBtn(false);
-        badgeBg.clear();
-        badgeBg.fillStyle(0x1abc9c, 1);
-        badgeBg.fillRoundedRect(-btnW / 2 + 12, -badgeSize / 2, badgeSize, badgeSize, 4);
-        numTxt.setColor('#0d1f35');
-        choiceTxt.setColor('#ecf0f1');
-        keyHint.setColor('#445566');
-      });
-      zone.on('pointerdown', () => { playSound('click'); this.selectChoice(i); });
-      this.input.keyboard?.once(`keydown-${i + 1}`, () => { playSound('click'); this.selectChoice(i); });
-
-      cont.add([btnBg, badgeBg, numTxt, choiceTxt, keyHint, zone]);
-      cont.setAlpha(0);
-      this.tweens.add({ targets: cont, alpha: 1, y: cy, duration: 180, delay: i * 55, ease: 'Back.easeOut' });
-
-      this.choiceArea.add(cont);
-      this.choiceButtons.push(cont);
-    });
+    (window as any).activeChoices = {
+      topic: this.dialogue.topic || (this.npcDef as any).sector || 'Gerência Assistencial & Enfermagem',
+      choices: choices.map((c, i) => ({ text: c.text, index: i })),
+      select: (idx: number) => {
+        this.selectChoice(idx);
+      }
+    };
+    window.dispatchEvent(new CustomEvent('showchoices'));
   }
 
   private selectChoice(idx: number) {
