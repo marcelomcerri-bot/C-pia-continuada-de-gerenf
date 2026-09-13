@@ -858,7 +858,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'intro',
-        condition: (s) => !s.missionProgress['triagem_ps'],
+        condition: (s) => !s.completedMissions.includes('triagem_ps'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Bom dia! O Pronto-Socorro está com fila grande hoje.',
@@ -902,7 +902,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'fluxo_start',
-        condition: (s) => s.completedMissions.includes('triagem_ps') && s.completedMissions.length >= 3 && !s.missionProgress['fluxo_recepcao'],
+        condition: (s) => s.completedMissions.includes('triagem_ps') && s.completedMissions.length >= 3 && !s.completedMissions.includes('fluxo_recepcao'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Com o Manchester funcionando bem, a triagem melhorou muito!',
@@ -1023,7 +1023,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'sepse_intro',
-        condition: (s) => !s.missionProgress['protocolo_sepse'],
+        condition: (s) => !s.completedMissions.includes('protocolo_sepse'),
         topic: 'Segurança do Paciente',
         text: [
           'Precisamos urgente de um protocolo de sepse aqui no PS!',
@@ -1067,7 +1067,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'superlot_intro',
-        condition: (s) => s.completedMissions.includes('protocolo_sepse') && s.completedMissions.length >= 3 && !s.missionProgress['superlotacao_ps'],
+        condition: (s) => s.completedMissions.includes('protocolo_sepse') && s.completedMissions.length >= 3 && !s.completedMissions.includes('superlotacao_ps'),
         topic: 'Tomada de Decisão',
         text: [
           'Protocolo de sepse funcionando. Mas o PS está cheio de novo!',
@@ -1185,7 +1185,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'estoque_intro',
-        condition: (s) => !s.missionProgress['estoque_farmacia'],
+        condition: (s) => !s.completedMissions.includes('estoque_farmacia'),
         topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Oi! Estamos com estoque crítico de medicamentos vasoativos.',
@@ -1229,7 +1229,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'reconciliacao_intro',
-        condition: (s) => s.completedMissions.includes('estoque_farmacia') && s.completedMissions.length >= 3 && !s.missionProgress['reconciliacao_medicamentosa'],
+        condition: (s) => s.completedMissions.includes('estoque_farmacia') && s.completedMissions.length >= 3 && !s.completedMissions.includes('reconciliacao_medicamentosa'),
         topic: 'Segurança do Paciente',
         text: [
           'Obrigado pela agilidade no estoque!',
@@ -1347,7 +1347,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'criticos_intro',
-        condition: (s) => !s.missionProgress['resultados_criticos'],
+        condition: (s) => !s.completedMissions.includes('resultados_criticos'),
         topic: 'Competências Gerenciais e Assistenciais',
         text: [
           'Bom dia! Temos um problema sério com comunicação de resultados críticos.',
@@ -1391,7 +1391,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'coleta_intro',
-        condition: (s) => s.completedMissions.includes('resultados_criticos') && s.completedMissions.length >= 3 && !s.missionProgress['coleta_sistematizada'],
+        condition: (s) => s.completedMissions.includes('resultados_criticos') && s.completedMissions.length >= 3 && !s.completedMissions.includes('coleta_sistematizada'),
         topic: 'Segurança do Paciente',
         text: [
           'Protocolo de valores críticos funcionando bem!',
@@ -1506,7 +1506,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'laudo_intro',
-        condition: (s) => !s.missionProgress['laudo_urgente'],
+        condition: (s) => !s.completedMissions.includes('laudo_urgente'),
         topic: 'Tomada de Decisão',
         text: [
           'Boa tarde. Temos acúmulo de exames aguardando laudo urgente.',
@@ -1621,7 +1621,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'escala_intro',
-        condition: (s) => !s.missionProgress['escala_plantao'],
+        condition: (s) => !s.completedMissions.includes('escala_plantao'),
         topic: 'Dimensionamento de Enfermagem',
         text: [
           'Bom dia! Seja bem-vinda ao HUAP.',
@@ -1666,7 +1666,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'pesquisa_indicadores_intro',
-        condition: (s) => s.completedMissions.length >= 9 && !s.missionProgress['pesquisa_indicadores'],
+        condition: (s) => s.completedMissions.length >= 9 && !s.completedMissions.includes('pesquisa_indicadores'),
         topic: 'Indicadores de Saúde: Ferramentas que Subsidiam a Tomada de Decisão',
         text: [
           'Um grande favor — o MEC exige relatório de pesquisa e indicadores do HUAP.',
@@ -1710,7 +1710,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'orcamento_intro',
-        condition: (s) => s.completedMissions.length >= 3 && !s.missionProgress['orcamento'],
+        condition: (s) => s.completedMissions.length >= 3 && !s.completedMissions.includes('orcamento'),
         topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Excelente progresso! Preciso de mais um favor de gestão.',
@@ -1754,7 +1754,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'acreditacao_intro',
-        condition: (s) => s.completedMissions.length >= 6 && !s.missionProgress['acreditacao_ona'],
+        condition: (s) => s.completedMissions.length >= 6 && !s.completedMissions.includes('acreditacao_ona'),
         topic: 'Acreditação Hospitalar',
         text: [
           'A ONA fará visita de acreditação em 60 dias!',
@@ -1869,7 +1869,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'cme_intro',
-        condition: (s) => !s.missionProgress['cme_protocolo'],
+        condition: (s) => !s.completedMissions.includes('cme_protocolo'),
         topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Oi! Temos problema com o controle de materiais na CME.',
@@ -1913,7 +1913,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'rastreabilidade_intro',
-        condition: (s) => s.completedMissions.includes('cme_protocolo') && s.completedMissions.length >= 3 && !s.missionProgress['rastreabilidade_esterilizacao'],
+        condition: (s) => s.completedMissions.includes('cme_protocolo') && s.completedMissions.length >= 3 && !s.completedMissions.includes('rastreabilidade_esterilizacao'),
         topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Com o protocolo de reprocessamento aprovado, podemos avançar.',
@@ -2028,7 +2028,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'nutricao_intro',
-        condition: (s) => !s.missionProgress['terapia_nutricional'],
+        condition: (s) => !s.completedMissions.includes('terapia_nutricional'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Bom dia! Você é a nova gerente de enfermagem?',
@@ -2072,7 +2072,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'protocolo_dieta_intro',
-        condition: (s) => s.completedMissions.includes('terapia_nutricional') && s.completedMissions.length >= 3 && !s.missionProgress['protocolo_dieta'],
+        condition: (s) => s.completedMissions.includes('terapia_nutricional') && s.completedMissions.length >= 3 && !s.completedMissions.includes('protocolo_dieta'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Com o protocolo ASPEN em vigor, a equipe precisa de um guia prático de dietas.',
@@ -2232,7 +2232,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'ronda_intro',
-        condition: (s) => !s.missionProgress['ronda_enfermaria'],
+        condition: (s) => !s.completedMissions.includes('ronda_enfermaria'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'A ronda de enfermagem está atrasada hoje.',
@@ -2276,7 +2276,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'capacitacao_intro',
-        condition: (s) => s.completedMissions.length >= 3 && !s.missionProgress['capacitacao_sae'],
+        condition: (s) => s.completedMissions.length >= 3 && !s.completedMissions.includes('capacitacao_sae'),
         topic: 'Competências Gerenciais e Assistenciais',
         text: [
           'A equipe precisa muito de capacitação em SAE (Sistematização da Assistência).',
@@ -2320,7 +2320,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'passagem_plantao_intro',
-        condition: (s) => s.completedMissions.includes('ronda_enfermaria') && s.completedMissions.length >= 3 && !s.missionProgress['passagem_plantao'],
+        condition: (s) => s.completedMissions.includes('ronda_enfermaria') && s.completedMissions.length >= 3 && !s.completedMissions.includes('passagem_plantao'),
         topic: 'Tomada de Decisão',
         text: [
           'A passagem de plantão é nossa maior vulnerabilidade em segurança do paciente.',
@@ -2590,7 +2590,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'quimio_intro',
-        condition: (s) => !s.missionProgress['quimioterapia_segura'],
+        condition: (s) => !s.completedMissions.includes('quimioterapia_segura'),
         topic: 'Segurança do Paciente',
         text: [
           'Precisamos implementar o protocolo de quimioterapia segura na Oncologia.',
@@ -2634,7 +2634,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'paliativos_intro',
-        condition: (s) => s.completedMissions.includes('quimioterapia_segura') && s.completedMissions.length >= 3 && !s.missionProgress['cuidados_paliativos'],
+        condition: (s) => s.completedMissions.includes('quimioterapia_segura') && s.completedMissions.length >= 3 && !s.completedMissions.includes('cuidados_paliativos'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Precisamos de um protocolo de cuidados paliativos para pacientes em fase avançada.',
@@ -2749,7 +2749,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'banco_leite_intro',
-        condition: (s) => !s.missionProgress['banco_leite'],
+        condition: (s) => !s.completedMissions.includes('banco_leite'),
         topic: 'Gestão da Qualidade',
         text: [
           'Bom dia! O Banco de Leite do HUAP precisa de reestruturação.',
@@ -2793,7 +2793,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'humanizacao_intro',
-        condition: (s) => s.completedMissions.includes('banco_leite') && s.completedMissions.length >= 3 && !s.missionProgress['humanizacao_parto'],
+        condition: (s) => s.completedMissions.includes('banco_leite') && s.completedMissions.length >= 3 && !s.completedMissions.includes('humanizacao_parto'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Precisamos implementar práticas de humanização do parto aqui no HUAP!',

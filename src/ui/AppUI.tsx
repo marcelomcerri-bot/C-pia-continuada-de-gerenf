@@ -9,7 +9,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Play, ClipboardList, LogOut, Pause, BookOpen } from "lucide-react";
 import { hasSave, clearSave, loadGame, saveGame, DEFAULT_STATE } from "../game/utils/save";
-import { PlayerProfile, GameState } from "../game/data/gameData";
+import { PlayerProfile, GameState, MISSIONS, getLevelInfo } from "../game/data/gameData";
 import { playSound } from "../game/utils/audio";
 import { ProfessorView } from "./ProfessorView";
 import { ErrorNotebookModal } from "./ErrorNotebookModal";
@@ -147,6 +147,22 @@ function RoutesWrapper({
     };
   }, []);
 
+  const [missionsModalData, setMissionsModalData] = useState<GameState | null>(null);
+
+  useEffect(() => {
+    const handleToggleMissions = (e: any) => {
+      setMissionsModalData((prev) => {
+        if (prev) return null;
+        const state = e?.detail?.state || (window as any).phaserGame?.scene?.getScene("GameScene")?.state;
+        return state || null;
+      });
+    };
+    window.addEventListener("toggle-missions" as any, handleToggleMissions);
+    return () => {
+      window.removeEventListener("toggle-missions" as any, handleToggleMissions);
+    };
+  }, []);
+
   useEffect(() => {
     const onShow = () => {
       const data = (window as any).activeChoices;
@@ -196,6 +212,12 @@ function RoutesWrapper({
       <ErrorNotebookModal
         isOpen={isNotebookOpen}
         onClose={() => setIsNotebookOpen(false)}
+      />
+
+      <MissionsModal
+        isOpen={!!missionsModalData}
+        onClose={() => setMissionsModalData(null)}
+        gameState={missionsModalData}
       />
     </>
   );
@@ -1097,6 +1119,252 @@ function DialogueChoicesOverlay({
           ))}
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Missions Modal Component (React UI)
+// ---------------------------------------------------------------------------
+
+const MISSION_NPC_MAP: Record<string, { npcName: string; room: string }> = {
+  triagem_ps: { npcName: 'Enf. Ana', room: 'Recepção' },
+  fluxo_recepcao: { npcName: 'Enf. Ana', room: 'Recepção' },
+  protocolo_sepse: { npcName: 'Dr. Carlos', room: 'Pronto-Socorro' },
+  superlotacao_ps: { npcName: 'Dr. Carlos', room: 'Pronto-Socorro' },
+  estoque_farmacia: { npcName: 'Farm. João', room: 'Farmácia' },
+  reconciliacao_medicamentosa: { npcName: 'Farm. João', room: 'Farmácia' },
+  resultados_criticos: { npcName: 'Tec. Renata', room: 'Laboratório' },
+  coleta_sistematizada: { npcName: 'Tec. Renata', room: 'Laboratório' },
+  laudo_urgente: { npcName: 'Dr. Roberto', room: 'Diagnóstico por Imagem' },
+  escala_plantao: { npcName: 'Diretora Alves', room: 'Diretoria' },
+  pesquisa_indicadores: { npcName: 'Diretora Alves', room: 'Diretoria' },
+  orcamento: { npcName: 'Diretora Alves', room: 'Diretoria' },
+  acreditacao_ona: { npcName: 'Diretora Alves', room: 'Diretoria' },
+  cme_protocolo: { npcName: 'Tec. Rosa', room: 'Central de Material' },
+  rastreabilidade_esterilizacao: { npcName: 'Tec. Rosa', room: 'Central de Material' },
+  terapia_nutricional: { npcName: 'Nutr. Clara', room: 'Copa & Nutrição' },
+  protocolo_dieta: { npcName: 'Nutr. Clara', room: 'Copa & Nutrição' },
+  ronda_enfermaria: { npcName: 'Enf. Maria', room: 'Enfermaria' },
+  capacitacao_sae: { npcName: 'Enf. Maria', room: 'Enfermaria' },
+  passagem_plantao: { npcName: 'Enf. Maria', room: 'Enfermaria' },
+  quimioterapia_segura: { npcName: 'Dra. Santos', room: 'Oncologia' },
+  cuidados_paliativos: { npcName: 'Dra. Santos', room: 'Oncologia' },
+  banco_leite: { npcName: 'Enf. Pedro', room: 'Maternidade' },
+  humanizacao_parto: { npcName: 'Enf. Pedro', room: 'Maternidade' },
+};
+
+function MissionsModal({
+  isOpen,
+  onClose,
+  gameState,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  gameState: GameState | null;
+}) {
+  const [filter, setFilter] = useState<"all" | "active" | "completed" | "locked">("all");
+  const [search, setSearch] = useState("");
+
+  if (!isOpen || !gameState) return null;
+
+  const levelInfo = getLevelInfo(gameState.prestige);
+  const pName = gameState.playerProfile?.name || "Enf. Alex Santos";
+  const doneCount = gameState.completedMissions.length;
+  const totalCount = MISSIONS.length;
+  const progressPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  const processedMissions = MISSIONS.map((m) => {
+    const isDone = gameState.completedMissions.includes(m.id);
+    const isActive = !!gameState.missionProgress[m.id] && !isDone;
+    const isLocked =
+      !isDone &&
+      !isActive &&
+      m.prerequisiteIds.some((id) => !gameState.completedMissions.includes(id));
+    const isAvailable = !isDone && !isActive && !isLocked;
+    const info = MISSION_NPC_MAP[m.id] || { npcName: "Equipe", room: "Hospital" };
+
+    return {
+      ...m,
+      isDone,
+      isActive,
+      isLocked,
+      isAvailable,
+      npcName: info.npcName,
+      room: info.room,
+    };
+  });
+
+  const filteredMissions = processedMissions.filter((m) => {
+    if (filter === "active" && !m.isActive && !m.isAvailable) return false;
+    if (filter === "completed" && !m.isDone) return false;
+    if (filter === "locked" && !m.isLocked) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return (
+        m.title.toLowerCase().includes(q) ||
+        m.category.toLowerCase().includes(q) ||
+        m.description.toLowerCase().includes(q) ||
+        m.npcName.toLowerCase().includes(q) ||
+        m.room.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn select-none pointer-events-auto">
+      <div className="relative w-full max-w-4xl max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.85)] overflow-hidden">
+        {/* Header */}
+        <div className="flex-shrink-0 p-3.5 sm:p-5 bg-slate-950/90 border-b border-slate-800 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg">
+                📋
+              </span>
+              <div>
+                <h2 className="text-xs sm:text-sm font-bold font-mono text-emerald-400 tracking-wider uppercase">
+                  Diretrizes e Missões de Gerência
+                </h2>
+                <p className="text-xs text-slate-400 font-sans">
+                  {pName} · <span className="text-amber-400 font-semibold">{levelInfo.title}</span> · ⭐ {gameState.prestige} PTS
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                playSound("click");
+                onClose();
+              }}
+              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-sm font-mono cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-slate-300 font-medium">Progresso de Gestão Hospitalar</span>
+              <span className="text-emerald-400 font-bold">
+                {doneCount} / {totalCount} ({progressPct}%)
+              </span>
+            </div>
+            <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Filters and Search */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
+              {[
+                { id: "all", label: "Todas" },
+                { id: "active", label: "Em Andamento / Disponíveis" },
+                { id: "completed", label: "Concluídas" },
+                { id: "locked", label: "Bloqueadas" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    playSound("click");
+                    setFilter(tab.id as any);
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                    filter === tab.id
+                      ? "bg-emerald-500 text-slate-950 font-semibold shadow-sm"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar missão, setor, NPC..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="px-3 py-1.5 text-xs rounded-xl bg-slate-900 border border-slate-800 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 w-full sm:w-56"
+            />
+          </div>
+        </div>
+
+        {/* Missions Grid / List */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-900 [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb]:rounded-full">
+          {filteredMissions.length === 0 ? (
+            <div className="text-center py-12 text-slate-500 text-xs font-mono">
+              Nenhuma missão encontrada neste filtro.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filteredMissions.map((m) => (
+                <div
+                  key={m.id}
+                  className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-2.5 ${
+                    m.isDone
+                      ? "bg-slate-900/60 border-emerald-500/30"
+                      : m.isActive
+                      ? "bg-slate-800/80 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                      : m.isAvailable
+                      ? "bg-slate-800/40 border-cyan-500/40"
+                      : "bg-slate-950/40 border-slate-800/80 opacity-60"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-800 text-emerald-400 border border-slate-700/80 truncate">
+                        {m.category}
+                      </span>
+                      {m.isDone && (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 flex-shrink-0">
+                          ✓ CONCLUÍDA (+{m.prestige} PTS)
+                        </span>
+                      )}
+                      {m.isActive && (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse flex items-center gap-1 flex-shrink-0">
+                          ▶ EM ANDAMENTO
+                        </span>
+                      )}
+                      {m.isAvailable && (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 flex-shrink-0">
+                          💡 DISPONÍVEL
+                        </span>
+                      )}
+                      {m.isLocked && (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1 flex-shrink-0">
+                          🔒 BLOQUEADA
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-100 mb-1 leading-snug">
+                      {m.title}
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed mb-2">
+                      {m.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
+                    <span className="flex items-center gap-1 text-slate-300">
+                      📍 <strong className="text-emerald-400 font-medium">{m.npcName}</strong> ({m.room})
+                    </span>
+                    {m.pedagogyRef && (
+                      <span className="text-[10px] text-amber-300/80">
+                        📖 {m.pedagogyRef}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
