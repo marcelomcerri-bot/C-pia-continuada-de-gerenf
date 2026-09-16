@@ -36,6 +36,7 @@ import {
   Layers
 } from "lucide-react";
 import { playSound } from "../game/utils/audio";
+import { LiveGameplayCanvas } from "./LiveGameplayCanvas";
 
 export function getDisplayNickname(fullName: string): { nick: string; firstName: string; prefix?: string } {
   if (!fullName) return { nick: "Estudante", firstName: "Estudante" };
@@ -143,337 +144,7 @@ function StatBar({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Canvas Gameplay Live Spectator Viewport (Full Hospital Floorplan & Real NPCs)
-// ─────────────────────────────────────────────────────────────────────────────
-function LiveGameplayCanvas({ player }: { player: PlayerData }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animFrameRef = useRef<number | null>(null);
-
-  // Map real Phaser world coordinates (0..2432 x 0..1600) to Canvas (560 x 280)
-  // Map dimensions in GameScene: cols=76 * 32 = 2432, rows=50 * 32 = 1600
-  const realX = player.x ?? 400;
-  const realY = player.y ?? 300;
-
-  // Scale to canvas usable interior (left: 20, top: 20, width: 520, height: 240)
-  const normX = Math.max(25, Math.min(535, 20 + (realX / 2432) * 520));
-  const normY = Math.max(25, Math.min(255, 20 + (realY / 1600) * 240));
-
-  const posRef = useRef({
-    x: normX,
-    y: normY,
-    targetX: normX,
-    targetY: normY,
-    facing: player.facing || 'down',
-    isMoving: Boolean(player.isMoving),
-  });
-
-  useEffect(() => {
-    posRef.current.targetX = normX;
-    posRef.current.targetY = normY;
-    posRef.current.facing = player.facing || 'down';
-    posRef.current.isMoving = Boolean(player.isMoving);
-  }, [normX, normY, player.facing, player.isMoving]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let frameCount = 0;
-
-    // Real HUAP Hospital NPCs situated at their exact Phaser map coordinates
-    // Formula: canvasX = 20 + ((col * 32) / 2432) * 520, canvasY = 20 + ((row * 32) / 1600) * 240
-    const npcs = [
-      { id: 'ana', name: 'Ana Beatriz', role: 'Recepcionista', col: 6, row: 3, x: 61, y: 34, color: '#f43f5e' },
-      { id: 'carlos', name: 'Enf. Carlos', role: 'Pronto-Socorro', col: 18, row: 6, x: 143, y: 49, color: '#14b8a6' },
-      { id: 'helena', name: 'Dra. Helena', role: 'Farmacêutica', col: 31, row: 6, x: 232, y: 49, color: '#8b5cf6' },
-      { id: 'joaquim', name: 'Sr. Joaquim', role: 'Laboratório', col: 43, row: 6, x: 314, y: 49, color: '#06b6d4' },
-      { id: 'teresa', name: 'Dra. Teresa', role: 'Diretoria', col: 68, row: 6, x: 485, y: 49, color: '#f59e0b' },
-      { id: 'amanda', name: 'Téc. Amanda', role: 'CME', col: 6, row: 21, x: 61, y: 121, color: '#64748b' },
-      { id: 'maria', name: 'Dona Maria', role: 'Enfermaria', col: 30, row: 21, x: 225, y: 121, color: '#6366f1' },
-      { id: 'marcos', name: 'Dr. Marcos', role: 'UTI Adulto', col: 45, row: 21, x: 328, y: 121, color: '#3b82f6' },
-      { id: 'roberto', name: 'Enf. Roberto', role: 'Posto Enfermagem', col: 63, row: 21, x: 451, y: 121, color: '#10b981' },
-      { id: 'luciana', name: 'Dra. Luciana', role: 'Maternidade', col: 20, row: 36, x: 157, y: 193, color: '#ec4899' },
-    ];
-
-    const render = () => {
-      frameCount++;
-      const w = canvas.width;
-      const h = canvas.height;
-
-      // Distance remaining to lerp target
-      const dx = posRef.current.targetX - posRef.current.x;
-      const dy = posRef.current.targetY - posRef.current.y;
-      const dist = Math.hypot(dx, dy);
-
-      // Smooth position lerp
-      posRef.current.x += dx * 0.18;
-      posRef.current.y += dy * 0.18;
-
-      const px = posRef.current.x;
-      const py = posRef.current.y;
-      const facing = posRef.current.facing;
-      const isCurrentlyMoving = posRef.current.isMoving || dist > 1.5;
-
-      // ── 1. BACKGROUND CANVAS & MEDICAL GRID ──
-      ctx.fillStyle = "#030712";
-      ctx.fillRect(0, 0, w, h);
-
-      // Fine grid background
-      ctx.strokeStyle = "rgba(14, 165, 233, 0.05)";
-      ctx.lineWidth = 1;
-      for (let x = 0; x < w; x += 16) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-      }
-      for (let y = 0; y < h; y += 16) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      }
-
-      // ── 2. SECTORS DEFINITION & COLOR-CODED FLOORS ──
-      const sectors = [
-        // North Wing (y: 30, h: 48)
-        { name: 'Recepção', x: 34, y: 30, w: 68, h: 48, fill: 'rgba(244, 63, 94, 0.10)', border: '#f43f5e' },
-        { name: 'Pronto-Socorro', x: 109, y: 30, w: 75, h: 48, fill: 'rgba(239, 68, 68, 0.14)', border: '#ef4444' },
-        { name: 'Farmácia', x: 198, y: 30, w: 68, h: 48, fill: 'rgba(139, 92, 246, 0.10)', border: '#8b5cf6' },
-        { name: 'Laboratório', x: 280, y: 30, w: 75, h: 48, fill: 'rgba(6, 182, 212, 0.10)', border: '#06b6d4' },
-        { name: 'Radiologia', x: 369, y: 30, w: 68, h: 48, fill: 'rgba(168, 85, 247, 0.10)', border: '#a855f7' },
-        { name: 'Diretoria', x: 451, y: 30, w: 68, h: 48, fill: 'rgba(245, 158, 11, 0.10)', border: '#f59e0b' },
-
-        // Corridor 1 (y: 83, h: 12)
-        { name: 'Corredor Norte', x: 20, y: 83, w: 520, h: 12, fill: 'rgba(248, 250, 252, 0.04)', border: '#334155' },
-
-        // Middle Wing (y: 97, h: 48)
-        { name: 'CME', x: 34, y: 97, w: 55, h: 48, fill: 'rgba(100, 116, 139, 0.12)', border: '#64748b' },
-        { name: 'Copa / Nutrição', x: 102, y: 97, w: 68, h: 48, fill: 'rgba(234, 179, 8, 0.10)', border: '#eab308' },
-        { name: 'Enfermaria', x: 184, y: 97, w: 89, h: 48, fill: 'rgba(99, 102, 241, 0.12)', border: '#6366f1' },
-        { name: 'UTI Adulto', x: 286, y: 97, w: 89, h: 48, fill: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6' },
-        { name: 'Posto Enfermagem', x: 389, y: 97, w: 130, h: 48, fill: 'rgba(16, 185, 129, 0.12)', border: '#10b981' },
-
-        // Corridor 2 (y: 150, h: 12)
-        { name: 'Corredor Central', x: 20, y: 150, w: 520, h: 12, fill: 'rgba(248, 250, 252, 0.04)', border: '#334155' },
-
-        // South Wing (y: 164, h: 53)
-        { name: 'Ambulatório', x: 34, y: 164, w: 75, h: 53, fill: 'rgba(14, 165, 233, 0.10)', border: '#0ea5e9' },
-        { name: 'Maternidade', x: 122, y: 164, w: 75, h: 53, fill: 'rgba(236, 72, 153, 0.12)', border: '#ec4899' },
-        { name: 'Oncologia', x: 211, y: 164, w: 89, h: 53, fill: 'rgba(20, 184, 166, 0.10)', border: '#14b8a6' },
-        { name: 'Reabilitação', x: 314, y: 164, w: 82, h: 53, fill: 'rgba(234, 179, 8, 0.10)', border: '#eab308' },
-        { name: 'Saúde Mental', x: 410, y: 164, w: 109, h: 53, fill: 'rgba(168, 85, 247, 0.10)', border: '#a855f7' },
-
-        // Garden (y: 222, h: 22)
-        { name: 'Jardim Central', x: 20, y: 222, w: 520, h: 22, fill: 'rgba(34, 197, 94, 0.12)', border: '#22c55e' }
-      ];
-
-      // Draw all sectors with floor color & wall outline
-      sectors.forEach((sec) => {
-        // Check if student is inside this sector
-        const isCurrentSector = px >= sec.x && px <= sec.x + sec.w && py >= sec.y && py <= sec.y + sec.h;
-
-        ctx.fillStyle = isCurrentSector ? sec.fill.replace('0.10', '0.28').replace('0.12', '0.30').replace('0.14', '0.32').replace('0.15', '0.35') : sec.fill;
-        ctx.fillRect(sec.x, sec.y, sec.w, sec.h);
-
-        // Border outline
-        ctx.strokeStyle = isCurrentSector ? "#38bdf8" : sec.border;
-        ctx.lineWidth = isCurrentSector ? 2 : 1;
-        ctx.strokeRect(sec.x, sec.y, sec.w, sec.h);
-
-        // If student is inside, draw glowing active room outline
-        if (isCurrentSector) {
-          ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
-          ctx.lineWidth = 3;
-          ctx.strokeRect(sec.x - 1, sec.y - 1, sec.w + 2, sec.h + 2);
-        }
-
-        // Room Label
-        ctx.fillStyle = isCurrentSector ? "#ffffff" : "rgba(148, 163, 184, 0.85)";
-        ctx.font = isCurrentSector ? "bold 8px monospace" : "bold 7px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(sec.name.toUpperCase(), sec.x + sec.w / 2, sec.y + 11);
-      });
-
-      // ── 3. INTERNAL FURNITURE & ROOM PROPS FOR REALISM ──
-      // Reception desk
-      ctx.fillStyle = "rgba(244, 63, 94, 0.4)"; ctx.fillRect(45, 48, 20, 6);
-      // PS Emergency stretchers
-      ctx.fillStyle = "rgba(239, 68, 68, 0.5)"; ctx.fillRect(120, 50, 12, 6); ctx.fillRect(150, 50, 12, 6);
-      // Pharmacy Shelves
-      ctx.fillStyle = "rgba(139, 92, 246, 0.5)"; ctx.fillRect(205, 46, 24, 4); ctx.fillRect(205, 56, 24, 4);
-      // ICU Hospital Beds & Vital Sign Monitor
-      ctx.fillStyle = "rgba(59, 130, 246, 0.5)"; ctx.fillRect(295, 118, 14, 8); ctx.fillRect(340, 118, 14, 8);
-      // ECG Vital Monitor Pulse Dot
-      const ecgPulse = Math.sin(frameCount * 0.2) > 0.5 ? '#22c55e' : '#15803d';
-      ctx.fillStyle = ecgPulse; ctx.beginPath(); ctx.arc(358, 110, 2, 0, Math.PI * 2); ctx.fill();
-
-      // ── 4. DRAW ALL 10 REAL HOSPITAL NPCs AT EXACT MAP COORDINATES ──
-      npcs.forEach((npc, idx) => {
-        // Micro roaming movement
-        const npcOffset = Math.sin(frameCount * 0.04 + idx) * 4;
-        const nx = npc.x + (idx % 2 === 0 ? npcOffset : 0);
-        const ny = npc.y + (idx % 2 !== 0 ? npcOffset : 0);
-
-        // Shadow
-        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-        ctx.beginPath(); ctx.ellipse(nx, ny + 6, 6, 2.5, 0, 0, Math.PI * 2); ctx.fill();
-
-        // Body
-        ctx.fillStyle = npc.color;
-        ctx.fillRect(nx - 4, ny - 3, 8, 9);
-
-        // Head
-        ctx.fillStyle = "#fde047";
-        ctx.beginPath(); ctx.arc(nx, ny - 7, 4, 0, Math.PI * 2); ctx.fill();
-
-        // Role Indicator Dot
-        ctx.fillStyle = npc.color;
-        ctx.beginPath(); ctx.arc(nx, ny - 13, 2.5, 0, Math.PI * 2); ctx.fill();
-
-        // Name tag above NPC
-        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-        ctx.fillRect(nx - 26, ny - 20, 52, 9);
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 6.5px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(npc.name, nx, ny - 13);
-
-        // Check if student player is near NPC (interaction range)
-        const distToPlayer = Math.hypot(px - nx, py - ny);
-        if (distToPlayer < 35) {
-          // Connection beam to NPC
-          ctx.strokeStyle = "rgba(56, 189, 248, 0.7)";
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([2, 2]);
-          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(nx, ny); ctx.stroke();
-          ctx.setLineDash([]);
-
-          // Interaction halo
-          ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
-          ctx.beginPath(); ctx.arc(nx, ny, 12, 0, Math.PI * 2); ctx.fill();
-        }
-      });
-
-      // ── 5. DRAW STUDENT PLAYER CHARACTER (DYNAMIC DIRECTION & STEP ANIMATION) ──
-      const bounce = isCurrentlyMoving ? Math.sin(frameCount * 0.3) * 2.5 : Math.sin(frameCount * 0.1) * 1;
-
-      // Direction cone / Flashlight beam
-      ctx.save();
-      ctx.translate(px, py);
-      let angle = Math.PI / 2; // default down
-      if (facing === 'up') angle = -Math.PI / 2;
-      else if (facing === 'left') angle = Math.PI;
-      else if (facing === 'right') angle = 0;
-
-      ctx.fillStyle = "rgba(56, 189, 248, 0.15)";
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, 40, angle - 0.4, angle + 0.4);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-
-      // Foot dust particles when moving
-      if (isCurrentlyMoving && (frameCount % 6 < 3)) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-        ctx.beginPath(); ctx.arc(px - 5 + Math.random() * 10, py + 9, 2, 0, Math.PI * 2); ctx.fill();
-      }
-
-      // Shadow
-      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-      ctx.beginPath(); ctx.ellipse(px, py + 9, 8, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-
-      // Uniform (Teal Scrubs)
-      ctx.fillStyle = "#0d9488";
-      ctx.fillRect(px - 6, py - 3 + bounce, 12, 12);
-
-      // Head
-      ctx.fillStyle = "#fecdd3";
-      ctx.beginPath(); ctx.arc(px, py - 9 + bounce, 7, 0, Math.PI * 2); ctx.fill();
-
-      // Nurse Cap with Red Cross
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(px - 5, py - 15 + bounce, 10, 3.5);
-      ctx.fillStyle = "#e11d48";
-      ctx.fillRect(px - 1, py - 14 + bounce, 2, 2);
-
-      // Eyes based on facing direction
-      ctx.fillStyle = "#0f172a";
-      if (facing === 'down') {
-        ctx.fillRect(px - 3, py - 10 + bounce, 1.5, 2.5);
-        ctx.fillRect(px + 1.5, py - 10 + bounce, 1.5, 2.5);
-      } else if (facing === 'left') {
-        ctx.fillRect(px - 5, py - 10 + bounce, 1.5, 2.5);
-      } else if (facing === 'right') {
-        ctx.fillRect(px + 3.5, py - 10 + bounce, 1.5, 2.5);
-      }
-
-      // Stethoscope
-      ctx.strokeStyle = "#38bdf8";
-      ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.arc(px, py - 2 + bounce, 4, 0, Math.PI); ctx.stroke();
-
-      // Player Name Badge
-      const displayNickObj = getDisplayNickname(player.playerName);
-      const nickLabel = (displayNickObj.firstName.length > 12 ? displayNickObj.firstName.slice(0, 11) : displayNickObj.firstName).toUpperCase();
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.92)";
-      ctx.fillRect(px - 40, py - 28 + bounce, 80, 12);
-      ctx.strokeStyle = "#10b981";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px - 40, py - 28 + bounce, 80, 12);
-
-      ctx.fillStyle = "#34d399";
-      ctx.font = "bold 8px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(`👤 ${nickLabel}`, px, py - 19 + bounce);
-
-      // ── 6. ACTION THOUGHT BUBBLE OVER PLAYER HEAD ──
-      const actionText = player.lastActivity || "Explorando setores do hospital";
-      const bubbleW = Math.min(220, actionText.length * 6 + 18);
-      const bubbleX = Math.max(15, Math.min(w - bubbleW - 15, px - bubbleW / 2));
-      const bubbleY = Math.max(25, py - 46 + bounce);
-
-      ctx.fillStyle = "#0f172a";
-      ctx.strokeStyle = "#38bdf8";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(bubbleX, bubbleY, bubbleW, 16, 4);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = "#f8fafc";
-      ctx.font = "bold 8.5px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(actionText.slice(0, 32), bubbleX + bubbleW / 2, bubbleY + 11);
-
-      // ── 7. CCTV OVERLAY STAMPS ──
-      ctx.fillStyle = "rgba(225, 29, 72, 0.9)";
-      ctx.beginPath(); ctx.arc(w - 20, 14, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 8.5px monospace";
-      ctx.textAlign = "right";
-      ctx.fillText("LIVE ● PLANTA HUAP 1:1", w - 28, 17);
-
-      animFrameRef.current = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, [normX, normY, player.facing, player.isMoving, player.lastActivity, player.playerName]);
-
-  return (
-    <div className="relative w-full aspect-[2/1] bg-[#030712] rounded-xl overflow-hidden border border-teal-500/30 shadow-inner">
-      <canvas ref={canvasRef} width={560} height={280} className="w-full h-full block" />
-      <div className="absolute top-2 left-2 flex items-center gap-2 px-2 py-0.5 rounded bg-slate-900/80 border border-teal-500/40 text-[10px] font-mono text-teal-300">
-        <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
-        <span>RADAR HOSPITALAR HUAP ENFERMAGEM</span>
-      </div>
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] opacity-5 [background-size:12px_12px]" />
-    </div>
-  );
-}
+// LiveGameplayCanvas imported from ./LiveGameplayCanvas
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Demo / Simulation Initializer with Dynamic Scoring
@@ -1190,129 +861,164 @@ export function ProfessorView() {
         )}
 
         {/* ─────────────────────────────────────────────────────────────────── */}
-        {/* MAIN BROADCAST SCREEN (TRANSMISSÃO AO VIVO DO LÍDER)              */}
+        {/* MAIN BROADCAST SCREEN (CENTRO INTEGRADO DE TRANSMISSÃO - HUAP)    */}
         {/* ─────────────────────────────────────────────────────────────────── */}
-        <div className="bg-[#071325] border-2 border-teal-500/50 rounded-2xl p-4 shadow-2xl relative overflow-hidden">
-          {/* Header Status Tag */}
-          <div className="flex items-center justify-between pb-3 mb-3 border-b border-teal-500/30 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
+        <div className="bg-slate-900/95 border border-slate-700/70 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm">
+          {/* Command Center Precision Header */}
+          <div className="flex items-center justify-between px-4 py-3 bg-slate-950/80 border-b border-slate-800 flex-wrap gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               {transmittedPlayer ? (
-                <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-mono font-bold">
-                  <Crown className="w-4 h-4 text-amber-400 animate-bounce" />
-                  <span>
-                    {manualSelectedId
-                      ? "TRANSMITINDO — ALUNO SELECIONADO"
-                      : `🥇 1º LUGAR — TRANSMISSÃO AO VIVO DO LÍDER (${getDisplayNickname(transmittedPlayer.playerName).nick})`}
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-semibold tracking-wide">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>AO VIVO • 60 FPS</span>
                   </span>
-                </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold">
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>
+                      {manualSelectedId
+                        ? `FEED MANUAL: ${getDisplayNickname(transmittedPlayer.playerName).nick}`
+                        : `1º LUGAR NO RANKING: ${getDisplayNickname(transmittedPlayer.playerName).nick}`}
+                    </span>
+                  </span>
+                </div>
               ) : (
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold">
-                  <Video className="w-3.5 h-3.5" />
-                  <span>Aguardando Primeira Pontuação (Todos em Tela Estática)</span>
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono">
+                  <Video className="w-3.5 h-3.5 text-amber-400" />
+                  <span>MODO ESPERA • AGUARDANDO PRIMEIRA PONTUAÇÃO</span>
                 </span>
               )}
             </div>
 
             {transmittedPlayer && (
-              <div className="flex items-center gap-2 font-mono text-xs text-slate-300">
-                <Trophy className="w-4 h-4 text-amber-400" />
-                <span>Pontuação do Líder:</span>
-                <span className="text-base font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded border border-amber-500/40">
-                  {transmittedPlayer.score ?? transmittedPlayer.prestige ?? 0} PTS
-                </span>
+              <div className="flex items-center gap-3 font-mono text-xs text-slate-300">
+                <div className="flex items-center gap-1.5 bg-slate-800/80 border border-slate-700 px-3 py-1 rounded-md">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-slate-400 text-[11px]">PONTUAÇÃO ATUAL:</span>
+                  <span className="font-bold text-amber-300 text-sm">
+                    {transmittedPlayer.score ?? transmittedPlayer.prestige ?? 0} PTS
+                  </span>
+                </div>
+                {manualSelectedId && (
+                  <button
+                    onClick={() => setManualSelectedId(null)}
+                    className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                  >
+                    Voltar para o Líder
+                  </button>
+                )}
               </div>
             )}
           </div>
 
           {/* MAIN STREAM CONTENT */}
           {transmittedPlayer ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-              {/* Left / Central Game Visual Specator Feed */}
-              <div className="lg:col-span-2 flex flex-col gap-2">
+            <div className="p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              {/* Left / Central Architectural CAD Visual Specator Feed (8 cols on PC) */}
+              <div className="lg:col-span-8 flex flex-col gap-2.5">
                 <LiveGameplayCanvas player={transmittedPlayer} />
-                <div className="flex items-center justify-between text-xs font-mono text-slate-300 bg-[#050c18] px-3 py-2 rounded-xl border border-teal-500/20">
+                
+                {/* Clean Sub-Canvas Telemetry Dock */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono text-slate-300 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 truncate">
-                    <MapPin className="w-3.5 h-3.5 text-teal-400" />
-                    <span>Setor Atual: <strong>{transmittedPlayer.currentRoom || "Corredores"}</strong></span>
+                    <MapPin className="w-4 h-4 text-cyan-400 shrink-0" />
+                    <span className="truncate">
+                      Setor: <strong className="text-white">{transmittedPlayer.currentRoom || "Corredores"}</strong>
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Clock className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Turno: {formatTime(transmittedPlayer.shiftTime)}</span>
+                    <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Tempo de Turno: <strong className="text-white">{formatTime(transmittedPlayer.shiftTime)}</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2 justify-start sm:justify-end text-[11px] text-slate-400">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                    <span>LATÊNCIA: 0.0s (SINAL DIRETO)</span>
                   </div>
                 </div>
               </div>
 
-              {/* Right Telemetry Sidebar for Transmitted Student */}
-              <div className="bg-[#050e1a] border border-teal-500/30 rounded-xl p-3.5 flex flex-col justify-between gap-3">
+              {/* Right Clinical Telemetry Terminal (4 cols on PC) */}
+              <div className="lg:col-span-4 bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between gap-4">
                 <div>
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-                    <div>
-                      {(() => {
-                        const tNick = getDisplayNickname(transmittedPlayer.playerName);
-                        return (
-                          <div>
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className="text-[10px] font-mono font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40 flex items-center gap-1">
-                                <Crown className="w-3 h-3 text-amber-400" />
-                                <span>1º LUGAR NO RANKING</span>
+                  {/* Student Medical Record Header */}
+                  <div className="flex items-start justify-between border-b border-slate-800 pb-3 mb-3 gap-2">
+                    {(() => {
+                      const tNick = getDisplayNickname(transmittedPlayer.playerName);
+                      return (
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                            <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+                              CLASSIFICAÇÃO: #1
+                            </span>
+                            {tNick.prefix && (
+                              <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                                {tNick.prefix}
                               </span>
-                              {tNick.prefix && (
-                                <span className="text-[10px] font-mono text-teal-300 bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">
-                                  {tNick.prefix}
-                                </span>
-                              )}
-                            </div>
-                            <h2 className="text-base sm:text-xl font-extrabold text-white font-mono tracking-wide">
-                              {tNick.nick}
-                            </h2>
-                            <span className="text-[10px] font-mono text-teal-300">
-                              {transmittedPlayer.level || "Estudante"}
+                            )}
+                            <span className="text-[10px] font-mono text-slate-400">
+                              HUAP ENF
                             </span>
                           </div>
-                        );
-                      })()}
-                    </div>
-                    <div className="text-right">
+                          <h2 className="text-base sm:text-lg font-bold text-white tracking-wide truncate">
+                            {tNick.nick}
+                          </h2>
+                          <span className="text-xs font-mono text-cyan-400 block mt-0.5">
+                            {transmittedPlayer.level || "Internato de Enfermagem"}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                    <div className="text-right shrink-0">
                       <span className="text-[10px] text-slate-400 block font-mono">STATUS</span>
-                      <span className="text-xs font-bold text-emerald-400 font-mono">EM AÇÃO</span>
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        EM AÇÃO
+                      </span>
                     </div>
                   </div>
 
-                  {/* Stats Gauges */}
-                  <div className="space-y-3 font-mono text-xs">
+                  {/* Core Clinical Metrics */}
+                  <div className="space-y-3.5 font-mono text-xs">
                     <div>
-                      <span className="text-slate-400 block text-[10px] mb-1">PONTUAÇÃO ACUMULADA</span>
-                      <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
-                        <span className="text-lg font-bold text-amber-300 flex items-center gap-1.5">
-                          <Sparkles className="w-4 h-4 text-amber-400 animate-spin-slow" />
-                          {transmittedPlayer.score ?? transmittedPlayer.prestige ?? 0} PT
+                      <span className="text-slate-400 block text-[10px] mb-1 uppercase tracking-wider">
+                        Pontuação Clínica Acumulada
+                      </span>
+                      <div className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-lg p-3">
+                        <span className="text-xl font-bold text-amber-300 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-400" />
+                          {transmittedPlayer.score ?? transmittedPlayer.prestige ?? 0} <span className="text-xs text-amber-400/80 font-normal">PTS</span>
                         </span>
-                        <span className="text-[10px] text-amber-400">✅ {transmittedPlayer.completedMissions} Casos</span>
+                        <span className="text-xs text-slate-300 bg-slate-800 px-2.5 py-1 rounded border border-slate-700">
+                          🎯 {transmittedPlayer.completedMissions || 0} Casos Resolvidos
+                        </span>
                       </div>
                     </div>
 
                     <StatBar
                       value={transmittedPlayer.energy ?? 100}
-                      color="#2ecc71"
-                      label="ENERGIA (RECOMPOSIÇÃO COPA)"
+                      color="#10b981"
+                      label="DISPOSIÇÃO / ENERGIA"
                       display={`${Math.round(transmittedPlayer.energy ?? 100)}%`}
                     />
 
                     <StatBar
                       value={transmittedPlayer.stress ?? 0}
                       color={(transmittedPlayer.stress ?? 0) > 70 ? "#ef4444" : "#f59e0b"}
-                      label="NÍVEL DE ESTRESSE"
+                      label="NÍVEL DE ESTRESSE CLÍNICO"
                       display={`${Math.round(transmittedPlayer.stress ?? 0)}%`}
                     />
                   </div>
                 </div>
 
-                {/* Recent Decision Log */}
+                {/* Real-Time Clinical Activity Log */}
                 <div className="border-t border-slate-800 pt-3">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block mb-1.5">
-                    📋 ÚLTIMA AÇÃO GERENCIAL
-                  </span>
-                  <div className="p-2.5 rounded-lg bg-[#081729] border border-teal-500/30 text-xs text-teal-100 font-sans leading-relaxed">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                      Última Ação no Plantão
+                    </span>
+                    <span className="text-[9px] font-mono text-emerald-400">SINCRONIZADO</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 leading-relaxed font-sans">
                     {transmittedPlayer.lastActivity || "Explorando as dependências do HUAP"}
                   </div>
                 </div>
@@ -1320,18 +1026,18 @@ export function ProfessorView() {
             </div>
           ) : (
             /* AWAITING TOP SCORE STATIC SCREEN BANNER */
-            <div className="flex flex-col items-center justify-center p-8 text-center bg-[#050e1a] rounded-xl border border-slate-800 space-y-3 min-h-[220px]">
-              <div className="p-3 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400">
+            <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center bg-slate-950/60 space-y-3.5 min-h-[260px]">
+              <div className="p-3.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
                 <Video className="w-8 h-8" />
               </div>
               <h3 className="text-base font-bold text-white font-mono uppercase tracking-wide">
-                Nenhum jogador possui pontuação maior que zero no momento
+                Nenhum estudante pontuou ainda no plantão
               </h3>
-              <p className="text-xs text-slate-300 font-sans max-w-lg leading-relaxed">
-                Todos os alunos iniciam com <strong>0 Pontos</strong> em <strong>Tela Estática</strong>. Assim que um estudante responder questões clínicas, gerenciar crises ou concluir missões no hospital, sua gameplay será <strong>transmitida ao vivo automaticamente</strong> nesta tela principal.
+              <p className="text-xs text-slate-300 font-sans max-w-md leading-relaxed">
+                Todos os alunos iniciam com <strong>0 Pontos</strong> em tela estática. Assim que um estudante responder casos clínicos, tomar decisões de enfermagem ou resolver intercorrências, sua gameplay será <strong>transmitida automaticamente nesta tela</strong> sem qualquer atraso.
               </p>
-              <div className="text-[11px] font-mono text-teal-400 bg-teal-500/10 px-3 py-1 rounded-full border border-teal-400/30">
-                💡 Dica: Você também pode clicar no botão "Assistir" de qualquer aluno abaixo para transmitir sua tela manualmente.
+              <div className="text-[11px] font-mono text-cyan-400 bg-cyan-950/40 px-3.5 py-1.5 rounded-full border border-cyan-800/40">
+                💡 Você também pode clicar em "Assistir" em qualquer aluno no painel abaixo para fixar sua transmissão.
               </div>
             </div>
           )}
@@ -1364,69 +1070,63 @@ export function ProfessorView() {
                   <motion.div
                     key={p.playerId}
                     layout
-                    initial={{ opacity: 0, scale: 0.96 }}
+                    initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.96 }}
-                    className="relative flex flex-col border-2 overflow-hidden rounded-xl bg-[#07111e] shadow-xl min-h-[230px]"
-                    style={{ borderColor: isOnline ? color : "#334155" }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    className="relative flex flex-col border border-slate-800 hover:border-slate-700 overflow-hidden rounded-xl bg-slate-900/90 shadow-md transition-colors min-h-[220px]"
                   >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-3 py-2 bg-[#0a182b] border-b border-white/10 gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                        <div
-                          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                            isOnline ? "bg-emerald-400 animate-pulse" : "bg-slate-500"
+                    <div className="flex items-center justify-between px-3 py-2 bg-slate-950/90 border-b border-slate-800/80 gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            isOnline ? "bg-emerald-400" : "bg-slate-600"
                           }`}
+                          title={isOnline ? "Conectado" : "Desconectado"}
                         />
-                        <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">
+                        <span className="text-[10px] font-mono font-bold text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 shrink-0">
                           #{pRank || i + 2}
                         </span>
-                        <span className="text-white font-mono font-extrabold text-xs sm:text-sm truncate" title={p.playerName}>
+                        <span className="text-white font-semibold text-xs truncate" title={p.playerName}>
                           {pNickObj.nick}
                         </span>
                       </div>
-                      <span className="text-[9px] font-mono text-slate-300 bg-black/60 px-1.5 py-0.5 rounded border border-white/10 shrink-0">
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0">
                         {p.level || "Estudante"}
                       </span>
                     </div>
 
-                    {/* Static Camera Screen Snapshot Display */}
-                    <div className="flex-1 flex flex-col items-center justify-center p-3 text-center bg-[#040a12] relative">
-                      <span className="text-[9px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 mb-1.5">
-                        📷 TELA ESTÁTICA
-                      </span>
-
-                      <div className="text-xs font-mono font-bold text-teal-200 bg-teal-950/80 border border-teal-500/40 px-2.5 py-1 rounded-lg mb-1.5 shadow-sm max-w-full truncate" title={p.playerName}>
-                        👤 NICK: <span className="text-white">{pNickObj.nick}</span>
-                      </div>
-
-                      <div className="text-xl font-mono font-bold text-amber-300 flex items-center gap-1 my-0.5">
-                        <Award className="w-5 h-5 text-amber-400" />
-                        <span>{scoreVal} PTS</span>
-                      </div>
-
-                      <span className="text-xs text-slate-200 font-mono font-semibold mb-1">
-                        📍 {p.currentRoom || "Corredor"}
-                      </span>
-
-                      <p className="text-[11px] text-slate-300 font-sans max-w-xs bg-black/70 px-2.5 py-1 rounded border border-white/10 line-clamp-2">
-                        {p.lastActivity || "Nenhuma ação recente"}
-                      </p>
-                    </div>
-
-                    {/* Footer HUD & Manual Stream Action */}
-                    <div className="p-2.5 bg-[#050e1a] border-t border-white/10 flex flex-col gap-2">
-                      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                        <div>
-                          <span className="text-slate-400 block">ENERGIA</span>
-                          <span className="text-emerald-400 font-bold">{Math.round(p.energy ?? 100)}%</span>
+                    {/* Static Screen Snapshot Display */}
+                    <div className="flex-1 flex flex-col justify-between p-3.5 bg-slate-950/50">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-300 font-mono">
+                          <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <span className="truncate">{p.currentRoom || "Corredor Central"}</span>
                         </div>
-                        <div>
-                          <span className="text-slate-400 block">ESTRESSE</span>
-                          <span className="text-amber-400 font-bold">{Math.round(p.stress ?? 0)}%</span>
+                        <div className="text-sm font-mono font-bold text-amber-300 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                          <span>{scoreVal} PTS</span>
                         </div>
                       </div>
 
+                      <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800/80 text-[11px] text-slate-300 leading-relaxed font-sans min-h-[46px] line-clamp-2 mb-3">
+                        {p.lastActivity || "Em deslocamento pelo plantão..."}
+                      </div>
+
+                      {/* Mini Vitals Strip */}
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono pt-2 border-t border-slate-800/60 mb-3">
+                        <div>
+                          <span className="text-slate-400 block text-[9px]">ENERGIA</span>
+                          <span className="text-emerald-400 font-semibold">{Math.round(p.energy ?? 100)}%</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[9px]">ESTRESSE</span>
+                          <span className={(p.stress ?? 0) > 70 ? "text-rose-400 font-semibold" : "text-amber-400 font-semibold"}>
+                            {Math.round(p.stress ?? 0)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
                       <button
                         onClick={() => {
                           try {
@@ -1434,10 +1134,10 @@ export function ProfessorView() {
                           } catch {}
                           setManualSelectedId(p.playerId);
                         }}
-                        className="w-full py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-mono font-bold text-[11px] rounded-lg transition-all shadow flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                        className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 hover:text-white text-cyan-300 border border-slate-700/80 font-mono font-medium text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                       >
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Transmitir {pNickObj.firstName}</span>
+                        <Video className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Transmitir Tela</span>
                       </button>
                     </div>
                   </motion.div>
@@ -1450,11 +1150,11 @@ export function ProfessorView() {
         {/* ─────────────────────────────────────────────────────────────────── */}
         {/* RANKING TABLE SECTION (CLASSIFICAÇÃO GERAL DA TURMA)              */}
         {/* ─────────────────────────────────────────────────────────────────── */}
-        <div className="bg-[#071325] border-2 border-teal-500/40 rounded-2xl p-4 shadow-xl space-y-3">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
             <h2 className="text-xs sm:text-sm font-mono font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-400" />
-              <span>RANKING GERAL DA TURMA — AO VIVO ({activePool.length} ALUNOS)</span>
+              <span>CLASSIFICAÇÃO GERAL DA TURMA — AO VIVO ({activePool.length} ALUNOS)</span>
             </h2>
             <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
               Classificação dinâmica por pontuação acumulada
@@ -1465,13 +1165,13 @@ export function ProfessorView() {
             <table className="w-full text-left font-mono text-xs">
               <thead>
                 <tr className="border-b border-slate-800 text-slate-400 text-[10px] uppercase">
-                  <th className="py-2 px-3">Posição</th>
-                  <th className="py-2 px-3">Nick / Nome do Aluno</th>
-                  <th className="py-2 px-3">Nível</th>
-                  <th className="py-2 px-3">Setor Atual</th>
-                  <th className="py-2 px-3">Casos Resolvidos</th>
-                  <th className="py-2 px-3 text-right">Pontuação</th>
-                  <th className="py-2 px-3 text-center">Transmissão</th>
+                  <th className="py-2.5 px-3">Posição</th>
+                  <th className="py-2.5 px-3">Nick / Nome do Aluno</th>
+                  <th className="py-2.5 px-3">Nível</th>
+                  <th className="py-2.5 px-3">Setor Atual</th>
+                  <th className="py-2.5 px-3">Casos Resolvidos</th>
+                  <th className="py-2.5 px-3 text-right">Pontuação</th>
+                  <th className="py-2.5 px-3 text-center">Transmissão</th>
                 </tr>
               </thead>
               <tbody>
@@ -1490,7 +1190,7 @@ export function ProfessorView() {
                     return (
                       <tr
                         key={player.playerId}
-                        className={`border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors ${
+                        className={`border-b border-slate-800/60 hover:bg-slate-800/50 transition-colors ${
                           isLeader ? "bg-amber-500/10" : ""
                         }`}
                       >
@@ -1509,24 +1209,24 @@ export function ProfessorView() {
                         </td>
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-white text-sm">{nick}</span>
+                            <span className="font-semibold text-white text-sm">{nick}</span>
                             {prefix && <span className="text-[10px] text-slate-400">({prefix})</span>}
                             {isLeader && (
-                              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/40 font-bold">
+                              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-bold">
                                 👑 LÍDER DO TURNO
                               </span>
                             )}
                           </div>
                         </td>
                         <td className="py-2.5 px-3 text-slate-300">{player.level || "Estudante"}</td>
-                        <td className="py-2.5 px-3 text-teal-300">{player.currentRoom || "Corredor"}</td>
+                        <td className="py-2.5 px-3 text-cyan-300">{player.currentRoom || "Corredor"}</td>
                         <td className="py-2.5 px-3 text-emerald-400 font-bold">{player.completedMissions || 0}</td>
                         <td className="py-2.5 px-3 text-right font-extrabold text-amber-300 text-sm">
                           {player.score ?? player.prestige ?? 0} PTS
                         </td>
                         <td className="py-2.5 px-3 text-center">
                           {isTransmitted ? (
-                            <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-1 rounded border border-rose-500/40 font-bold inline-block">
+                            <span className="text-[10px] bg-rose-500/15 text-rose-300 px-2 py-1 rounded border border-rose-500/30 font-bold inline-block">
                               🔴 TRANSMITINDO
                             </span>
                           ) : (
@@ -1537,7 +1237,7 @@ export function ProfessorView() {
                                 } catch {}
                                 setManualSelectedId(player.playerId);
                               }}
-                              className="text-[10px] bg-teal-600 hover:bg-teal-500 text-white px-2.5 py-1 rounded font-bold cursor-pointer transition-all active:scale-95"
+                              className="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 px-2.5 py-1 rounded font-bold cursor-pointer transition-all active:scale-95"
                             >
                               Assistir
                             </button>

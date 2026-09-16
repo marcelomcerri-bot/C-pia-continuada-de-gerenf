@@ -22,13 +22,9 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private interactionBubble: Phaser.GameObjects.Text | null = null;
   private interactionBubbleTimer = 0;
 
-  private lastX = 0;
-  private lastY = 0;
+  private lastDistToNode = 99999;
   private stuckTimer = 0;
-  private readonly STUCK_THRESHOLD = 800;
-
-  private slideHorizontalTimer = 0;
-  private slideVerticalTimer = 0;
+  private readonly STUCK_THRESHOLD = 650;
 
   private currentPath: { col: number; row: number }[] = [];
   private pathIdx = 0;
@@ -55,9 +51,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.setFrame(0);
     this.setRotation(0);
     this.setAngle(0);
-
-    this.lastX = x;
-    this.lastY = y;
 
     const roleColors: Record<string, string> = {
       doctor: '#3498db', nurse: '#2ecc71', technician: '#9b59b6',
@@ -156,16 +149,26 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    if (this.slideHorizontalTimer > 0) {
-      this.slideHorizontalTimer -= delta;
-      if (this.slideHorizontalTimer < 0) this.slideHorizontalTimer = 0;
-    }
-    if (this.slideVerticalTimer > 0) {
-      this.slideVerticalTimer -= delta;
-      if (this.slideVerticalTimer < 0) this.slideVerticalTimer = 0;
+    // Soft separation to prevent overlapping with other visible NPCs
+    const npcs = (this.scene as any).npcs as NPC[] | undefined;
+    if (npcs && this.visible && this.def.role !== 'patient') {
+      for (const other of npcs) {
+        if (other === this || !other.visible || other.def.role === 'patient') continue;
+        const odx = this.x - other.x;
+        const ody = this.y - other.y;
+        const distSq = odx * odx + ody * ody;
+        const minSpacing = 28; // minimum spacing between character centers
+        if (distSq < minSpacing * minSpacing && distSq > 0.001) {
+          const dist = Math.sqrt(distSq);
+          const push = (minSpacing - dist) / minSpacing;
+          const factor = 30 * (delta / 1000);
+          this.x += (odx / dist) * push * factor;
+          this.y += (ody / dist) * push * factor;
+        }
+      }
     }
 
-    // NPCs with 1 or fewer patrol points stand still at their designated spot — no random wander to avoid hitting walls
+    // NPCs with 1 or fewer patrol points stand still at their designated spot — no random wander
     if (this.def.patrolPoints.length <= 1) {
       (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
       this.updateFrame(delta, false);
@@ -200,6 +203,12 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     if (this.currentPath.length === 0) {
       this.recalculatePath();
+      if (this.currentPath.length === 0) {
+        (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+        this.updateFrame(delta, false);
+        this.updateLabels();
+        return;
+      }
     }
 
     const nextTile = this.currentPath[this.pathIdx];
@@ -212,36 +221,24 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     const ty = (nextTile.row + 0.5) * TILE_SIZE;
     const dx = tx - this.x;
     const dy = ty - this.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.hypot(dx, dy);
 
     const isFinalNode = this.pathIdx === this.currentPath.length - 1;
-    const arrivalThreshold = isFinalNode ? 2.5 : 5.0;
-
-    const expectedDist = (NPC_SPEED / 1000) * delta;
-    const movedDelta = Math.hypot(this.x - this.lastX, this.y - this.lastY);
-    if (movedDelta < expectedDist * 0.45 && dist > arrivalThreshold) {
-      this.stuckTimer += delta;
-      if (this.stuckTimer >= this.STUCK_THRESHOLD) {
-        this.stuckTimer = 0;
-        this.waypointIdx = (this.waypointIdx + 1) % this.def.patrolPoints.length;
-        this.lastX = this.x; this.lastY = this.y;
-        this.recalculatePath();
-        return;
-      }
-    } else {
-      this.stuckTimer = 0;
-    }
-    this.lastX = this.x;
-    this.lastY = this.y;
+    const arrivalThreshold = isFinalNode ? 3.5 : 5.5;
 
     if (dist < arrivalThreshold) {
       if (!isFinalNode) {
         this.pathIdx++;
+        this.stuckTimer = 0;
+        this.lastDistToNode = 99999;
       } else {
         (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
-        this.setPosition(tx, ty);
         this.isWaiting = true;
-        this.waitTimer = Phaser.Math.Between(2000, 5000);
+        this.waitTimer = Phaser.Math.Between(2500, 5000);
+        this.currentPath = [];
+        this.pathIdx = 0;
+        this.stuckTimer = 0;
+        this.lastDistToNode = 99999;
 
         let facedPoint: any = null;
         if (this.scene) {
@@ -263,9 +260,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
           }
         }
 
-        if (!facedPoint) {
-          // Keep current direction
-        } else {
+        if (facedPoint) {
           this.interactionBubble?.setVisible(false);
         }
         this.updateFrame(delta, false);
@@ -273,34 +268,32 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     } else {
       const body = this.body as Phaser.Physics.Arcade.Body;
 
-      if (body.blocked.left || body.blocked.right) {
-        this.slideHorizontalTimer = 350;
+      // Obstacle detection: if body blocked against wall/prop or not making progress
+      const isBlocked = body.blocked.left || body.blocked.right || body.blocked.up || body.blocked.down;
+      if (isBlocked || dist >= this.lastDistToNode - 0.2) {
+        this.stuckTimer += delta;
+      } else {
+        this.stuckTimer = 0;
       }
-      if (body.blocked.up || body.blocked.down) {
-        this.slideVerticalTimer = 350;
+      this.lastDistToNode = dist;
+
+      if (this.stuckTimer >= this.STUCK_THRESHOLD) {
+        // Blocked for too long: stop, advance waypoint, and pause briefly rather than walking into wall
+        body.setVelocity(0, 0);
+        this.stuckTimer = 0;
+        this.lastDistToNode = 99999;
+        this.isWaiting = true;
+        this.waitTimer = 1800;
+        this.waypointIdx = (this.waypointIdx + 1) % this.def.patrolPoints.length;
+        this.currentPath = [];
+        this.pathIdx = 0;
+        this.updateFrame(delta, false);
+        this.updateLabels();
+        return;
       }
 
-      if (Math.abs(dy) < 6) {
-        this.slideHorizontalTimer = 0;
-      }
-      if (Math.abs(dx) < 6) {
-        this.slideVerticalTimer = 0;
-      }
-
-      let vx = (dx / dist) * NPC_SPEED;
-      let vy = (dy / dist) * NPC_SPEED;
-
-      if (this.slideHorizontalTimer > 0 && this.slideVerticalTimer > 0) {
-        vx = 0;
-        vy = 0;
-      } else if (this.slideHorizontalTimer > 0) {
-        vx = 0;
-        vy = dy > 0 ? NPC_SPEED : -NPC_SPEED;
-      } else if (this.slideVerticalTimer > 0) {
-        vy = 0;
-        vx = dx > 0 ? NPC_SPEED : -NPC_SPEED;
-      }
-
+      const vx = (dx / dist) * NPC_SPEED;
+      const vy = (dy / dist) * NPC_SPEED;
       body.setVelocity(vx, vy);
 
       this.direction = AnimationController.getDirectionFromVelocity(vx, vy, this.direction);
@@ -409,21 +402,50 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   }
 
   private recalculatePath() {
+    if (this.def.patrolPoints.length <= 1) {
+      this.currentPath = [];
+      this.pathIdx = 0;
+      return;
+    }
+
     const startCol = Math.floor(this.x / TILE_SIZE);
     const startRow = Math.floor(this.y / TILE_SIZE);
     const target = this.def.patrolPoints[this.waypointIdx];
+    if (!target) return;
+
     const mapData = (this.scene as any).mapData;
+    const solidPropTiles = (this.scene as any).solidPropTiles as Set<string> | undefined;
 
     if (mapData) {
-      const p = findPath(startCol, startRow, target.col, target.row, mapData);
+      const p = findPath(startCol, startRow, target.col, target.row, mapData, solidPropTiles);
       if (p && p.length > 0) {
-        this.currentPath = p;
+        // If first tile in path is already our current tile, start at the next tile
+        if (p.length > 1) {
+          const firstTx = (p[0].col + 0.5) * TILE_SIZE;
+          const firstTy = (p[0].row + 0.5) * TILE_SIZE;
+          if (Math.hypot(firstTx - this.x, firstTy - this.y) < 8) {
+            this.currentPath = p.slice(1);
+          } else {
+            this.currentPath = p;
+          }
+        } else {
+          this.currentPath = p;
+        }
         this.pathIdx = 0;
+        this.lastDistToNode = 99999;
         return;
       }
     }
-    this.currentPath = [{ col: target.col, row: target.row }];
+
+    // Pathfinding could not find a valid route — do NOT walk into walls or teleport!
+    this.currentPath = [];
     this.pathIdx = 0;
+    this.isWaiting = true;
+    this.waitTimer = 2000;
+    this.waypointIdx = (this.waypointIdx + 1) % this.def.patrolPoints.length;
+    if (this.body) {
+      (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+    }
   }
 
   destroy(fromScene?: boolean) {
@@ -449,25 +471,60 @@ function findPath(
   startRow: number,
   endCol: number,
   endRow: number,
-  mapData: number[][]
+  mapData: number[][],
+  solidPropTiles?: Set<string>
 ): { col: number; row: number }[] | null {
   if (startCol === endCol && startRow === endRow) {
     return [{ col: endCol, row: endRow }];
   }
 
+  // Ensure start tile is within bounds and walkable
+  let sc = Math.max(0, Math.min(MAP_COLS - 1, startCol));
+  let sr = Math.max(0, Math.min(MAP_ROWS - 1, startRow));
+  if (mapData[sr][sc] === TILE_ID.WALL || mapData[sr][sc] === TILE_ID.GARDEN) {
+    const neighbors = [
+      { c: sc, r: sr - 1 }, { c: sc, r: sr + 1 }, { c: sc - 1, r: sr }, { c: sc + 1, r: sr }
+    ];
+    for (const n of neighbors) {
+      if (n.r >= 0 && n.r < MAP_ROWS && n.c >= 0 && n.c < MAP_COLS) {
+        if (mapData[n.r][n.c] !== TILE_ID.WALL && mapData[n.r][n.c] !== TILE_ID.GARDEN) {
+          sc = n.c;
+          sr = n.r;
+          break;
+        }
+      }
+    }
+  }
+
+  // Ensure end tile is within bounds and walkable
+  let ec = Math.max(0, Math.min(MAP_COLS - 1, endCol));
+  let er = Math.max(0, Math.min(MAP_ROWS - 1, endRow));
+  if (mapData[er][ec] === TILE_ID.WALL || mapData[er][ec] === TILE_ID.GARDEN) {
+    const neighbors = [
+      { c: ec, r: er - 1 }, { c: ec, r: er + 1 }, { c: ec - 1, r: er }, { c: ec + 1, r: er }
+    ];
+    for (const n of neighbors) {
+      if (n.r >= 0 && n.r < MAP_ROWS && n.c >= 0 && n.c < MAP_COLS) {
+        if (mapData[n.r][n.c] !== TILE_ID.WALL && mapData[n.r][n.c] !== TILE_ID.GARDEN) {
+          ec = n.c;
+          er = n.r;
+          break;
+        }
+      }
+    }
+  }
+
   const queue: { col: number; row: number; path: { col: number; row: number }[] }[] = [];
   const visited: boolean[][] = Array.from({ length: MAP_ROWS }, () => Array(MAP_COLS).fill(false));
 
-  queue.push({ col: startCol, row: startRow, path: [] });
-  if (startRow >= 0 && startRow < MAP_ROWS && startCol >= 0 && startCol < MAP_COLS) {
-    visited[startRow][startCol] = true;
-  }
+  queue.push({ col: sc, row: sr, path: [] });
+  visited[sr][sc] = true;
 
   while (queue.length > 0) {
     const curr = queue.shift()!;
 
-    if (curr.col === endCol && curr.row === endRow) {
-      return [...curr.path, { col: endCol, row: endRow }];
+    if (curr.col === ec && curr.row === er) {
+      return [...curr.path, { col: ec, row: er }];
     }
 
     const dirs = [
@@ -486,7 +543,8 @@ function findPath(
           visited[nr][nc] = true;
 
           const tile = mapData[nr][nc];
-          const isWalkable = tile !== TILE_ID.WALL && tile !== TILE_ID.GARDEN;
+          const isPropBlocked = solidPropTiles && solidPropTiles.has(`${nc},${nr}`) && !(nc === ec && nr === er);
+          const isWalkable = tile !== TILE_ID.WALL && tile !== TILE_ID.GARDEN && !isPropBlocked;
 
           if (isWalkable) {
             queue.push({

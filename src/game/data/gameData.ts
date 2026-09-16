@@ -3096,10 +3096,10 @@ export const NPC_DEFS: NPCDef[] = [
     title: 'Tec. Enfermagem (Maternidade)',
     role: 'technician',
     spriteKey: 'npc_nurse_f', // Using fallback string
-    startCol: 27, startRow: 34,
+    startCol: 22, startRow: 34,
     bodyColor: 0xffffff, coatColor: 0x86efac, hairColor: 0x3f2a14, skinColor: 0x8b5a2b,
-    patrolPoints: [{ col: 27, row: 34 }, { col: 21, row: 34 }],
-    schedule: [{ hour: 7, col: 27, row: 34 }],
+    patrolPoints: [{ col: 22, row: 34 }, { col: 25, row: 34 }, { col: 25, row: 36 }, { col: 22, row: 36 }],
+    schedule: [{ hour: 7, col: 22, row: 34 }],
     missionIds: [],
     dialogues: [{
       id: 'idle',
@@ -3179,10 +3179,10 @@ export const NPC_DEFS: NPCDef[] = [
     title: 'Plantonista Geral',
     role: 'doctor',
     spriteKey: 'npc_roberto',
-    startCol: 36, startRow: 23,
+    startCol: 34, startRow: 23,
     bodyColor: 0x1e3a8a, coatColor: 0xffffff, hairColor: 0xd97706, skinColor: 0xfce2c4,
-    patrolPoints: [{ col: 36, row: 23 }, { col: 38, row: 23 }, { col: 38, row: 21 }],
-    schedule: [{ hour: 8, col: 36, row: 23 }],
+    patrolPoints: [{ col: 34, row: 23 }, { col: 28, row: 23 }, { col: 28, row: 20 }, { col: 34, row: 20 }],
+    schedule: [{ hour: 8, col: 34, row: 23 }],
     missionIds: [],
     dialogues: [{
       id: 'idle',
@@ -3262,10 +3262,10 @@ export const NPC_DEFS: NPCDef[] = [
     title: 'Auxiliar de Limpeza',
     role: 'other',
     spriteKey: 'npc_cleaner',
-    startCol: 20, startRow: 14,
+    startCol: 10, startRow: 14,
     bodyColor: 0x475569, coatColor: 0x475569, hairColor: 0x4b5563, skinColor: 0xf5c5a3,
-    patrolPoints: [{ col: 10, row: 14 }, { col: 40, row: 14 }, { col: 60, row: 15 }, { col: 10, row: 15 }],
-    schedule: [{ hour: 6, col: 20, row: 14 }],
+    patrolPoints: [{ col: 10, row: 14 }, { col: 30, row: 14 }, { col: 30, row: 15 }, { col: 10, row: 15 }],
+    schedule: [{ hour: 6, col: 10, row: 14 }],
     missionIds: [],
     dialogues: [{
       id: 'idle',
@@ -3279,10 +3279,10 @@ export const NPC_DEFS: NPCDef[] = [
     title: 'Estagiário de Enfermagem',
     role: 'other',
     spriteKey: 'npc_tiago',
-    startCol: 36, startRow: 20,
+    startCol: 32, startRow: 19,
     bodyColor: 0x0f172a, coatColor: 0x0284c7, hairColor: 0x3b2314, skinColor: 0xd4a574,
-    patrolPoints: [{ col: 36, row: 20 }, { col: 40, row: 20 }],
-    schedule: [{ hour: 8, col: 36, row: 20 }],
+    patrolPoints: [{ col: 32, row: 19 }, { col: 26, row: 19 }, { col: 26, row: 23 }, { col: 32, row: 23 }],
+    schedule: [{ hour: 8, col: 32, row: 19 }],
     missionIds: [],
     dialogues: [{
       id: 'idle',
@@ -3396,10 +3396,10 @@ export const NPC_DEFS: NPCDef[] = [
     title: 'Enfermeiro Centro Cirúrgico',
     role: 'nurse',
     spriteKey: 'npc_nurse_m',
-    startCol: 8, startRow: 23,
+    startCol: 7, startRow: 22,
     bodyColor: 0xffffff, coatColor: 0x0ea5e9, hairColor: 0x000000, skinColor: 0x8d5524,
-    patrolPoints: [{ col: 8, row: 23 }, { col: 12, row: 23 }],
-    schedule: [{ hour: 6, col: 8, row: 23 }],
+    patrolPoints: [{ col: 7, row: 22 }, { col: 4, row: 22 }, { col: 4, row: 24 }, { col: 7, row: 24 }],
+    schedule: [{ hour: 6, col: 7, row: 22 }],
     missionIds: [],
     dialogues: [{
       id: 'idle',
@@ -3496,7 +3496,7 @@ export const NPC_DEFS: NPCDef[] = [
     spriteKey: 'npc_tech_f',
     startCol: 34, startRow: 5,
     bodyColor: 0xffffff, coatColor: 0xfcd34d, hairColor: 0x3f2a14, skinColor: 0xf5c5a3,
-    patrolPoints: [{ col: 34, row: 5 }, { col: 38, row: 5 }],
+    patrolPoints: [{ col: 34, row: 5 }, { col: 31, row: 5 }, { col: 31, row: 8 }, { col: 34, row: 8 }],
     schedule: [{ hour: 8, col: 34, row: 5 }],
     missionIds: [],
     dialogues: [{
@@ -3584,12 +3584,12 @@ export const NPC_DEFS: NPCDef[] = [
     title: 'Mãe',
     role: 'other',
     spriteKey: 'npc_laura',
-    startCol: 36, startRow: 8,
+    startCol: 18, startRow: 33,
     bodyColor: 0x3498db, coatColor: 0x85c1e9, hairColor: 0x2c3e50, skinColor: 0xffceb4,
     patrolPoints: [
-      { col: 36, row: 8 }, { col: 33, row: 11 }, { col: 28, row: 6 }
+      { col: 18, row: 33 }, { col: 18, row: 35 }
     ],
-    schedule: [],
+    schedule: [{ hour: 9, col: 18, row: 33 }],
     missionIds: [],
     dialogues: [{ id: 'idle', text: ['O berçário ficou lindo! Minha bebê está bem cuidada.'], choices: [{text: 'Que bom!'}] }]
   },
@@ -3599,12 +3599,12 @@ export const NPC_DEFS: NPCDef[] = [
     title: 'Visitante (Pai)',
     role: 'other',
     spriteKey: 'npc_felipe',
-    startCol: 44, startRow: 8,
+    startCol: 17, startRow: 38,
     bodyColor: 0x7f8c8d, coatColor: 0x95a5a6, hairColor: 0x34495e, skinColor: 0xe0ac69,
     patrolPoints: [
-      { col: 44, row: 8 }, { col: 44, row: 12 }, { col: 48, row: 10 }
+      { col: 17, row: 38 }, { col: 19, row: 38 }
     ],
-    schedule: [],
+    schedule: [{ hour: 10, col: 17, row: 38 }],
     missionIds: [],
     dialogues: [{ id: 'idle', text: ['Estou olhando pelos vidros da UTI Neonatal. Quanta tecnologia!', 'Mas o ambiente está mais humano.'], choices: [{text: 'Essa era a ideia.'}] }]
   },

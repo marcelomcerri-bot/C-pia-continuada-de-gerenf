@@ -51,6 +51,7 @@ export class GameScene extends Phaser.Scene {
   
   private ambientGfx!: Phaser.GameObjects.Graphics;
   private propColliders: Phaser.Physics.Arcade.StaticGroup | null = null;
+  public solidPropTiles: Set<string> = new Set();
   public interactionPoints: Array<{ x: number; y: number; type: 'work' | 'sit' | 'inspect' | 'rest' }> = [];
 
   constructor() { super({ key: SCENES.GAME }); }
@@ -435,6 +436,19 @@ export class GameScene extends Phaser.Scene {
     sb.halfWidth = w / 2;
     sb.halfHeight = h / 2;
     sb.updateCenter();
+
+    // Register covered tiles in solidPropTiles so NPC pathfinding navigates cleanly around furniture
+    const c0 = Math.floor(bx / TILE_SIZE);
+    const c1 = Math.floor((bx + w - 1) / TILE_SIZE);
+    const r0 = Math.floor(by / TILE_SIZE);
+    const r1 = Math.floor((by + h - 1) / TILE_SIZE);
+    for (let r = r0; r <= r1; r++) {
+      for (let c = c0; c <= c1; c++) {
+        if (!this.isDoorGapTile(r, c)) {
+          this.solidPropTiles.add(`${c},${r}`);
+        }
+      }
+    }
   }
 
   // Draw enhanced props
@@ -1861,6 +1875,14 @@ export class GameScene extends Phaser.Scene {
       }
       npc.updateMissionStatus(this.state);
       this.npcs.push(npc);
+    }
+
+    // Add physics collision between active, visible NPCs so they never walk through or overlap each other
+    const activeNpcs = this.npcs.filter(n => n.def.role !== 'patient');
+    for (let i = 0; i < activeNpcs.length; i++) {
+      for (let j = i + 1; j < activeNpcs.length; j++) {
+        this.physics.add.collider(activeNpcs[i], activeNpcs[j]);
+      }
     }
   }
 
