@@ -121,10 +121,11 @@ export class MenuScene extends Phaser.Scene {
       }
 
       if (subContainer) {
-        subContainer.y = tY + 44;
+        const sY = tY + 34;
+        subContainer.y = sY;
         bobTween2 = this.tweens.add({
           targets: subContainer,
-          y: tY + 47,
+          y: sY + 3,
           duration: 3000,
           yoyo: true,
           repeat: -1,
@@ -141,35 +142,32 @@ export class MenuScene extends Phaser.Scene {
       const cx = W / 2;
       const cy = H / 2;
 
-      // 1. Position & cover scale background (with cinematic Ken Burns breathing & gentle sway)
+      // 1. Position & cover scale background centered (100% of original image visible, zero black bars)
       if (bgKey) {
-        // Shift down by 105px to reveal clear sky at top and keep the statue's face completely unobstructed
-        const shiftedCy = cy + 105;
         if (!bg) {
-          bg = this.add.image(cx, shiftedCy, bgKey).setOrigin(0.5).setDepth(0);
+          bg = this.add.image(cx, cy, bgKey).setOrigin(0.5).setDepth(0);
           
           const scaleX = W / bg.width;
           const scaleY = H / bg.height;
           const baseScale = Math.max(scaleX, scaleY);
           
           // Cinematic camera fade and zoom-in on load
-          bg.setScale(baseScale * 1.05);
-          bg.setPosition(cx - 3, shiftedCy - 2);
+          bg.setScale(baseScale * 1.04);
+          bg.setPosition(cx, cy);
           this.tweens.add({
             targets: bg,
             scale: baseScale,
             x: cx,
-            y: shiftedCy,
-            duration: 3000,
+            y: cy,
+            duration: 2500,
             ease: 'Power2.easeOut',
             onComplete: () => {
               if (!bg) return;
-              // Initiate a persistent, extremely soothing camera "breathing" and sways (drift)
               this.tweens.add({
                 targets: bg,
-                scale: baseScale * 1.03, // gentle scale breath
-                x: cx + 6,               // horizontal drift sway
-                y: shiftedCy + 4,        // vertical drift sway
+                scale: baseScale * 1.02,
+                x: cx + 4,
+                y: cy + 2,
                 duration: 9000,
                 yoyo: true,
                 repeat: -1,
@@ -178,9 +176,8 @@ export class MenuScene extends Phaser.Scene {
             }
           });
         } else {
-          // If resizing, kill any stale tweens, update to new scale and restart sways
           this.tweens.killTweensOf(bg);
-          bg.setPosition(cx, shiftedCy);
+          bg.setPosition(cx, cy);
           const scaleX = W / bg.width;
           const scaleY = H / bg.height;
           const baseScale = Math.max(scaleX, scaleY);
@@ -188,9 +185,9 @@ export class MenuScene extends Phaser.Scene {
 
           this.tweens.add({
             targets: bg,
-            scale: baseScale * 1.03,
-            x: cx + 6,
-            y: shiftedCy + 4,
+            scale: baseScale * 1.02,
+            x: cx + 4,
+            y: cy + 2,
             duration: 9000,
             yoyo: true,
             repeat: -1,
@@ -199,57 +196,49 @@ export class MenuScene extends Phaser.Scene {
         }
       }
 
-      // 2. Clear & Redraw vertical dark header gradient (for perfect text readability in the sky only)
-      if (!gradient) {
-        gradient = this.add.graphics().setDepth(1);
+      // 2. Clear overlays so 100% of the original art, colors and space are shown with no black overlays
+      if (gradient) {
+        gradient.clear();
       }
-      gradient.clear();
-      gradient.fillGradientStyle(0x060f1c, 0x060f1c, 0x060f1c, 0x060f1c, 0.88, 0.88, 0.0, 0.0);
-      gradient.fillRect(0, 0, W, 115);
-
-      // 3. Clear & Redraw vignette overlay
-      if (!vignette) {
-        vignette = this.add.graphics().setDepth(1);
+      if (vignette) {
+        vignette.clear();
       }
-      vignette.clear();
-      vignette.fillStyle(0x000000, 0.15);
-      vignette.fillRect(0, 0, W, H);
 
-      // 4. Position & configure main title text (comfortably up in the night sky)
-      const titleY = 36;
+      // 3. Position & configure main title text (comfortably up in the night sky)
+      const titleY = 32;
       if (!title) {
         title = this.add.text(cx, titleY, 'GESTOR ENF', {
           fontFamily: "'Press Start 2P', monospace",
-          fontSize: '38px',
+          fontSize: '36px',
           color: '#ffffff',
         }).setOrigin(0.5).setDepth(4);
-        title.setShadow(3, 3, '#000000', 5, true, true);
+        title.setShadow(3, 3, '#000000', 4, true, true);
       } else {
         title.setPosition(cx, titleY);
       }
 
-      // 5. Position & configure modern rounded capsule subtitle badge (comfortably in the sky, above the building)
-      const subY = titleY + 44;
+      // 4. Subtitle badge in the open night sky, well above the pediment and statue's face
+      const subY = titleY + 34;
       if (!subContainer) {
         subContainer = this.add.container(cx, subY).setDepth(4);
         
         const subTextStr = 'Simulador de Gerência de Enfermagem II';
         const subText = this.add.text(0, 0, subTextStr, {
           fontFamily: "'Segoe UI', Roboto, system-ui, -apple-system, sans-serif",
-          fontSize: '16px',
-          color: '#ffffff',
+          fontSize: '15px',
+          color: '#5eead4',
           fontStyle: 'bold'
         }).setOrigin(0.5);
+        subText.setShadow(1.5, 1.5, '#000000', 4, true, true);
 
-        // Safe defensive minimums to prevent squishing if fonts are still loading
-        const pillW = Math.max(360, subText.width + 36);
-        const pillH = 34;
+        const pillW = Math.max(340, subText.width + 24);
+        const pillH = 28;
 
         const bgPill = this.add.graphics();
-        bgPill.fillStyle(0x0b1322, 0.92);
-        bgPill.lineStyle(1.5, 0x14b8a6, 0.9);
-        bgPill.fillRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, pillH / 2);
-        bgPill.strokeRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, pillH / 2);
+        bgPill.fillStyle(0x0a192f, 0.4);
+        bgPill.lineStyle(1, 0x14b8a6, 0.6);
+        bgPill.fillRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, 14);
+        bgPill.strokeRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, 14);
 
         subContainer.add(bgPill);
         subContainer.add(subText);
