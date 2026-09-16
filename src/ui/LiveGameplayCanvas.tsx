@@ -79,11 +79,12 @@ interface StaffDef {
 }
 
 const HUAP_STAFF_MEMBERS: StaffDef[] = [
+  // North Wing (Recepção, PS, Farmácia, Lab, Radiologia, Diretoria)
   {
     id: 'ana',
     name: 'Ana Beatriz',
-    role: 'Recepção',
-    col: 6, row: 6,
+    role: 'Recepção Central',
+    col: 6, row: 5,
     config: {
       skin: '#f5c5a3',
       coat: '#0284c7',
@@ -97,9 +98,26 @@ const HUAP_STAFF_MEMBERS: StaffDef[] = [
     }
   },
   {
+    id: 'roberto_vis',
+    name: 'Roberto',
+    role: 'Visitante (Recepção)',
+    col: 6, row: 10,
+    config: {
+      skin: '#8d5524',
+      coat: '#2563eb',
+      coatDark: '#1d4ed8',
+      pants: '#1e293b',
+      hair: '#111111',
+      shoe: '#0f172a',
+      role: 'other',
+      isPlayer: false,
+      visual: { gender: 'male', hairStyle: 'short_neat', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'none', nurseCap: false }
+    }
+  },
+  {
     id: 'carlos',
     name: 'Enf. Carlos',
-    role: 'Emergência',
+    role: 'Emergência (PS)',
     col: 19, row: 6,
     config: {
       skin: '#e0a97c',
@@ -114,9 +132,26 @@ const HUAP_STAFF_MEMBERS: StaffDef[] = [
     }
   },
   {
-    id: 'helena',
+    id: 'claudio_ps',
+    name: 'Cláudio',
+    role: 'Paciente (Triagem)',
+    col: 8, row: 8,
+    config: {
+      skin: '#ffdfc4',
+      coat: '#64748b',
+      coatDark: '#475569',
+      pants: '#334155',
+      hair: '#737373',
+      shoe: '#0f172a',
+      role: 'other',
+      isPlayer: false,
+      visual: { gender: 'male', hairStyle: 'short_neat', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'none', nurseCap: false }
+    }
+  },
+  {
+    id: 'helena_farm',
     name: 'Dra. Helena',
-    role: 'Farmácia',
+    role: 'Farmácia Hospitalar',
     col: 31, row: 6,
     config: {
       skin: '#fcd34d',
@@ -133,7 +168,7 @@ const HUAP_STAFF_MEMBERS: StaffDef[] = [
   {
     id: 'joaquim',
     name: 'Sr. Joaquim',
-    role: 'Laboratório',
+    role: 'Laboratório Clínico',
     col: 44, row: 6,
     config: {
       skin: '#f5c5a3',
@@ -148,9 +183,26 @@ const HUAP_STAFF_MEMBERS: StaffDef[] = [
     }
   },
   {
+    id: 'farias_rx',
+    name: 'Dr. Farias',
+    role: 'Radiologia & Imagem',
+    col: 56, row: 6,
+    config: {
+      skin: '#d4a574',
+      coat: '#ffffff',
+      coatDark: '#e2e8f0',
+      pants: '#7c3aed',
+      hair: '#1e293b',
+      shoe: '#0f172a',
+      role: 'doctor',
+      isPlayer: false,
+      visual: { gender: 'male', hairStyle: 'short_neat', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'glasses', nurseCap: false }
+    }
+  },
+  {
     id: 'teresa',
-    name: 'Dra. Teresa',
-    role: 'Diretoria',
+    name: 'Dra. Teresa Alves',
+    role: 'Diretoria Geral',
     col: 68, row: 6,
     config: {
       skin: '#fbcfe8',
@@ -164,10 +216,12 @@ const HUAP_STAFF_MEMBERS: StaffDef[] = [
       visual: { gender: 'female', hairStyle: 'updo', build: 'medium', groundYOff: 0, age: 'senior', accessory: 'glasses', nurseCap: false }
     }
   },
+
+  // Middle Wing (CME, Copa, Enfermaria, UTI, Posto de Enfermagem)
   {
-    id: 'amanda',
-    name: 'Téc. Amanda',
-    role: 'CME',
+    id: 'amanda_cme',
+    name: 'Téc. Rosa',
+    role: 'CME Esterilização',
     col: 6, row: 21,
     config: {
       skin: '#f5c5a3',
@@ -182,33 +236,33 @@ const HUAP_STAFF_MEMBERS: StaffDef[] = [
     }
   },
   {
-    id: 'maria',
-    name: 'Dona Maria',
-    role: 'Enfermaria',
-    col: 30, row: 21,
+    id: 'clara_nutri',
+    name: 'Nutri. Clara',
+    role: 'Copa & Nutrição',
+    col: 17, row: 21,
     config: {
-      skin: '#f5c5a3',
-      coat: '#2563eb',
-      coatDark: '#1d4ed8',
-      pants: '#1e3a8a',
-      hair: '#cbd5e1',
-      shoe: '#0f172a',
-      role: 'nurse',
+      skin: '#ffdfc4',
+      coat: '#ca8a04',
+      coatDark: '#a16207',
+      pants: '#713f12',
+      hair: '#d97706',
+      shoe: '#451a03',
+      role: 'other',
       isPlayer: false,
-      visual: { gender: 'female', hairStyle: 'bun', build: 'medium', groundYOff: 0, age: 'senior', accessory: 'none', nurseCap: true }
+      visual: { gender: 'female', hairStyle: 'ponytail', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'none', nurseCap: false }
     }
   },
   {
-    id: 'marcos',
-    name: 'Dr. Marcos',
-    role: 'UTI Adulto',
-    col: 45, row: 21,
+    id: 'dr_roberto',
+    name: 'Dr. Roberto',
+    role: 'Plantonista Enfermaria',
+    col: 27, row: 22,
     config: {
-      skin: '#e2e8f0',
-      coat: '#0d9488',
-      coatDark: '#0f766e',
-      pants: '#115e59',
-      hair: '#334155',
+      skin: '#fce2c4',
+      coat: '#ffffff',
+      coatDark: '#e2e8f0',
+      pants: '#1e3a8a',
+      hair: '#d97706',
       shoe: '#0f172a',
       role: 'doctor',
       isPlayer: false,
@@ -216,9 +270,43 @@ const HUAP_STAFF_MEMBERS: StaffDef[] = [
     }
   },
   {
-    id: 'roberto',
-    name: 'Enf. Roberto',
-    role: 'Coordenação',
+    id: 'maria_pac',
+    name: 'Dona Maria',
+    role: 'Paciente (Enfermaria)',
+    col: 34, row: 22,
+    config: {
+      skin: '#d4a574',
+      coat: '#94a3b8',
+      coatDark: '#64748b',
+      pants: '#334155',
+      hair: '#6e2c00',
+      shoe: '#0f172a',
+      role: 'other',
+      isPlayer: false,
+      visual: { gender: 'female', hairStyle: 'bun', build: 'medium', groundYOff: 0, age: 'senior', accessory: 'none', nurseCap: false }
+    }
+  },
+  {
+    id: 'oliveira_uti',
+    name: 'Dr. Oliveira',
+    role: 'Médico Chefe UTI',
+    col: 45, row: 21,
+    config: {
+      skin: '#8d5524',
+      coat: '#0d9488',
+      coatDark: '#0f766e',
+      pants: '#115e59',
+      hair: '#0f172a',
+      shoe: '#0f172a',
+      role: 'doctor',
+      isPlayer: false,
+      visual: { gender: 'male', hairStyle: 'short_neat', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'none', nurseCap: false }
+    }
+  },
+  {
+    id: 'maria_enf',
+    name: 'Enf. Maria',
+    role: 'Supervisão de Enfermagem',
     col: 63, row: 21,
     config: {
       skin: '#fed7aa',
@@ -229,24 +317,128 @@ const HUAP_STAFF_MEMBERS: StaffDef[] = [
       shoe: '#0f172a',
       role: 'nurse',
       isPlayer: false,
-      visual: { gender: 'male', hairStyle: 'low_fade', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'none', nurseCap: false }
+      visual: { gender: 'female', hairStyle: 'ponytail', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'none', nurseCap: true }
     }
   },
+
+  // South Wing (Ambulatório, Maternidade, Oncologia, Fisioterapia, Saúde Mental)
   {
-    id: 'luciana',
+    id: 'luciana_amb',
     name: 'Dra. Luciana',
-    role: 'Maternidade',
-    col: 20, row: 36,
+    role: 'Ambulatório',
+    col: 7, row: 36,
     config: {
       skin: '#f5c5a3',
-      coat: '#db2777',
-      coatDark: '#be185d',
-      pants: '#831843',
+      coat: '#ffffff',
+      coatDark: '#e2e8f0',
+      pants: '#0284c7',
       hair: '#713f12',
       shoe: '#0f172a',
       role: 'doctor',
       isPlayer: false,
-      visual: { gender: 'female', hairStyle: 'ponytail', build: 'slim', groundYOff: 0, age: 'young', accessory: 'none', nurseCap: false }
+      visual: { gender: 'female', hairStyle: 'bob', build: 'slim', groundYOff: 0, age: 'adult', accessory: 'glasses', nurseCap: false }
+    }
+  },
+  {
+    id: 'pedro_mat',
+    name: 'Enf. Pedro',
+    role: 'Maternidade & BLH',
+    col: 19, row: 36,
+    config: {
+      skin: '#d4a574',
+      coat: '#db2777',
+      coatDark: '#be185d',
+      pants: '#831843',
+      hair: '#5c4033',
+      shoe: '#0f172a',
+      role: 'nurse',
+      isPlayer: false,
+      visual: { gender: 'male', hairStyle: 'short_neat', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'none', nurseCap: false }
+    }
+  },
+  {
+    id: 'amanda_gest',
+    name: 'Amanda',
+    role: 'Gestante (Maternidade)',
+    col: 24, row: 38,
+    config: {
+      skin: '#c68642',
+      coat: '#f472b6',
+      coatDark: '#db2777',
+      pants: '#831843',
+      hair: '#5c4033',
+      shoe: '#0f172a',
+      role: 'other',
+      isPlayer: false,
+      visual: { gender: 'female', hairStyle: 'ponytail', build: 'medium', groundYOff: 0, age: 'young', accessory: 'none', nurseCap: false }
+    }
+  },
+  {
+    id: 'santos_onco',
+    name: 'Dra. Santos',
+    role: 'Oncologia & Quimio',
+    col: 34, row: 36,
+    config: {
+      skin: '#d4a574',
+      coat: '#ffffff',
+      coatDark: '#e2e8f0',
+      pants: '#0f766e',
+      hair: '#1a1a1a',
+      shoe: '#0f172a',
+      role: 'doctor',
+      isPlayer: false,
+      visual: { gender: 'female', hairStyle: 'ponytail', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'glasses', nurseCap: false }
+    }
+  },
+  {
+    id: 'marcos_fisio',
+    name: 'Fisio. Marcos',
+    role: 'Reabilitação Motora',
+    col: 49, row: 36,
+    config: {
+      skin: '#8d5524',
+      coat: '#10b981',
+      coatDark: '#059669',
+      pants: '#047857',
+      hair: '#475569',
+      shoe: '#0f172a',
+      role: 'doctor',
+      isPlayer: false,
+      visual: { gender: 'male', hairStyle: 'short_neat', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'none', nurseCap: false }
+    }
+  },
+  {
+    id: 'helena_psiq',
+    name: 'Dra. Helena',
+    role: 'Psiquiatria & Saúde Mental',
+    col: 65, row: 36,
+    config: {
+      skin: '#c68642',
+      coat: '#ffffff',
+      coatDark: '#e2e8f0',
+      pants: '#7c3aed',
+      hair: '#d97706',
+      shoe: '#0f172a',
+      role: 'doctor',
+      isPlayer: false,
+      visual: { gender: 'female', hairStyle: 'updo', build: 'medium', groundYOff: 0, age: 'adult', accessory: 'glasses', nurseCap: false }
+    }
+  },
+  {
+    id: 'lucas_psi',
+    name: 'Lucas',
+    role: 'Paciente (Saúde Mental)',
+    col: 70, row: 38,
+    config: {
+      skin: '#f5c5a3',
+      coat: '#64748b',
+      coatDark: '#475569',
+      pants: '#334155',
+      hair: '#111111',
+      shoe: '#0f172a',
+      role: 'other',
+      isPlayer: false,
+      visual: { gender: 'male', hairStyle: 'short_wavy', build: 'medium', groundYOff: 0, age: 'young', accessory: 'none', nurseCap: false }
     }
   }
 ];
@@ -397,20 +589,34 @@ export function LiveGameplayCanvas({ player }: { player: LiveGameplayPlayer }) {
       const facing = posRef.current.facing;
       const isCurrentlyMoving = posRef.current.isMoving || dist > 1.2;
 
-      // Smooth camera interpolation for Follow Mode vs Overview Mode
-      const targetZoom = cameraMode === 'follow' ? 2.1 : 1.0;
-      const targetCamX = cameraMode === 'follow' ? px : w / 2;
-      const targetCamY = cameraMode === 'follow' ? py : h / 2;
+      // Fill screen background in screen space first
+      ctx.fillStyle = "#030712";
+      ctx.fillRect(0, 0, w, h);
 
-      posRef.current.camZoom += (targetZoom - posRef.current.camZoom) * 0.08;
+      // Smooth camera interpolation for Follow Mode vs Overview Mode
+      const targetZoom = cameraMode === 'follow' ? 1.85 : 1.0;
+      
+      // Calculate camera viewport bounds so camera never pans into empty space
+      const halfViewW = (w / 2) / targetZoom;
+      const halfViewH = (h / 2) / targetZoom;
+      const minCamX = Math.min(w / 2, PAD_X + halfViewW);
+      const maxCamX = Math.max(w / 2, PAD_X + MAP_W - halfViewW);
+      const minCamY = Math.min(h / 2, PAD_Y + halfViewH);
+      const maxCamY = Math.max(h / 2, PAD_Y + MAP_H - halfViewH);
+
+      const rawCamX = cameraMode === 'follow' ? px : w / 2;
+      const rawCamY = cameraMode === 'follow' ? py : h / 2;
+
+      const targetCamX = cameraMode === 'follow' ? Math.max(minCamX, Math.min(maxCamX, rawCamX)) : w / 2;
+      const targetCamY = cameraMode === 'follow' ? Math.max(minCamY, Math.min(maxCamY, rawCamY)) : h / 2;
+
+      posRef.current.camZoom += (targetZoom - posRef.current.camZoom) * 0.09;
       posRef.current.camX += (targetCamX - posRef.current.camX) * 0.12;
       posRef.current.camY += (targetCamY - posRef.current.camY) * 0.12;
 
       const camZoom = posRef.current.camZoom;
       const camX = posRef.current.camX;
       const camY = posRef.current.camY;
-
-      ctx.clearRect(0, 0, w, h);
 
       // ──────────────────────────────────────────────────────────────────────
       // WORLD SPACE TRANSFORM (CAMERA APPLIED)
@@ -420,9 +626,9 @@ export function LiveGameplayCanvas({ player }: { player: LiveGameplayPlayer }) {
       ctx.scale(camZoom, camZoom);
       ctx.translate(-camX, -camY);
 
-      // Hospital Foundation
+      // Extended Hospital Foundation to eliminate any edge gaps
       ctx.fillStyle = "#070c16";
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillRect(PAD_X - 120, PAD_Y - 120, MAP_W + 240, MAP_H + 240);
 
       // Precision CAD blueprint micro-grid
       ctx.strokeStyle = "rgba(30, 41, 59, 0.4)";
@@ -439,45 +645,77 @@ export function LiveGameplayCanvas({ player }: { player: LiveGameplayPlayer }) {
 
       // Main Corridors with clean terrazzo vinyl
       const c1Y = toY(13);
-      const c1H = toH(4);
-      ctx.fillStyle = "#0f172a";
+      const c1H = toH(3.5);
+      ctx.fillStyle = "#0c1424";
       ctx.fillRect(PAD_X, c1Y, MAP_W, c1H);
-      ctx.strokeStyle = "rgba(71, 85, 105, 0.6)";
+      ctx.strokeStyle = "rgba(51, 65, 85, 0.8)";
       ctx.lineWidth = 1;
       ctx.strokeRect(PAD_X, c1Y, MAP_W, c1H);
 
       const c2Y = toY(27);
-      const c2H = toH(4);
-      ctx.fillStyle = "#0f172a";
+      const c2H = toH(3.5);
+      ctx.fillStyle = "#0c1424";
       ctx.fillRect(PAD_X, c2Y, MAP_W, c2H);
+      ctx.strokeStyle = "rgba(51, 65, 85, 0.8)";
+      ctx.lineWidth = 1;
       ctx.strokeRect(PAD_X, c2Y, MAP_W, c2H);
 
       // Hospital Floor Wayfinding Guidance Stripes
       // Red line to Emergency
-      ctx.strokeStyle = "rgba(244, 63, 94, 0.5)";
+      ctx.strokeStyle = "rgba(244, 63, 94, 0.7)";
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(PAD_X + 24, c1Y + c1H / 2 - 5);
-      ctx.lineTo(toX(26), c1Y + c1H / 2 - 5);
+      ctx.moveTo(PAD_X + 20, c1Y + c1H / 2 - 6);
+      ctx.lineTo(toX(25), c1Y + c1H / 2 - 6);
       ctx.stroke();
 
-      // Cyan line to UTI / Central Nursing
-      ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+      // Cyan line to UTI / Posto Central
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.65)";
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(PAD_X + 24, c1Y + c1H / 2 + 5);
-      ctx.lineTo(PAD_X + MAP_W - 24, c1Y + c1H / 2 + 5);
+      ctx.moveTo(toX(26), c1Y + c1H / 2 + 6);
+      ctx.lineTo(PAD_X + MAP_W - 20, c1Y + c1H / 2 + 6);
+      ctx.stroke();
+
+      // Amber line to Maternidade & Oncologia
+      ctx.strokeStyle = "rgba(245, 158, 11, 0.65)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(PAD_X + 20, c2Y + c2H / 2 - 6);
+      ctx.lineTo(toX(42), c2Y + c2H / 2 - 6);
       ctx.stroke();
 
       // Green line to Central Courtyard Garden
-      ctx.strokeStyle = "rgba(74, 222, 128, 0.4)";
+      ctx.strokeStyle = "rgba(74, 222, 128, 0.6)";
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(PAD_X + 24, c2Y + c2H / 2);
-      ctx.lineTo(PAD_X + MAP_W - 24, c2Y + c2H / 2);
+      ctx.moveTo(toX(33), c2Y + c2H / 2 + 6);
+      ctx.lineTo(toX(42), c2Y + c2H / 2 + 6);
+      ctx.lineTo(toX(37.5), toY(43));
       ctx.stroke();
 
-      // Hospital Sectors & Detailed Equipment
+      // Corridor Wall Directional Signage Plaques
+      const corridorSigns = [
+        { text: "← RECEPÇÃO • PRONTO-SOCORRO →", x: toX(12), y: c1Y + 9 },
+        { text: "← FARMÁCIA • LABORATÓRIO • RADIOLOGIA →", x: toX(38), y: c1Y + 9 },
+        { text: "← DIRETORIA • GESTÃO HOSPITALAR →", x: toX(65), y: c1Y + 9 },
+        { text: "← AMBULATÓRIO • MATERNIDADE →", x: toX(14), y: c2Y + 9 },
+        { text: "← ONCOLOGIA • REABILITAÇÃO MOTORA →", x: toX(38), y: c2Y + 9 },
+        { text: "← SAÚDE MENTAL • JARDIM CENTRAL ↓", x: toX(64), y: c2Y + 9 },
+      ];
+      ctx.font = "bold 8px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      corridorSigns.forEach((cs) => {
+        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+        ctx.fillRect(cs.x - 70, cs.y - 8, 140, 13);
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cs.x - 70, cs.y - 8, 140, 13);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillText(cs.text, cs.x, cs.y + 2);
+      });
+
+      // Hospital Sectors & Detailed Equipment (ALL 17 SECTORS)
       HUAP_SECTORS.forEach((sec) => {
         const sx = toX(sec.col);
         const sy = toY(sec.row);
@@ -497,8 +735,44 @@ export function LiveGameplayCanvas({ player }: { player: LiveGameplayPlayer }) {
         ctx.lineWidth = 1.2;
         ctx.strokeRect(sx + 2, sy + 2, sw - 4, sh - 4);
 
+        // Door Openings & Walkway thresholds into Corridors
+        const drawDoor = (colStart: number, wallY: number, isTopDoor: boolean) => {
+          const doorX = toX(colStart);
+          const doorW = toW(2.2);
+          // Clear wall border for door opening
+          ctx.fillStyle = sec.floorColor;
+          ctx.fillRect(doorX, wallY - 3, doorW, 6);
+          // Threshold marker
+          ctx.fillStyle = "rgba(250, 204, 21, 0.6)";
+          ctx.fillRect(doorX, wallY - 1, doorW, 2);
+          // Door frame hinges
+          ctx.fillStyle = "#94a3b8";
+          ctx.fillRect(doorX - 1, wallY - 2, 2, 4);
+          ctx.fillRect(doorX + doorW - 1, wallY - 2, 2, 4);
+        };
+
+        // Render matching door for each sector
+        if (sec.id === 'reception') drawDoor(6, sy + sh, false);
+        if (sec.id === 'emergency') drawDoor(18, sy + sh, false);
+        if (sec.id === 'pharmacy') drawDoor(30, sy + sh, false);
+        if (sec.id === 'lab') drawDoor(43, sy + sh, false);
+        if (sec.id === 'radiology') drawDoor(55, sy + sh, false);
+        if (sec.id === 'admin') drawDoor(67, sy + sh, false);
+
+        if (sec.id === 'cme') { drawDoor(5, sy, true); drawDoor(5, sy + sh, false); }
+        if (sec.id === 'break') { drawDoor(16, sy, true); drawDoor(16, sy + sh, false); }
+        if (sec.id === 'ward') { drawDoor(30, sy, true); drawDoor(30, sy + sh, false); }
+        if (sec.id === 'icu') { drawDoor(44, sy, true); drawDoor(44, sy + sh, false); }
+        if (sec.id === 'nursing') { drawDoor(62, sy, true); drawDoor(62, sy + sh, false); }
+
+        if (sec.id === 'outpatient') { drawDoor(7, sy, true); drawDoor(7, sy + sh, false); }
+        if (sec.id === 'maternity') { drawDoor(20, sy, true); drawDoor(20, sy + sh, false); }
+        if (sec.id === 'oncology') { drawDoor(34, sy, true); drawDoor(34, sy + sh, false); }
+        if (sec.id === 'rehab') { drawDoor(48, sy, true); drawDoor(48, sy + sh, false); }
+        if (sec.id === 'psych') { drawDoor(64, sy, true); drawDoor(64, sy + sh, false); }
+
         // Architectural Header Bar
-        ctx.fillStyle = "rgba(10, 16, 28, 0.88)";
+        ctx.fillStyle = "rgba(10, 16, 28, 0.9)";
         ctx.fillRect(sx + 3, sy + 3, sw - 6, 17);
 
         ctx.fillStyle = sec.accentColor;
@@ -511,139 +785,708 @@ export function LiveGameplayCanvas({ player }: { player: LiveGameplayPlayer }) {
         ctx.textAlign = "right";
         ctx.fillText(sec.short, sx + sw - 7, sy + 15);
 
-        // Clinical Room Fixtures
+        // ────────────────────────────────────────────────────────────────────
+        // CLINICAL & ADMINISTRATIVE ROOM FIXTURES (ALL SECTORS COMPLETE)
+        // ────────────────────────────────────────────────────────────────────
         if (sec.type === 'reception') {
-          // Curved Reception Desk
+          // Curved Reception Counter with wood top
           ctx.fillStyle = "#334155";
           ctx.beginPath();
-          ctx.roundRect(sx + 10, sy + 24, sw - 20, 16, 4);
+          ctx.roundRect(sx + 12, sy + 24, sw - 24, 18, 5);
           ctx.fill();
-          // Computer monitors
-          ctx.fillStyle = "#38bdf8";
-          ctx.fillRect(sx + 18, sy + 26, 9, 6);
-          ctx.fillRect(sx + 40, sy + 26, 9, 6);
-          // Waiting Chairs
           ctx.fillStyle = "#475569";
-          for (let i = 0; i < 4; i++) {
-            ctx.fillRect(sx + 14 + i * 20, sy + sh - 22, 12, 9);
+          ctx.fillRect(sx + 14, sy + 25, sw - 28, 4);
+
+          // 3 Reception computer monitors with glowing blue screens
+          for (let i = 0; i < 3; i++) {
+            const mx = sx + 20 + i * ((sw - 40) / 3);
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(mx - 2, sy + 26, 12, 11);
+            ctx.fillStyle = "#38bdf8";
+            ctx.fillRect(mx, sy + 27, 8, 6);
           }
+
+          // Electronic Queue Ticket Totem (Totem de Senhas)
+          ctx.fillStyle = "#0284c7";
+          ctx.fillRect(sx + sw - 22, sy + 24, 10, 20);
+          ctx.fillStyle = "#f8fafc";
+          ctx.fillRect(sx + sw - 20, sy + 26, 6, 6);
+
+          // Waiting Rows of Chairs (Longarinas)
+          ctx.fillStyle = "#334155";
+          const chairRows = 2;
+          for (let r = 0; r < chairRows; r++) {
+            const ry = sy + sh - 34 + r * 15;
+            for (let i = 0; i < 5; i++) {
+              const cx = sx + 12 + i * ((sw - 28) / 5);
+              ctx.fillStyle = "#1e293b";
+              ctx.fillRect(cx, ry, 12, 10);
+              ctx.fillStyle = "#0284c7";
+              ctx.fillRect(cx + 1, ry + 1, 10, 8);
+            }
+          }
+
+          // Potted Ficus Plant
+          ctx.fillStyle = "#78350f";
+          ctx.beginPath(); ctx.arc(sx + 14, sy + sh - 10, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#22c55e";
+          ctx.beginPath(); ctx.arc(sx + 14, sy + sh - 13, 6, 0, Math.PI * 2); ctx.fill();
+
         } else if (sec.type === 'emergency') {
-          // 2 Hospital Emergency Stretchers
-          for (let i = 0; i < 2; i++) {
-            const bx = sx + 14 + i * 48;
-            const by = sy + 28;
+          // 3 Trauma & Resuscitation Stretchers
+          const numBeds = 3;
+          for (let i = 0; i < numBeds; i++) {
+            const bx = sx + 10 + i * ((sw - 20) / numBeds);
+            const by = sy + 26;
+            const bw = 32;
+            const bh = 18;
+
+            // Stretcher frame
             ctx.fillStyle = "#f8fafc";
-            ctx.fillRect(bx, by, 34, 18);
+            ctx.fillRect(bx, by, bw, bh);
             ctx.strokeStyle = "#ef4444";
             ctx.lineWidth = 1.2;
-            ctx.strokeRect(bx, by, 34, 18);
+            ctx.strokeRect(bx, by, bw, bh);
+
+            // Red Emergency Blanket
+            ctx.fillStyle = "#f87171";
+            ctx.fillRect(bx + 8, by + 2, bw - 10, bh - 4);
+
             // Pillow
-            ctx.fillStyle = "#e2e8f0";
-            ctx.fillRect(bx + 2, by + 2, 8, 14);
-            // Defibrillator / Vital Monitor Cart with pulsing green ECG
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(bx + 2, by + 3, 6, bh - 6);
+
+            // Defibrillator / Vital Monitor Cart with animated ECG
             ctx.fillStyle = "#0f172a";
-            ctx.fillRect(bx + 26, by - 8, 10, 6);
+            ctx.fillRect(bx + bw - 10, by - 8, 11, 7);
             ctx.fillStyle = "#22c55e";
-            ctx.fillRect(bx + 27, by - 7, 8, 4);
+            ctx.fillRect(bx + bw - 9, by - 7, 9, 5);
+
+            // IV Infusion Stand
+            ctx.fillStyle = "#94a3b8";
+            ctx.beginPath(); ctx.arc(bx + bw + 2, by + 3, 2.5, 0, Math.PI * 2); ctx.fill();
           }
-        } else if (sec.type === 'ward') {
-          // 3 Hospital Beds with blue blankets
+
+          // Emergency Crash Cart (Carro de Emergência Vermelho)
+          ctx.fillStyle = "#dc2626";
+          ctx.fillRect(sx + sw - 20, sy + sh - 26, 14, 16);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + sw - 16, sy + sh - 22, 6, 3);
+
+          // Triage Manchester Desk
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(sx + 10, sy + sh - 26, 36, 16);
+          ctx.fillStyle = "#facc15";
+          ctx.fillRect(sx + 14, sy + sh - 22, 8, 6);
+
+        } else if (sec.type === 'pharmacy') {
+          // Grid of High-Density CAF Medicine Shelving Racks
+          const rows = 3;
+          for (let r = 0; r < rows; r++) {
+            const ry = sy + 24 + r * 17;
+            ctx.fillStyle = "#312e81";
+            ctx.fillRect(sx + 10, ry, sw - 20, 11);
+            ctx.fillStyle = "#4338ca";
+            ctx.fillRect(sx + 10, ry + 9, sw - 20, 2);
+
+            // Medicine boxes of various colors (antibiotics, analgesics, cardiovascular)
+            for (let i = 0; i < 9; i++) {
+              const mx = sx + 14 + i * ((sw - 32) / 9);
+              const color = i % 4 === 0 ? "#f43f5e" : i % 4 === 1 ? "#38bdf8" : i % 4 === 2 ? "#eab308" : "#22c55e";
+              ctx.fillStyle = color;
+              ctx.fillRect(mx, ry + 2, 6, 6);
+            }
+          }
+
+          // Locked Psychotropic / Narcotic Safe (Armário de Controlados)
+          ctx.fillStyle = "#1e1b4b";
+          ctx.fillRect(sx + 10, sy + sh - 26, 18, 16);
+          ctx.strokeStyle = "#818cf8";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(sx + 10, sy + sh - 26, 18, 16);
+          ctx.fillStyle = "#e2e8f0";
+          ctx.fillRect(sx + 24, sy + sh - 18, 2, 4); // lock
+
+          // Dispensing Counter with Barcode Scanner & Terminal
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + 34, sy + sh - 24, sw - 44, 14);
+          ctx.fillStyle = "#6366f1";
+          ctx.fillRect(sx + sw - 22, sy + sh - 22, 10, 7);
+
+        } else if (sec.type === 'lab') {
+          // Laboratory Workbenches along top & bottom
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + 10, sy + 24, sw - 20, 15);
+          ctx.fillStyle = "#0f766e";
+          ctx.fillRect(sx + 10, sy + 37, sw - 20, 2);
+
+          // Automated Biochemistry & Hematology Analyzer
+          ctx.fillStyle = "#0f172a";
+          ctx.fillRect(sx + 16, sy + 25, 26, 12);
+          ctx.fillStyle = "#22d3ee";
+          ctx.fillRect(sx + 18, sy + 27, 10, 6);
+
+          // Centrifuges with spinning rotors
+          ctx.fillStyle = "#1e293b";
+          ctx.beginPath(); ctx.arc(sx + 54, sy + 31, 6, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#38bdf8";
+          ctx.beginPath(); ctx.arc(sx + 54, sy + 31, 3, 0, Math.PI * 2); ctx.fill();
+
+          ctx.fillStyle = "#1e293b";
+          ctx.beginPath(); ctx.arc(sx + 72, sy + 31, 6, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#38bdf8";
+          ctx.beginPath(); ctx.arc(sx + 72, sy + 31, 3, 0, Math.PI * 2); ctx.fill();
+
+          // Binocular Microscopes
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + sw - 26, sy + 25, 10, 10);
+          ctx.fillStyle = "#0f172a";
+          ctx.fillRect(sx + sw - 24, sy + 26, 6, 4);
+
+          // Reagent Specimen Storage Refrigerator
+          ctx.fillStyle = "#0284c7";
+          ctx.fillRect(sx + 10, sy + sh - 28, 22, 18);
+          ctx.fillStyle = "#e0f2fe";
+          ctx.fillRect(sx + 12, sy + sh - 26, 18, 6);
+
+          // Biohazard Specimen Waste Canister
+          ctx.fillStyle = "#eab308";
+          ctx.fillRect(sx + sw - 20, sy + sh - 22, 10, 12);
+
+        } else if (sec.type === 'radiology') {
+          // Circular CT Scanner Gantry (Tomógrafo Computadorizado)
+          const gantryX = sx + sw / 2;
+          const gantryY = sy + 44;
+          ctx.fillStyle = "#334155";
+          ctx.beginPath(); ctx.arc(gantryX, gantryY, 20, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#0f172a";
+          ctx.beginPath(); ctx.arc(gantryX, gantryY, 11, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "#a855f7";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Motorized Patient Table extending through gantry
+          ctx.fillStyle = "#c084fc";
+          ctx.fillRect(gantryX - 8, gantryY - 4, 16, 32);
+          ctx.fillStyle = "#f8fafc";
+          ctx.fillRect(gantryX - 6, gantryY + 4, 12, 18);
+
+          // Lead-Shielded Glass Control Console Booth
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(sx + 10, sy + 24, 28, 24);
+          ctx.strokeStyle = "#38bdf8";
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(sx + 10, sy + 24, 28, 24);
+          // Dual high-res diagnostic monitors
+          ctx.fillStyle = "#0284c7";
+          ctx.fillRect(sx + 14, sy + 28, 8, 7);
+          ctx.fillRect(sx + 24, sy + 28, 8, 7);
+
+          // Backlit Wall X-Ray Film Viewers (Negatoscópio)
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + sw - 26, sy + 24, 18, 14);
+          ctx.fillStyle = "#0f172a";
+          ctx.fillRect(sx + sw - 24, sy + 26, 14, 10);
+          ctx.fillStyle = "#38bdf8";
+          ctx.fillRect(sx + sw - 21, sy + 28, 8, 6);
+
+          // Radiation Warning Trefoil Plaque
+          ctx.fillStyle = "#eab308";
+          ctx.fillRect(sx + sw - 18, sy + sh - 20, 10, 10);
+
+        } else if (sec.type === 'admin') {
+          // Executive Conference Table (Mesa de Reunião da Diretoria)
+          const tW = sw - 36;
+          const tH = 22;
+          const tX = sx + 18;
+          const tY = sy + 28;
+          ctx.fillStyle = "#78350f"; // Rich mahogany wood
+          ctx.beginPath();
+          ctx.roundRect(tX, tY, tW, tH, 6);
+          ctx.fill();
+          ctx.strokeStyle = "#b45309";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Conference Chairs around table (6 chairs)
           for (let i = 0; i < 3; i++) {
-            const bx = sx + 10 + i * 44;
-            const by = sy + 26;
+            const cx = tX + 10 + i * ((tW - 20) / 2);
+            // Top chairs
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(cx - 5, tY - 6, 10, 5);
+            // Bottom chairs
+            ctx.fillRect(cx - 5, tY + tH + 1, 10, 5);
+          }
+
+          // Director's Laptop on table
+          ctx.fillStyle = "#cbd5e1";
+          ctx.fillRect(tX + tW / 2 - 6, tY + 5, 12, 8);
+          ctx.fillStyle = "#0284c7";
+          ctx.fillRect(tX + tW / 2 - 4, tY + 6, 8, 4);
+
+          // Executive Filing Cabinets (Arquivos de Acreditação Hospitalar ONA)
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + 10, sy + sh - 24, 26, 14);
+          ctx.strokeStyle = "#94a3b8";
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(sx + 10, sy + sh - 24, 26, 14);
+          ctx.fillStyle = "#e2e8f0";
+          ctx.fillRect(sx + 14, sy + sh - 20, 6, 3);
+          ctx.fillRect(sx + 24, sy + sh - 20, 6, 3);
+
+          // Water Cooler Dispenser with Blue 20L bottle
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + sw - 22, sy + sh - 24, 10, 14);
+          ctx.fillStyle = "#38bdf8";
+          ctx.beginPath(); ctx.arc(sx + sw - 17, sy + sh - 26, 4.5, 0, Math.PI * 2); ctx.fill();
+
+          // Executive Leather Visitor Sofa
+          ctx.fillStyle = "#451a03";
+          ctx.fillRect(sx + 42, sy + sh - 22, 38, 12);
+          ctx.fillStyle = "#78350f";
+          ctx.fillRect(sx + 44, sy + sh - 20, 34, 8);
+
+        } else if (sec.type === 'cme') {
+          // Dual Heavy-Duty Industrial Autoclaves (Autoclaves a Vapor de Barreira)
+          for (let i = 0; i < 2; i++) {
+            const ax = sx + 12 + i * 36;
+            const ay = sy + 25;
+            // Stainless steel body
+            ctx.fillStyle = "#64748b";
+            ctx.fillRect(ax, ay, 28, 20);
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 1.2;
+            ctx.strokeRect(ax, ay, 28, 20);
+
+            // Circular pressure hatch with rotating handle
+            ctx.fillStyle = "#334155";
+            ctx.beginPath(); ctx.arc(ax + 14, ay + 10, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Digital temperature LED display & pressure gauge
+            ctx.fillStyle = "#10b981"; // Green ready LED
+            ctx.fillRect(ax + 2, ay + 2, 4, 3);
+            ctx.fillStyle = "#f59e0b"; // Orange cycle LED
+            ctx.fillRect(ax + 8, ay + 2, 4, 3);
+          }
+
+          // Ultrasonic Wash Sink & Decontamination Sinks
+          ctx.fillStyle = "#475569";
+          ctx.fillRect(sx + 10, sy + sh - 26, 36, 16);
+          ctx.fillStyle = "#0284c7";
+          ctx.fillRect(sx + 14, sy + sh - 23, 12, 10);
+          ctx.fillRect(sx + 30, sy + sh - 23, 12, 10);
+
+          // Packing Workbench with Crepe Paper Rolls & Heat Sealer (Termoseladora)
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + sw - 36, sy + 25, 26, 26);
+          ctx.fillStyle = "#38bdf8";
+          ctx.fillRect(sx + sw - 32, sy + 28, 18, 5); // paper roll
+          ctx.fillStyle = "#f43f5e";
+          ctx.fillRect(sx + sw - 32, sy + 38, 18, 4); // surgical pack
+
+          // Sterile Storage Shelves with Color-Coded Kit Containers
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(sx + sw - 36, sy + sh - 26, 26, 16);
+          ctx.fillStyle = "#10b981";
+          ctx.fillRect(sx + sw - 32, sy + sh - 23, 8, 5);
+          ctx.fillStyle = "#3b82f6";
+          ctx.fillRect(sx + sw - 20, sy + sh - 23, 8, 5);
+
+        } else if (sec.type === 'break') {
+          // Cafeteria Dining Tables with Chairs
+          for (let i = 0; i < 2; i++) {
+            const tx = sx + 12 + i * 44;
+            const ty = sy + 28;
+            ctx.fillStyle = "#a16207"; // Warm wood table
+            ctx.beginPath();
+            ctx.roundRect(tx, ty, 32, 18, 4);
+            ctx.fill();
+
+            // Chairs on both sides
+            ctx.fillStyle = "#451a03";
+            ctx.fillRect(tx + 4, ty - 5, 8, 4);
+            ctx.fillRect(tx + 20, ty - 5, 8, 4);
+            ctx.fillRect(tx + 4, ty + 19, 8, 4);
+            ctx.fillRect(tx + 20, ty + 19, 8, 4);
+          }
+
+          // Kitchenette Counter with Sink, Microwaves, Coffee Machine
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + 10, sy + sh - 25, sw - 48, 15);
+          // Microwave ovens
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(sx + 16, sy + sh - 23, 12, 8);
+          ctx.fillRect(sx + 32, sy + sh - 23, 12, 8);
+          // Coffee maker
+          ctx.fillStyle = "#78350f";
+          ctx.fillRect(sx + 48, sy + sh - 23, 8, 9);
+
+          // Cold Beverage & Snack Vending Machines (Máquinas de Vendas)
+          ctx.fillStyle = "#0284c7";
+          ctx.fillRect(sx + sw - 32, sy + sh - 30, 14, 20);
+          ctx.fillStyle = "#38bdf8";
+          ctx.fillRect(sx + sw - 30, sy + sh - 28, 10, 8);
+
+          ctx.fillStyle = "#dc2626";
+          ctx.fillRect(sx + sw - 16, sy + sh - 30, 12, 20);
+          ctx.fillStyle = "#fca5a5";
+          ctx.fillRect(sx + sw - 14, sy + sh - 28, 8, 8);
+
+        } else if (sec.type === 'ward') {
+          // 4 Hospital Ward Beds with Crisp Blue Blankets
+          const numBeds = 4;
+          for (let i = 0; i < numBeds; i++) {
+            const bx = sx + 8 + i * ((sw - 16) / numBeds);
+            const by = sy + 25;
+            const bw = 30;
+            const bh = 18;
+
             ctx.fillStyle = "#f8fafc";
-            ctx.fillRect(bx, by, 32, 20);
+            ctx.fillRect(bx, by, bw, bh);
             ctx.strokeStyle = "#60a5fa";
             ctx.lineWidth = 1;
-            ctx.strokeRect(bx, by, 32, 20);
-            // Blue blanket
+            ctx.strokeRect(bx, by, bw, bh);
+
+            // Blue Blanket
             ctx.fillStyle = "#93c5fd";
-            ctx.fillRect(bx + 8, by + 2, 22, 16);
+            ctx.fillRect(bx + 8, by + 2, bw - 10, bh - 4);
+            // Pillow
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(bx + 2, by + 4, 6, 12);
-            // IV stand
+            ctx.fillRect(bx + 2, by + 3, 6, bh - 6);
+
+            // Bedside Cabinet & IV stand
+            ctx.fillStyle = "#cbd5e1";
+            ctx.fillRect(bx + bw - 6, by - 6, 6, 5);
             ctx.fillStyle = "#94a3b8";
-            ctx.beginPath(); ctx.arc(bx + 34, by + 4, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(bx + bw + 2, by + 3, 2.5, 0, Math.PI * 2); ctx.fill();
           }
+
+          // Ward Nurse Station Workstation
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(sx + 10, sy + sh - 24, 46, 14);
+          ctx.fillStyle = "#3b82f6";
+          ctx.fillRect(sx + 16, sy + sh - 22, 10, 6);
+          ctx.fillStyle = "#e2e8f0";
+          ctx.fillRect(sx + 32, sy + sh - 22, 18, 5); // Chart folders
+
         } else if (sec.type === 'icu') {
-          // 2 High-Acuity ICU Beds
-          for (let i = 0; i < 2; i++) {
-            const bx = sx + 16 + i * 54;
-            const by = sy + 26;
+          // 3 High-Acuity ICU Beds with Overhead Cardiac Monitors
+          const numIcuBeds = 3;
+          for (let i = 0; i < numIcuBeds; i++) {
+            const bx = sx + 10 + i * ((sw - 20) / numIcuBeds);
+            const by = sy + 25;
+            const bw = 34;
+            const bh = 20;
+
             ctx.fillStyle = "#f8fafc";
-            ctx.fillRect(bx, by, 36, 22);
+            ctx.fillRect(bx, by, bw, bh);
             ctx.strokeStyle = "#2dd4bf";
             ctx.lineWidth = 1.2;
-            ctx.strokeRect(bx, by, 36, 22);
-            // Teal blanket
+            ctx.strokeRect(bx, by, bw, bh);
+
+            // Teal ICU Blanket
             ctx.fillStyle = "#5eead4";
-            ctx.fillRect(bx + 10, by + 2, 24, 18);
+            ctx.fillRect(bx + 10, by + 2, bw - 12, bh - 4);
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(bx + 2, by + 5, 8, 12);
-            // Overhead ICU Cardiac Monitor
+            ctx.fillRect(bx + 2, by + 4, 7, bh - 8);
+
+            // Overhead Multi-Parameter Monitor (ECG, SpO2, Art Pressure)
             ctx.fillStyle = "#020617";
-            ctx.fillRect(bx + 26, by - 8, 11, 7);
-            ctx.fillStyle = "#4ade80";
-            ctx.fillRect(bx + 27, by - 7, 9, 5);
+            ctx.fillRect(bx + bw - 12, by - 9, 13, 8);
+            ctx.fillStyle = "#4ade80"; // ECG green trace
+            ctx.fillRect(bx + bw - 11, by - 8, 11, 3);
+            ctx.fillStyle = "#38bdf8"; // SpO2 blue trace
+            ctx.fillRect(bx + bw - 11, by - 4, 11, 2);
+
+            // Mechanical Ventilator (Ventilador Pulmonar)
+            ctx.fillStyle = "#e2e8f0";
+            ctx.fillRect(bx - 6, by + 4, 5, 12);
+            ctx.fillStyle = "#06b6d4";
+            ctx.fillRect(bx - 5, by + 6, 3, 4);
           }
+
+          // ICU Crash Cart & Syringe Infusion Pump Columns
+          ctx.fillStyle = "#ef4444";
+          ctx.fillRect(sx + 10, sy + sh - 25, 14, 15);
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + 30, sy + sh - 25, 24, 15);
+          ctx.fillStyle = "#22d3ee";
+          ctx.fillRect(sx + 34, sy + sh - 22, 6, 8);
+          ctx.fillRect(sx + 44, sy + sh - 22, 6, 8);
+
         } else if (sec.type === 'nursing') {
-          // Semicircular Central Nursing Command Island
+          // Large Semicircular Central Nursing Command Island
           ctx.fillStyle = "#1e293b";
           ctx.beginPath();
-          ctx.roundRect(sx + 22, sy + 26, sw - 44, 26, 8);
+          ctx.roundRect(sx + 16, sy + 24, sw - 32, 28, 8);
           ctx.fill();
           ctx.strokeStyle = "#34d399";
           ctx.lineWidth = 1.2;
           ctx.stroke();
-          // Workstation terminals
-          ctx.fillStyle = "#34d399";
-          ctx.fillRect(sx + 34, sy + 30, 14, 7);
-          ctx.fillRect(sx + 68, sy + 30, 14, 7);
-          ctx.fillRect(sx + 102, sy + 30, 14, 7);
-        } else if (sec.type === 'pharmacy') {
-          // Medicine Racks & Shelving Grid
-          ctx.fillStyle = "#312e81";
-          ctx.fillRect(sx + 10, sy + 24, sw - 20, 11);
-          ctx.fillStyle = "#4338ca";
-          ctx.fillRect(sx + 10, sy + 42, sw - 20, 11);
-          for (let i = 0; i < 7; i++) {
-            ctx.fillStyle = i % 2 === 0 ? "#f43f5e" : "#38bdf8";
-            ctx.fillRect(sx + 14 + i * 14, sy + 26, 5, 7);
+
+          // 4 Active Computer Terminals with Shift Status
+          for (let i = 0; i < 4; i++) {
+            const mx = sx + 24 + i * ((sw - 60) / 4);
+            ctx.fillStyle = "#020617";
+            ctx.fillRect(mx, sy + 28, 12, 10);
+            ctx.fillStyle = "#34d399";
+            ctx.fillRect(mx + 1, sy + 29, 10, 6);
           }
-        } else if (sec.type === 'lab') {
-          // Analytical Workbenches & Centrifuge
-          ctx.fillStyle = "#334155";
-          ctx.fillRect(sx + 12, sy + 26, sw - 24, 14);
-          ctx.fillStyle = "#22d3ee";
-          ctx.beginPath(); ctx.arc(sx + 30, sy + 33, 5, 0, Math.PI * 2); ctx.fill();
+
+          // Nursing Shift & Patient Handover Whiteboard
           ctx.fillStyle = "#f8fafc";
-          ctx.fillRect(sx + 56, sy + 28, 9, 9);
-        } else if (sec.type === 'radiology') {
-          // Circular CT Scanner Gantry
+          ctx.fillRect(sx + sw / 2 - 30, sy + sh - 22, 60, 12);
+          ctx.strokeStyle = "#059669";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(sx + sw / 2 - 30, sy + sh - 22, 60, 12);
+          ctx.fillStyle = "#0f172a";
+          ctx.font = "bold 6.5px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("ESCALA & PASSAGEM DE PLANTÃO", sx + sw / 2, sy + sh - 14);
+
+        } else if (sec.type === 'outpatient') {
+          // 2 Consultation Exam Rooms with Examination Couches & Physician Desks
+          for (let i = 0; i < 2; i++) {
+            const cx = sx + 10 + i * 44;
+            const cy = sy + 25;
+
+            // Clinical Examination Couch with Paper Roll
+            ctx.fillStyle = "#f8fafc";
+            ctx.fillRect(cx, cy, 26, 15);
+            ctx.strokeStyle = "#0284c7";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(cx, cy, 26, 15);
+            ctx.fillStyle = "#38bdf8";
+            ctx.fillRect(cx + 2, cy + 2, 5, 11); // Roll paper
+
+            // Doctor Consultation Desk with PC
+            ctx.fillStyle = "#334155";
+            ctx.fillRect(cx, cy + 18, 26, 12);
+            ctx.fillStyle = "#38bdf8";
+            ctx.fillRect(cx + 4, cy + 20, 8, 6);
+          }
+
+          // Outpatient Waiting Row Chairs
           ctx.fillStyle = "#334155";
+          for (let i = 0; i < 4; i++) {
+            const wx = sx + 12 + i * 18;
+            ctx.fillRect(wx, sy + sh - 24, 12, 10);
+            ctx.fillStyle = "#0284c7";
+            ctx.fillRect(wx + 1, sy + sh - 23, 10, 8);
+          }
+
+          // Stadiometer / Medical Scale (Balança Antropométrica)
+          ctx.fillStyle = "#cbd5e1";
+          ctx.fillRect(sx + sw - 20, sy + 25, 8, 22);
+          ctx.fillStyle = "#0284c7";
+          ctx.fillRect(sx + sw - 22, sy + 43, 12, 4);
+
+        } else if (sec.type === 'maternity') {
+          // Obstetric Delivery / Postpartum Recovery Bed
+          const bx = sx + 12;
+          const by = sy + 25;
+          ctx.fillStyle = "#fdf2f8";
+          ctx.fillRect(bx, by, 34, 20);
+          ctx.strokeStyle = "#ec4899";
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(bx, by, 34, 20);
+          // Soft pink blanket
+          ctx.fillStyle = "#f472b6";
+          ctx.fillRect(bx + 10, by + 2, 22, 16);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(bx + 2, by + 4, 7, 12);
+
+          // 2 Transparent Acrylic Neonatal Bassinets (Berços Acrílicos)
+          for (let i = 0; i < 2; i++) {
+            const nx = sx + 52 + i * 22;
+            ctx.fillStyle = "#e0f2fe";
+            ctx.fillRect(nx, by + 2, 16, 16);
+            ctx.strokeStyle = "#38bdf8";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(nx, by + 2, 16, 16);
+            // Baby swaddle blanket
+            ctx.fillStyle = i === 0 ? "#fbcfe8" : "#bae6fd";
+            ctx.beginPath(); ctx.arc(nx + 8, by + 10, 5, 0, Math.PI * 2); ctx.fill();
+          }
+
+          // High-Acuity Neonatal Incubator (Incubadora Neonatal Aquecida)
+          const ix = sx + 12;
+          const iy = sy + sh - 28;
+          ctx.fillStyle = "#f8fafc";
+          ctx.fillRect(ix, iy, 28, 18);
+          ctx.strokeStyle = "#f43f5e";
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(ix, iy, 28, 18);
+          // Curved radiant hood
+          ctx.fillStyle = "#bae6fd";
+          ctx.beginPath(); ctx.arc(ix + 14, iy + 9, 7, 0, Math.PI * 2); ctx.fill();
+
+          // Breastfeeding & Lactation Support Armchair (Banco de Leite)
+          ctx.fillStyle = "#db2777";
           ctx.beginPath();
-          ctx.arc(sx + sw / 2, sy + 40, 18, 0, Math.PI * 2);
+          ctx.roundRect(sx + sw - 28, sy + sh - 28, 18, 18, 5);
           ctx.fill();
-          ctx.fillStyle = "#090d16";
+
+        } else if (sec.type === 'oncology') {
+          // 3 Ergonomic Chemotherapy Infusion Armchairs (Poltronas de Quimioterapia)
+          for (let i = 0; i < 3; i++) {
+            const cx = sx + 12 + i * 36;
+            const cy = sy + 25;
+            // Plush reclining armchair
+            ctx.fillStyle = "#0f766e";
+            ctx.beginPath();
+            ctx.roundRect(cx, cy, 22, 20, 5);
+            ctx.fill();
+            ctx.fillStyle = "#14b8a6";
+            ctx.fillRect(cx + 3, cy + 3, 16, 14);
+
+            // Tall Infusion Pump Pole with Dual Syringe Drip
+            ctx.fillStyle = "#94a3b8";
+            ctx.fillRect(cx + 25, cy - 8, 2, 28);
+            ctx.fillStyle = "#0284c7";
+            ctx.fillRect(cx + 23, cy - 6, 6, 7); // Pump unit
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(cx + 24, cy - 5, 4, 3); // Display
+          }
+
+          // Cytostatic Chemotherapy Preparation Counter with Laminar Flow Hood
+          ctx.fillStyle = "#134e4a";
+          ctx.fillRect(sx + 10, sy + sh - 25, 42, 15);
+          ctx.fillStyle = "#2dd4bf";
+          ctx.fillRect(sx + 14, sy + sh - 22, 16, 9); // Laminar hood glass
+
+          // Purple Cytostatic Biohazard Waste Canister (Grupo B - Quimioterápicos)
+          ctx.fillStyle = "#9333ea";
+          ctx.fillRect(sx + sw - 22, sy + sh - 25, 12, 15);
+          ctx.fillStyle = "#facc15";
+          ctx.fillRect(sx + sw - 19, sy + sh - 21, 6, 6);
+
+        } else if (sec.type === 'rehab') {
+          // Chrome Parallel Walking Rehabilitation Bars (Barras Paralelas)
+          const px = sx + 12;
+          const py = sy + 26;
+          const pw = 48;
+          ctx.strokeStyle = "#94a3b8";
+          ctx.lineWidth = 3;
           ctx.beginPath();
-          ctx.arc(sx + sw / 2, sy + 40, 10, 0, Math.PI * 2);
+          ctx.moveTo(px, py); ctx.lineTo(px + pw, py);
+          ctx.moveTo(px, py + 16); ctx.lineTo(px + pw, py + 16);
+          ctx.stroke();
+          // Step markings
+          ctx.strokeStyle = "#10b981";
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 5; i++) {
+            const mx = px + 6 + i * 9;
+            ctx.beginPath(); ctx.moveTo(mx, py + 3); ctx.lineTo(mx, py + 13); ctx.stroke();
+          }
+
+          // Thick Physiotherapy Exercise Floor Mat (Tablado de Reabilitação)
+          ctx.fillStyle = "#059669";
+          ctx.fillRect(sx + sw - 44, sy + 25, 34, 22);
+          ctx.fillStyle = "#34d399";
+          ctx.fillRect(sx + sw - 42, sy + 27, 30, 18);
+          // Bolster roll & gym ball
+          ctx.fillStyle = "#3b82f6";
+          ctx.beginPath(); ctx.arc(sx + sw - 20, sy + 36, 6, 0, Math.PI * 2); ctx.fill();
+
+          // Wall-Mounted Swedish Rehabilitation Ladder (Espaldar)
+          ctx.fillStyle = "#78350f";
+          ctx.fillRect(sx + 10, sy + sh - 24, 28, 14);
+          ctx.fillStyle = "#d97706";
+          for (let i = 0; i < 4; i++) {
+            ctx.fillRect(sx + 12, sy + sh - 22 + i * 3, 24, 1.5);
+          }
+
+          // Physiotherapist Consultation Desk
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + sw - 44, sy + sh - 24, 34, 14);
+          ctx.fillStyle = "#10b981";
+          ctx.fillRect(sx + sw - 36, sy + sh - 22, 10, 6);
+
+        } else if (sec.type === 'psych') {
+          // Psychotherapy Lounge: Soft L-Shaped Sectional Sofa & Armchairs
+          ctx.fillStyle = "#5b21b6"; // Plush violet sofa
+          ctx.beginPath();
+          ctx.roundRect(sx + 14, sy + 25, 42, 16, 5);
           ctx.fill();
-          // Patient table
-          ctx.fillStyle = "#c084fc";
-          ctx.fillRect(sx + sw / 2 - 7, sy + 40, 14, 24);
+          ctx.beginPath();
+          ctx.roundRect(sx + 14, sy + 38, 16, 20, 5);
+          ctx.fill();
+
+          // Low Solid Wood Coffee Table with Tissue Box
+          ctx.fillStyle = "#78350f";
+          ctx.beginPath();
+          ctx.roundRect(sx + 34, sy + 44, 22, 14, 3);
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + 42, sy + 48, 6, 5); // Tissues
+
+          // Extensive Bookshelf with DSM/Psychiatry Manuals
+          ctx.fillStyle = "#451a03";
+          ctx.fillRect(sx + sw - 38, sy + 25, 28, 14);
+          for (let i = 0; i < 6; i++) {
+            const bx = sx + sw - 36 + i * 4.5;
+            ctx.fillStyle = i % 2 === 0 ? "#7c3aed" : "#3b82f6";
+            ctx.fillRect(bx, sy + 27, 3.5, 9);
+          }
+
+          // Psychiatrist Consultation Desk with Laptop
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + sw - 38, sy + sh - 25, 28, 15);
+          ctx.fillStyle = "#a78bfa";
+          ctx.fillRect(sx + sw - 30, sy + sh - 23, 10, 6);
+
+          // Calming Ambient Floor Lamp & Plant
+          ctx.fillStyle = "#fbbf24";
+          ctx.beginPath(); ctx.arc(sx + 14, sy + sh - 14, 4, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#22c55e";
+          ctx.beginPath(); ctx.arc(sx + 24, sy + sh - 14, 5, 0, Math.PI * 2); ctx.fill();
+
         } else if (sec.type === 'garden') {
           // Central Garden with Walkways & Planters
           ctx.fillStyle = "#1e3a24";
-          ctx.fillRect(sx + 10, sy + 20, sw - 20, sh - 28);
-          // Cobblestone walking path
+          ctx.fillRect(sx + 8, sy + 18, sw - 16, sh - 24);
+
+          // Cobblestone walking loop path
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(sx + 12, sy + 22, sw - 24, 10);
+          ctx.fillRect(sx + sw / 2 - 20, sy + 18, 40, sh - 24);
+
+          // Central Decorative Tiered Fountain with Water Ripples
+          const fx = sx + sw / 2;
+          const fy = sy + sh / 2 + 2;
           ctx.fillStyle = "#475569";
-          ctx.fillRect(sx + sw / 2 - 24, sy + 20, 48, sh - 28);
-          // Foliage bushes
-          ctx.fillStyle = "#22c55e";
-          for (let i = 0; i < 9; i++) {
-            ctx.beginPath();
-            ctx.arc(sx + 32 + i * 70, sy + sh / 2 + (i % 2 === 0 ? -4 : 4), 7, 0, Math.PI * 2);
-            ctx.fill();
+          ctx.beginPath(); ctx.arc(fx, fy, 14, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#0284c7";
+          ctx.beginPath(); ctx.arc(fx, fy, 10, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#38bdf8";
+          ctx.beginPath(); ctx.arc(fx, fy, 5, 0, Math.PI * 2); ctx.fill();
+
+          // 4 Classic Wooden Park Benches
+          const benchPositions = [
+            { x: sx + 40, y: sy + 20 },
+            { x: sx + sw - 60, y: sy + 20 },
+            { x: sx + 40, y: sy + sh - 16 },
+            { x: sx + sw - 60, y: sy + sh - 16 },
+          ];
+          ctx.fillStyle = "#78350f";
+          benchPositions.forEach((bp) => {
+            ctx.fillRect(bp.x, bp.y, 22, 6);
+            ctx.fillStyle = "#b45309";
+            ctx.fillRect(bp.x + 2, bp.y + 1, 18, 4);
+          });
+
+          // Lush Foliage Bushes & Flowering Shrubs
+          for (let i = 0; i < 11; i++) {
+            const bx = sx + 25 + i * ((sw - 50) / 10);
+            const by = sy + sh / 2 + (i % 2 === 0 ? -9 : 9);
+            ctx.fillStyle = "#15803d";
+            ctx.beginPath(); ctx.arc(bx, by, 7.5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = i % 3 === 0 ? "#ec4899" : i % 3 === 1 ? "#facc15" : "#4ade80";
+            ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI * 2); ctx.fill();
           }
         }
       });
