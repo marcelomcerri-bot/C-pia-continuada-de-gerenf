@@ -153,6 +153,7 @@ function scheduleTrack(
   melody: NoteStep[], bass: NoteStep[], chord: NoteStep[],
   startTime: number,
   bpm: number,
+  track: 'menu' | 'game',
   onLoop: (prevBatch: AudioNode[]) => void,
 ): AudioNode[] {
   const beatDur = 60 / bpm;
@@ -165,8 +166,8 @@ function scheduleTrack(
     osc.type = type;
     osc.frequency.value = freq;
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol, t + 0.01);
-    g.gain.setValueAtTime(vol, t + dur * beatDur - 0.04);
+    g.gain.linearRampToValueAtTime(vol, t + 0.05); // softer attack, zero clicks or harshness
+    g.gain.setValueAtTime(vol, t + dur * beatDur - 0.06);
     g.gain.linearRampToValueAtTime(0, t + dur * beatDur);
     osc.connect(g);
     g.connect(masterGain);
@@ -177,7 +178,8 @@ function scheduleTrack(
 
   let t = startTime;
   for (const [n, d] of melody) {
-    makeOsc('square', NOTE[n] || 0, t, d, 0.10);
+    // Pure, warm sine wave for a bell-like or Rhode electric piano feel
+    makeOsc('sine', NOTE[n] || 0, t, d, 0.06);
     t += d * beatDur;
   }
   const totalBeats = melody.reduce((s, [, d]) => s + d, 0);
@@ -185,21 +187,23 @@ function scheduleTrack(
 
   let bt = startTime;
   for (const [n, d] of bass) {
-    makeOsc('triangle', NOTE[n] || 0, bt, d, 0.14);
+    // Soft, deep bass tone
+    makeOsc('triangle', NOTE[n] || 0, bt, d, 0.08);
     bt += d * beatDur;
   }
   let ct = startTime;
   for (const [n, d] of chord) {
-    makeOsc('square', NOTE[n] || 0, ct, d, 0.05);
+    // Extremely subtle background pad
+    makeOsc('sine', NOTE[n] || 0, ct, d, 0.025);
     ct += d * beatDur;
   }
 
-  // Arpeggio feel (sparse - only every other beat to reduce node count)
+  // Arpeggio feel (sparse background sparkles)
   const arpNotes = ['C4', 'E4', 'G4', 'E4'];
   for (let i = 0; i < totalBeats; i++) {
     const freq = NOTE[arpNotes[i % arpNotes.length]];
     const pt = startTime + i * beatDur;
-    if (pt < loopEnd) makeOsc('square', freq, pt, 0.12, 0.025);
+    if (pt < loopEnd) makeOsc('sine', freq, pt, 0.12, 0.012);
   }
 
   const until = loopEnd - ctx.currentTime;
@@ -225,11 +229,12 @@ export function playMusic(track: 'menu' | 'game') {
 
   const masterGain = ctx.createGain();
   masterGain.gain.setValueAtTime(0, ctx.currentTime);
-  masterGain.gain.linearRampToValueAtTime(0.45, ctx.currentTime + 2.0);
+  masterGain.gain.linearRampToValueAtTime(0.40, ctx.currentTime + 2.0);
   masterGain.connect(ctx.destination);
   musicGain = masterGain;
 
-  const bpm = track === 'menu' ? 76 : 68;
+  // Calm, serene tempos
+  const bpm = track === 'menu' ? 58 : 56;
   const melody = track === 'menu' ? MENU_MELODY : GAME_MELODY;
   const bass   = track === 'menu' ? MENU_BASS   : GAME_BASS;
   const chord  = track === 'menu' ? MENU_CHORD  : GAME_CHORD;
@@ -240,10 +245,10 @@ export function playMusic(track: 'menu' | 'game') {
     if (!c) { disconnectBatch(prevBatch); return; }
     // Disconnect the previous iteration's nodes now that they've stopped
     disconnectBatch(prevBatch);
-    scheduleTrack(c, masterGain, melody, bass, chord, c.currentTime, bpm, loop);
+    scheduleTrack(c, masterGain, melody, bass, chord, c.currentTime, bpm, track, loop);
   };
 
-  const firstBatch = scheduleTrack(ctx, masterGain, melody, bass, chord, ctx.currentTime, bpm, loop);
+  const firstBatch = scheduleTrack(ctx, masterGain, melody, bass, chord, ctx.currentTime, bpm, track, loop);
   // Track only the first batch in musicNodes so stopMusic() can clean up if called early
   musicNodes = firstBatch;
 }

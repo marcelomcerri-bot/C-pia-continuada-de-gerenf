@@ -1215,8 +1215,17 @@ function MissionsModal({
   });
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn select-none pointer-events-auto">
-      <div className="relative w-full max-w-4xl max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.85)] overflow-hidden">
+    <div 
+      onClick={() => {
+        try { playSound("click"); } catch {}
+        onClose();
+      }}
+      className="fixed inset-0 z-[150] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn select-none pointer-events-auto cursor-pointer"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-4xl max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.85)] overflow-hidden cursor-default"
+      >
         {/* Header */}
         <div className="flex-shrink-0 p-3.5 sm:p-5 bg-slate-950/90 border-b border-slate-800 flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -1234,11 +1243,20 @@ function MissionsModal({
               </div>
             </div>
             <button
-              onClick={() => {
-                playSound("click");
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                try { playSound("click"); } catch {}
                 onClose();
               }}
-              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-sm font-mono cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                try { playSound("click"); } catch {}
+                onClose();
+              }}
+              className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-xl font-bold font-mono cursor-pointer touch-manipulation"
+              aria-label="Sair"
             >
               ✕
             </button>

@@ -240,7 +240,10 @@ export default function App() {
 
             <button
               type="button"
-              onClick={() => setDismissedPortrait(true)}
+              onClick={async () => {
+                await handleRequestFullscreenAndLandscape();
+                setDismissedPortrait(true);
+              }}
               className="w-full py-2.5 px-4 bg-[#1abc9c] hover:bg-[#16a085] active:bg-[#148f77] text-[#020b14] font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
             >
               <span>Entendido, girar tela</span>

@@ -210,13 +210,20 @@ export function ErrorNotebookModal({ isOpen, onClose }: ErrorNotebookModalProps)
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 pointer-events-auto select-none">
+      <div 
+        onClick={() => {
+          try { playSound("click"); } catch {}
+          onClose();
+        }}
+        className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 pointer-events-auto select-none cursor-pointer"
+      >
         <motion.div
+          onClick={(e) => e.stopPropagation()}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.12, ease: "easeOut" }}
-          className="relative w-full max-w-4xl bg-[#0b1422] border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          className="relative w-full max-w-4xl bg-[#0b1422] border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden cursor-default"
         >
           {/* Top Bar Header */}
           <div className="flex items-center justify-between px-5 py-3.5 bg-[#0e1a2c] border-b border-slate-800">
@@ -238,14 +245,22 @@ export function ErrorNotebookModal({ isOpen, onClose }: ErrorNotebookModalProps)
             </div>
 
             <button
-              onClick={() => {
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 try { playSound("click"); } catch {}
                 onClose();
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                try { playSound("click"); } catch {}
+                onClose();
+              }}
+              className="w-12 h-12 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer touch-manipulation"
               aria-label="Fechar"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
           </div>
 
