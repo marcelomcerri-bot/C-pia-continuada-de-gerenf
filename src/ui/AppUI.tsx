@@ -302,10 +302,11 @@ function HomeMenu({
     }, 800);
   };
 
-  // Align buttons with the title in the 16:9 canvas
+  // Align buttons with the lower entrance colonnade of the hospital in the 16:9 canvas
   const menuCenterX = canvasBounds.left + canvasBounds.width / 2;
-  const menuCenterY = canvasBounds.top + 440 * canvasBounds.scale;
-  const menuScale = Math.min(1, Math.max(0.70, canvasBounds.scale));
+  const menuCenterY = canvasBounds.top + 490 * canvasBounds.scale;
+  // Keep buttons comfortably readable even on compact/laptop views
+  const menuScale = Math.min(1.05, Math.max(0.85, canvasBounds.scale));
 
   return (
     <motion.div
@@ -331,54 +332,54 @@ function HomeMenu({
             top: `${menuCenterY}px`,
             transformOrigin: "center center",
           }}
-          className="flex flex-col gap-3 w-72 pointer-events-auto select-none"
+          className="flex flex-col gap-2.5 w-80 max-w-[92vw] pointer-events-auto select-none p-3.5 bg-slate-950/65 backdrop-blur-md rounded-2xl border border-teal-500/30 shadow-[0_12px_36px_rgba(0,0,0,0.65)]"
         >
           {hasSave() && (
             <motion.button
-              whileHover={{ scale: 1.04, y: -2 }}
+              whileHover={{ scale: 1.03, y: -2 }}
               whileTap={{ scale: 0.97, y: 1 }}
               type="button"
               onPointerDown={continueGame}
               onClick={continueGame}
               onMouseEnter={() => { try { playSound("hover"); } catch {} }}
-              className="w-full flex items-center justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-sans font-bold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#312e81] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
+              className="w-full flex items-center justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#312e81] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
             >
               ▶ CONTINUAR
             </motion.button>
           )}
 
           <motion.button
-            whileHover={{ scale: 1.04, y: -2 }}
+            whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
             onPointerDown={openNewGameModal}
             onClick={openNewGameModal}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
-            className="w-full flex items-center justify-center gap-2.5 bg-[#1abc9c] hover:bg-[#1dd2af] active:bg-[#16a085] text-white font-sans font-bold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#0e6252] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
+            className="w-full flex items-center justify-center gap-2.5 bg-[#1abc9c] hover:bg-[#1dd2af] active:bg-[#16a085] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#0e6252] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
             ★ NOVO JOGO
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.04, y: -2 }}
+            whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
             onPointerDown={() => { try { playSound("click"); } catch {}; setShowHelp(true); }}
             onClick={() => { try { playSound("click"); } catch {}; setShowHelp(true); }}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
-            className="w-full flex items-center justify-center gap-2.5 bg-[#f39c12] hover:bg-[#f4a62a] active:bg-[#d68910] text-white font-sans font-bold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#a66705] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
+            className="w-full flex items-center justify-center gap-2.5 bg-[#f39c12] hover:bg-[#f4a62a] active:bg-[#d68910] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#a66705] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
             📖 COMO JOGAR
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.04, y: -2 }}
+            whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
             onPointerDown={() => { try { playSound("click"); } catch {}; navigate("/professor"); }}
             onClick={() => { try { playSound("click"); } catch {}; navigate("/professor"); }}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
-            className="w-full flex items-center justify-center gap-2.5 bg-[#2c3e70] hover:bg-[#344985] active:bg-[#1a2348] text-white font-sans font-bold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#1a2348] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
+            className="w-full flex items-center justify-center gap-2.5 bg-[#2c3e70] hover:bg-[#344985] active:bg-[#1a2348] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#1a2348] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
             🎓 MODO PROFESSOR
           </motion.button>

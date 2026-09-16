@@ -112,7 +112,7 @@ export class MenuScene extends Phaser.Scene {
         title.y = tY;
         bobTween1 = this.tweens.add({
           targets: title,
-          y: tY + 4,
+          y: tY + 3,
           duration: 3000,
           yoyo: true,
           repeat: -1,
@@ -121,10 +121,10 @@ export class MenuScene extends Phaser.Scene {
       }
 
       if (subContainer) {
-        subContainer.y = tY + 54;
+        subContainer.y = tY + 44;
         bobTween2 = this.tweens.add({
           targets: subContainer,
-          y: tY + 58,
+          y: tY + 47,
           duration: 3000,
           yoyo: true,
           repeat: -1,
@@ -143,7 +143,8 @@ export class MenuScene extends Phaser.Scene {
 
       // 1. Position & cover scale background (with cinematic Ken Burns breathing & gentle sway)
       if (bgKey) {
-        const shiftedCy = cy + 70; // Shift down by 70px to reveal clear sky at top
+        // Shift down by 105px to reveal clear sky at top and keep the statue's face completely unobstructed
+        const shiftedCy = cy + 105;
         if (!bg) {
           bg = this.add.image(cx, shiftedCy, bgKey).setOrigin(0.5).setDepth(0);
           
@@ -198,61 +199,62 @@ export class MenuScene extends Phaser.Scene {
         }
       }
 
-      // 2. Clear & Redraw vertical dark header gradient (for perfect text readability)
+      // 2. Clear & Redraw vertical dark header gradient (for perfect text readability in the sky only)
       if (!gradient) {
         gradient = this.add.graphics().setDepth(1);
       }
       gradient.clear();
-      gradient.fillGradientStyle(0x060f1c, 0x060f1c, 0x060f1c, 0x060f1c, 0.85, 0.85, 0.0, 0.0);
-      gradient.fillRect(0, 0, W, 220);
+      gradient.fillGradientStyle(0x060f1c, 0x060f1c, 0x060f1c, 0x060f1c, 0.88, 0.88, 0.0, 0.0);
+      gradient.fillRect(0, 0, W, 115);
 
       // 3. Clear & Redraw vignette overlay
       if (!vignette) {
         vignette = this.add.graphics().setDepth(1);
       }
       vignette.clear();
-      vignette.fillStyle(0x000000, 0.2);
+      vignette.fillStyle(0x000000, 0.15);
       vignette.fillRect(0, 0, W, H);
 
-      // 4. Position & configure main title text
-      const titleY = 56;
+      // 4. Position & configure main title text (comfortably up in the night sky)
+      const titleY = 36;
       if (!title) {
         title = this.add.text(cx, titleY, 'GESTOR ENF', {
           fontFamily: "'Press Start 2P', monospace",
-          fontSize: '42px',
+          fontSize: '38px',
           color: '#ffffff',
         }).setOrigin(0.5).setDepth(4);
-        title.setShadow(3, 3, '#000000', 4, true, true);
+        title.setShadow(3, 3, '#000000', 5, true, true);
       } else {
         title.setPosition(cx, titleY);
       }
 
-      // 5. Position & configure modern rounded capsule subtitle badge
+      // 5. Position & configure modern rounded capsule subtitle badge (comfortably in the sky, above the building)
+      const subY = titleY + 44;
       if (!subContainer) {
-        subContainer = this.add.container(cx, titleY + 54).setDepth(4);
+        subContainer = this.add.container(cx, subY).setDepth(4);
         
         const subTextStr = 'Simulador de Gerência de Enfermagem II';
         const subText = this.add.text(0, 0, subTextStr, {
-          fontFamily: "Arial, sans-serif",
-          fontSize: '15px',
+          fontFamily: "'Segoe UI', Roboto, system-ui, -apple-system, sans-serif",
+          fontSize: '16px',
           color: '#ffffff',
           fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Safe defensive minimums to prevent squishing if fonts are still loading
-        const pillW = Math.max(340, subText.width + 32);
-        const pillH = Math.max(36, subText.height + 14);
+        const pillW = Math.max(360, subText.width + 36);
+        const pillH = 34;
 
         const bgPill = this.add.graphics();
-        bgPill.fillStyle(0x0e1726, 0.88);
-        bgPill.lineStyle(1.5, 0x1abc9c, 0.85);
+        bgPill.fillStyle(0x0b1322, 0.92);
+        bgPill.lineStyle(1.5, 0x14b8a6, 0.9);
         bgPill.fillRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, pillH / 2);
         bgPill.strokeRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, pillH / 2);
 
         subContainer.add(bgPill);
         subContainer.add(subText);
       } else {
-        subContainer.setPosition(cx, titleY + 54);
+        subContainer.setPosition(cx, subY);
       }
 
       // Restart bobbing tweens at new base positions
