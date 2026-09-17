@@ -254,20 +254,35 @@ export default function App() {
               <p>• Toque no botão abaixo e vire o aparelho de lado.</p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                handleRequestFullscreenAndLandscape();
-                try {
-                  playSound("click");
-                } catch {}
-                setDismissedPortrait(true);
-              }}
-              className="w-full py-3.5 px-4 bg-[#1abc9c] hover:bg-[#16a085] active:bg-[#148f77] text-[#020b14] font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none active:scale-[0.98]"
-            >
-              <Maximize className="w-4 h-4" />
-              <span>Entendido, tela cheia</span>
-            </button>
+            <div className="w-full flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    playSound("click");
+                  } catch {}
+                  handleRequestFullscreenAndLandscape();
+                  setDismissedPortrait(true);
+                }}
+                className="w-full py-3.5 px-4 bg-[#1abc9c] hover:bg-[#16a085] active:bg-[#148f77] text-[#020b14] font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none active:scale-[0.98]"
+              >
+                <Maximize className="w-4 h-4" />
+                <span>Ativar Tela Cheia & Paisagem</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    playSound("click");
+                  } catch {}
+                  setDismissedPortrait(true);
+                }}
+                className="w-full py-2.5 px-4 bg-transparent hover:bg-white/5 active:bg-white/10 text-gray-300 hover:text-white font-medium text-xs rounded-lg transition-all border border-gray-700/60 flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none"
+              >
+                <span>Continuar no Modo Vertical</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
