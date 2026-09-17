@@ -51,9 +51,7 @@ export function createGameConfig(
     input: {
       keyboard: true,
       mouse: true,
-      touch: {
-        capture: false,
-      },
+      touch: true,
     },
   };
 }

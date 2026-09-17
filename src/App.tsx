@@ -182,16 +182,6 @@ export default function App() {
     }
   };
 
-  const lastActionTimeRef = useRef(0);
-  const [isClosingModal, setIsClosingModal] = useState(false);
-
-  const executeOnce = (fn: () => void) => {
-    const now = Date.now();
-    if (now - lastActionTimeRef.current < 300) return;
-    lastActionTimeRef.current = now;
-    fn();
-  };
-
   const handleRequestFullscreenAndLandscape = () => {
     // 1. Immediately request universal fullscreen (synchronous on direct user gesture)
     requestAppFullscreen();
@@ -200,45 +190,6 @@ export default function App() {
     applySize();
     setTimeout(applySize, 60);
     setTimeout(applySize, 200);
-  };
-
-  const handleActivateFullscreen = (e?: React.SyntheticEvent | React.PointerEvent | React.TouchEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    executeOnce(() => {
-      // Trigger fullscreen immediately synchronously while the user gesture is active
-      handleRequestFullscreenAndLandscape();
-      try { playSound("click"); } catch {}
-
-      // Mark dismissal timestamp so underlying buttons ignore ghost clicks
-      (window as any).__lastModalDismissedTime = Date.now();
-      setIsClosingModal(true);
-
-      // Keep backdrop active absorbing clicks for 350ms until touch sequence finishes
-      setTimeout(() => {
-        setDismissedPortrait(true);
-        setIsClosingModal(false);
-      }, 350);
-    });
-  };
-
-  const handleDismissToVertical = (e?: React.SyntheticEvent | React.PointerEvent | React.TouchEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    executeOnce(() => {
-      try { playSound("click"); } catch {}
-      (window as any).__lastModalDismissedTime = Date.now();
-      setIsClosingModal(true);
-
-      setTimeout(() => {
-        setDismissedPortrait(true);
-        setIsClosingModal(false);
-      }, 350);
-    });
   };
 
   // Calculate dynamic scaling and bounds
@@ -264,32 +215,17 @@ export default function App() {
         onStartGame={handleStartGame}
         isMobile={IS_MOBILE_DEVICE}
         canvasBounds={{ left, top, width, height, scale }}
-        isModalActive={isPortrait && !dismissedPortrait}
       />
 
       {/* Full Portrait Helper Modal: guides user to rotate phone to landscape */}
       {isPortrait && !dismissedPortrait && (
-        <div
-          onPointerDown={handleDismissToVertical}
-          onClick={handleDismissToVertical}
-          className={`fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md pointer-events-auto transition-opacity duration-300 ${
-            isClosingModal ? "opacity-0 pointer-events-auto" : "opacity-100"
-          }`}
-        >
-          <div
-            onPointerDown={(e) => { e.stopPropagation(); }}
-            onClick={(e) => { e.stopPropagation(); }}
-            className={`relative max-w-sm w-full bg-[#0a1628] border-2 border-[#1abc9c]/70 rounded-2xl p-6 text-center shadow-2xl flex flex-col items-center pointer-events-auto transition-all duration-300 ${
-              isClosingModal ? "scale-95 opacity-50" : "scale-100 opacity-100"
-            }`}
-          >
+        <div className="absolute inset-0 z-[400] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-opacity duration-300">
+          <div className="relative max-w-sm w-full bg-[#0a1628] border-2 border-[#1abc9c]/70 rounded-2xl p-6 text-center shadow-2xl flex flex-col items-center">
             {/* Close button to allow vertical play */}
             <button
-              type="button"
-              onPointerDown={handleDismissToVertical}
-              onClick={handleDismissToVertical}
+              onClick={() => setDismissedPortrait(true)}
               aria-label="Fechar aviso"
-              className="absolute top-3 right-3 text-gray-400 hover:text-white p-2 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all cursor-pointer pointer-events-auto"
+              className="absolute top-3 right-3 text-gray-400 hover:text-white p-1 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -321,9 +257,14 @@ export default function App() {
             <div className="w-full flex flex-col gap-2.5">
               <button
                 type="button"
-                onPointerDown={handleActivateFullscreen}
-                onClick={handleActivateFullscreen}
-                className="w-full py-3.5 px-4 bg-[#1abc9c] hover:bg-[#16a085] active:bg-[#148f77] text-[#020b14] font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none active:scale-[0.98] pointer-events-auto"
+                onClick={() => {
+                  try {
+                    playSound("click");
+                  } catch {}
+                  handleRequestFullscreenAndLandscape();
+                  setDismissedPortrait(true);
+                }}
+                className="w-full py-3.5 px-4 bg-[#1abc9c] hover:bg-[#16a085] active:bg-[#148f77] text-[#020b14] font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none active:scale-[0.98]"
               >
                 <Maximize className="w-4 h-4" />
                 <span>Ativar Tela Cheia & Paisagem</span>
@@ -331,9 +272,13 @@ export default function App() {
 
               <button
                 type="button"
-                onPointerDown={handleDismissToVertical}
-                onClick={handleDismissToVertical}
-                className="w-full py-2.5 px-4 bg-transparent hover:bg-white/5 active:bg-white/10 text-gray-300 hover:text-white font-medium text-xs rounded-lg transition-all border border-gray-700/60 flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none pointer-events-auto"
+                onClick={() => {
+                  try {
+                    playSound("click");
+                  } catch {}
+                  setDismissedPortrait(true);
+                }}
+                className="w-full py-2.5 px-4 bg-transparent hover:bg-white/5 active:bg-white/10 text-gray-300 hover:text-white font-medium text-xs rounded-lg transition-all border border-gray-700/60 flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none"
               >
                 <span>Continuar no Modo Vertical</span>
               </button>
@@ -346,8 +291,13 @@ export default function App() {
       {isPortrait && dismissedPortrait && (
         <button
           type="button"
-          onPointerDown={handleActivateFullscreen}
-          onClick={handleActivateFullscreen}
+          onClick={() => {
+            handleRequestFullscreenAndLandscape();
+            try {
+              playSound("click");
+            } catch {}
+            setDismissedPortrait(false);
+          }}
           className="absolute top-3 left-1/2 -translate-x-1/2 z-[300] bg-[#0a1628]/95 border border-[#1abc9c]/70 text-[#1abc9c] px-3.5 py-1.5 rounded-full text-xs font-mono font-bold shadow-lg flex items-center gap-2 backdrop-blur-sm active:scale-95 transition-all pointer-events-auto cursor-pointer"
         >
           <RotateCw className="w-3.5 h-3.5 animate-spin-slow" />
