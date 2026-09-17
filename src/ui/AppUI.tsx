@@ -835,35 +835,60 @@ function MobileControls() {
 
   if (dialogOpen) return null;
 
-  const handleAction = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAction = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try { playSound("click"); } catch {}
     setVPad("actionJustPressed", true);
     window.dispatchEvent(new CustomEvent("mobileaction", { detail: { action: "falar" } }));
   };
 
-  const handleSprintDown = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleSprintDown = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const next = !sprintToggle;
     setSprintToggle(next);
     setVPad("sprint", next);
     try { playSound("click"); } catch {}
   };
 
-  const handleMission = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleMission = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try { playSound("click"); } catch {}
     setVPad("missionJustPressed", true);
   };
 
-  const handlePause = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handlePause = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try { playSound("click"); } catch {}
     setVPad("menuJustPressed", true);
+
+    // Direct immediate trigger for zero-lag mobile responsiveness
+    try {
+      const phaser = (window as any).phaserGame;
+      if (phaser && phaser.scene) {
+        const gameScene = phaser.scene.getScene("GameScene") as any;
+        if (gameScene && typeof gameScene.pauseGame === "function") {
+          gameScene.pauseGame();
+          return;
+        }
+      }
+      if ((window as any).reactNavigate) {
+        (window as any).reactNavigate("/pause");
+      }
+    } catch (err) {
+      console.warn("Pause menu navigation error:", err);
+    }
   };
 
   return (
@@ -928,6 +953,7 @@ function MobileControls() {
         <button
           type="button"
           onPointerDown={handleAction}
+          onClick={handleAction}
           style={{
             position: "absolute",
             right: 0,
@@ -962,6 +988,7 @@ function MobileControls() {
         <button
           type="button"
           onPointerDown={handleMission}
+          onClick={handleMission}
           style={{
             position: "absolute",
             left: 2,
@@ -991,16 +1018,18 @@ function MobileControls() {
           <span style={{ fontSize: 8 }}>MISSÃO</span>
         </button>
 
-        {/* PAUSA */}
+        {/* PAUSA / MENU */}
         <button
           type="button"
           onPointerDown={handlePause}
+          onClick={handlePause}
           style={{
             position: "absolute",
-            right: 18,
+            right: 16,
             bottom: 0,
-            width: 46,
-            height: 46,
+            width: 48,
+            height: 48,
+            pointerEvents: "auto",
             borderRadius: "50%",
             background: "rgba(15,23,42,0.9)",
             border: "2.5px solid #e74c3c",
@@ -1019,7 +1048,7 @@ function MobileControls() {
             boxShadow: "0 4px 10px rgba(0,0,0,0.5)",
           }}
         >
-          <span style={{ fontSize: 13 }}>⚙️</span>
+          <span style={{ fontSize: 14 }}>⚙️</span>
           <span style={{ fontSize: 8 }}>MENU</span>
         </button>
       </div>
