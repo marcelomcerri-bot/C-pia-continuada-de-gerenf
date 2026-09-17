@@ -315,7 +315,9 @@ export class DialogScene extends Phaser.Scene {
 
     const hasExplicitCorrect = rawChoices.some((c: any) => c.correct === true);
     const isCorrectChoice = (choice as any).correct === true || (!hasExplicitCorrect && (choice as any).correct !== false);
-    const isIncorrectChoice = !isCorrectChoice || ((choice as any).feedback && typeof (choice as any).feedback === 'string' && ((choice as any).feedback.includes('Incorreto') || (choice as any).feedback.includes('Perigoso') || (choice as any).feedback.includes('Ilegal')));
+    const isIncorrectChoice = (choice as any).correct === true 
+      ? false 
+      : (!isCorrectChoice || ((choice as any).feedback && typeof (choice as any).feedback === 'string' && ((choice as any).feedback.includes('Incorreto') || (choice as any).feedback.includes('Perigoso') || (choice as any).feedback.includes('Ilegal'))));
 
     let stateUpdate: Partial<GameState> = {};
 
