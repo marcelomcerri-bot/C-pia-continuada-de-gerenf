@@ -5,6 +5,7 @@ import { createGameConfig } from "./game/config";
 import { AppUI } from "./ui/AppUI";
 import { GAME_WIDTH, GAME_HEIGHT, getDynamicGameSize } from "./game/constants";
 import { playSound } from "./game/utils/audio";
+import { requestAppFullscreen, subscribeFullscreenChange } from "./game/utils/fullscreen";
 
 const IS_MOBILE_DEVICE =
   navigator.maxTouchPoints > 1 ||
@@ -104,6 +105,10 @@ export default function App() {
       window.visualViewport.addEventListener("resize", handleResizeOrRotate, { passive: true });
     }
 
+    const unsubFs = subscribeFullscreenChange(() => {
+      handleResizeOrRotate();
+    });
+
     return () => {
       if (resizeTimerRef.current) {
         window.clearTimeout(resizeTimerRef.current);
@@ -115,6 +120,7 @@ export default function App() {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener("resize", handleResizeOrRotate);
       }
+      unsubFs();
     };
   }, [applySize]);
 
@@ -176,71 +182,14 @@ export default function App() {
     }
   };
 
-  const handleRequestFullscreenAndLandscape = async () => {
-    // 1. Try to enter Fullscreen using various vendor methods
-    try {
-      const doc = document.documentElement as any;
-      const body = document.body as any;
-      const container = containerRef.current as any;
-      
-      const isAlreadyFs = !!(
-        document.fullscreenElement ||
-        (document as any).webkitFullscreenElement ||
-        (document as any).mozFullScreenElement ||
-        (document as any).msFullscreenElement
-      );
+  const handleRequestFullscreenAndLandscape = () => {
+    // 1. Immediately request universal fullscreen (synchronous on direct user gesture)
+    requestAppFullscreen();
 
-      if (!isAlreadyFs) {
-        if (doc.requestFullscreen) {
-          await doc.requestFullscreen({ navigationUI: "hide" }).catch(() => doc.requestFullscreen().catch(() => {}));
-        } else if (doc.webkitRequestFullscreen) {
-          await doc.webkitRequestFullscreen().catch(() => {});
-        } else if (body.webkitRequestFullscreen) {
-          await body.webkitRequestFullscreen().catch(() => {});
-        } else if (container && container.requestFullscreen) {
-          await container.requestFullscreen().catch(() => {});
-        } else if (doc.mozRequestFullScreen) {
-          await doc.mozRequestFullScreen().catch(() => {});
-        } else if (doc.msRequestFullscreen) {
-          await doc.msRequestFullscreen().catch(() => {});
-        }
-      }
-    } catch (err) {
-      console.warn("Fullscreen request error:", err);
-    }
-
-    // 2. Also trigger Phaser scale manager fullscreen if available
-    try {
-      const phaser = gameRef.current || (window as any).phaserGame;
-      if (phaser?.scale && !phaser.scale.isFullscreen) {
-        phaser.scale.startFullscreen();
-      }
-    } catch (err) {
-      console.warn("Phaser fullscreen error:", err);
-    }
-
-    // 3. Try to lock screen orientation to landscape
-    try {
-      const ori = (screen as any).orientation;
-      if (ori && typeof ori.lock === "function") {
-        await ori.lock("landscape").catch((err: any) => {
-          console.warn("Screen orientation lock rejected:", err);
-        });
-      } else if ((screen as any).lockOrientation) {
-        (screen as any).lockOrientation("landscape");
-      } else if ((screen as any).webkitLockOrientation) {
-        (screen as any).webkitLockOrientation("landscape");
-      } else if ((screen as any).mozLockOrientation) {
-        (screen as any).mozLockOrientation("landscape");
-      }
-    } catch (err) {
-      console.warn("Orientation lock error:", err);
-    }
-    
-    // Force immediate size recalculation
+    // 2. Recalculate layout dimensions
     applySize();
-    setTimeout(applySize, 80);
-    setTimeout(applySize, 250);
+    setTimeout(applySize, 60);
+    setTimeout(applySize, 200);
   };
 
   // Calculate dynamic scaling and bounds
@@ -270,8 +219,8 @@ export default function App() {
 
       {/* Full Portrait Helper Modal: guides user to rotate phone to landscape */}
       {isPortrait && !dismissedPortrait && (
-        <div className="absolute inset-0 z-[400] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity duration-300">
-          <div className="relative max-w-sm w-full bg-[#0a1628] border-2 border-[#1abc9c]/60 rounded-2xl p-6 text-center shadow-2xl flex flex-col items-center">
+        <div className="absolute inset-0 z-[400] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-opacity duration-300">
+          <div className="relative max-w-sm w-full bg-[#0a1628] border-2 border-[#1abc9c]/70 rounded-2xl p-6 text-center shadow-2xl flex flex-col items-center">
             {/* Close button to allow vertical play */}
             <button
               onClick={() => setDismissedPortrait(true)}
@@ -293,23 +242,31 @@ export default function App() {
               <RotateCw className="w-4 h-4 text-[#1abc9c] animate-spin-slow" />
             </h2>
 
-            <p className="text-sm text-gray-300 font-sans leading-relaxed mb-6">
+            <p className="text-sm text-gray-300 font-sans leading-relaxed mb-3">
               Para a melhor experiência e campo de visão no <strong>Hospital Antônio Pedro</strong>, vire seu aparelho na horizontal (modo paisagem).
             </p>
 
+            <div className="w-full mb-5 p-2.5 rounded-xl bg-white/5 border border-[#1abc9c]/25 text-xs text-gray-300 text-left space-y-1">
+              <p className="font-semibold text-[#1abc9c] flex items-center gap-1">
+                <span>📱</span> <span>Dica de rotação:</span>
+              </p>
+              <p>• Ative a <strong>Rotação Automática</strong> no painel de controle do seu celular.</p>
+              <p>• Toque no botão abaixo e vire o aparelho de lado.</p>
+            </div>
+
             <button
               type="button"
-              onClick={async () => {
+              onClick={() => {
+                handleRequestFullscreenAndLandscape();
                 try {
                   playSound("click");
                 } catch {}
-                await handleRequestFullscreenAndLandscape();
                 setDismissedPortrait(true);
               }}
               className="w-full py-3.5 px-4 bg-[#1abc9c] hover:bg-[#16a085] active:bg-[#148f77] text-[#020b14] font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none active:scale-[0.98]"
             >
               <Maximize className="w-4 h-4" />
-              <span>Entendido, girar tela</span>
+              <span>Entendido, tela cheia</span>
             </button>
           </div>
         </div>
@@ -319,17 +276,17 @@ export default function App() {
       {isPortrait && dismissedPortrait && (
         <button
           type="button"
-          onClick={async () => {
+          onClick={() => {
+            handleRequestFullscreenAndLandscape();
             try {
               playSound("click");
             } catch {}
-            await handleRequestFullscreenAndLandscape();
             setDismissedPortrait(false);
           }}
           className="absolute top-3 left-1/2 -translate-x-1/2 z-[300] bg-[#0a1628]/95 border border-[#1abc9c]/70 text-[#1abc9c] px-3.5 py-1.5 rounded-full text-xs font-mono font-bold shadow-lg flex items-center gap-2 backdrop-blur-sm active:scale-95 transition-all pointer-events-auto cursor-pointer"
         >
           <RotateCw className="w-3.5 h-3.5 animate-spin-slow" />
-          <span>Modo Paisagem / Tela Cheia</span>
+          <span>Vire na Horizontal / Tela Cheia</span>
         </button>
       )}
     </div>

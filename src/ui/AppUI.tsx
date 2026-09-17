@@ -11,6 +11,7 @@ import { Play, ClipboardList, LogOut, Pause, BookOpen, Maximize2, Minimize2 } fr
 import { hasSave, clearSave, loadGame, saveGame, DEFAULT_STATE } from "../game/utils/save";
 import { PlayerProfile, GameState, MISSIONS, getLevelInfo } from "../game/data/gameData";
 import { playSound } from "../game/utils/audio";
+import { isAppFullscreen, toggleAppFullscreen, subscribeFullscreenChange } from "../game/utils/fullscreen";
 import { ProfessorView } from "./ProfessorView";
 import { ErrorNotebookModal } from "./ErrorNotebookModal";
 import { CharacterCreationModal } from "./CharacterCreationModal";
@@ -435,85 +436,21 @@ function HomeMenu({
 
 function PauseMenu() {
   const navigate = useNavigate();
-  const [isFullscreen, setIsFullscreen] = useState(() => {
-    return !!(
-      document.fullscreenElement ||
-      (document as any).webkitFullscreenElement ||
-      (document as any).mozFullScreenElement ||
-      (document as any).msFullscreenElement ||
-      (window as any).phaserGame?.scale?.isFullscreen
-    );
-  });
+  const [isFullscreen, setIsFullscreen] = useState(() => isAppFullscreen());
 
   useEffect(() => {
-    const updateFs = () => {
-      setIsFullscreen(
-        !!(
-          document.fullscreenElement ||
-          (document as any).webkitFullscreenElement ||
-          (document as any).mozFullScreenElement ||
-          (document as any).msFullscreenElement ||
-          (window as any).phaserGame?.scale?.isFullscreen
-        )
-      );
-    };
-    document.addEventListener("fullscreenchange", updateFs);
-    document.addEventListener("webkitfullscreenchange", updateFs);
-    return () => {
-      document.removeEventListener("fullscreenchange", updateFs);
-      document.removeEventListener("webkitfullscreenchange", updateFs);
-    };
+    return subscribeFullscreenChange((fs) => {
+      setIsFullscreen(fs);
+    });
   }, []);
 
-  const toggleFullscreen = async (e?: React.SyntheticEvent) => {
+  const handleToggleFullscreen = (e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     try { playSound("click"); } catch {}
-
-    if (isFullscreen) {
-      try {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen().catch(() => {});
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen().catch(() => {});
-        }
-        const phaser = (window as any).phaserGame;
-        if (phaser?.scale?.isFullscreen) {
-          phaser.scale.stopFullscreen();
-        }
-      } catch {}
-      setIsFullscreen(false);
-    } else {
-      try {
-        const docEl = document.documentElement as any;
-        const body = document.body as any;
-        if (docEl.requestFullscreen) {
-          await docEl.requestFullscreen({ navigationUI: "hide" }).catch(() => docEl.requestFullscreen().catch(() => {}));
-        } else if (docEl.webkitRequestFullscreen) {
-          await docEl.webkitRequestFullscreen().catch(() => {});
-        } else if (body.webkitRequestFullscreen) {
-          await body.webkitRequestFullscreen().catch(() => {});
-        }
-      } catch {}
-
-      try {
-        const phaser = (window as any).phaserGame;
-        if (phaser?.scale && !phaser.scale.isFullscreen) {
-          phaser.scale.startFullscreen();
-        }
-      } catch {}
-
-      try {
-        const ori = (screen as any).orientation;
-        if (ori && typeof ori.lock === "function") {
-          await ori.lock("landscape").catch(() => {});
-        }
-      } catch {}
-
-      setIsFullscreen(true);
-    }
+    toggleAppFullscreen();
   };
 
   const resume = (e?: React.SyntheticEvent) => {
@@ -643,7 +580,7 @@ function PauseMenu() {
           {/* TELA CHEIA / MODO PAISAGEM */}
           <button
             type="button"
-            onClick={toggleFullscreen}
+            onClick={handleToggleFullscreen}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
             className="w-full flex items-center justify-center gap-3 bg-sky-700 hover:bg-sky-600 active:bg-sky-800 text-white font-sans text-sm font-semibold py-3.5 px-5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer select-none touch-manipulation"
           >
@@ -992,59 +929,20 @@ function MobileControls() {
     navigate("/pause");
   };
 
-  const handleQuickFullscreen = async (e?: React.SyntheticEvent) => {
+  const [isFullscreen, setIsFullscreen] = useState(() => isAppFullscreen());
+
+  useEffect(() => {
+    return subscribeFullscreenChange((fs) => {
+      setIsFullscreen(fs);
+    });
+  }, []);
+
+  const handleQuickFullscreen = (e?: React.SyntheticEvent) => {
     if (e) {
       e.stopPropagation();
     }
     try { playSound("click"); } catch {}
-
-    const isFs = !!(
-      document.fullscreenElement ||
-      (document as any).webkitFullscreenElement ||
-      (document as any).mozFullScreenElement ||
-      (document as any).msFullscreenElement ||
-      (window as any).phaserGame?.scale?.isFullscreen
-    );
-
-    if (isFs) {
-      try {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen().catch(() => {});
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen().catch(() => {});
-        }
-        const phaser = (window as any).phaserGame;
-        if (phaser?.scale?.isFullscreen) {
-          phaser.scale.stopFullscreen();
-        }
-      } catch {}
-    } else {
-      try {
-        const docEl = document.documentElement as any;
-        const body = document.body as any;
-        if (docEl.requestFullscreen) {
-          await docEl.requestFullscreen({ navigationUI: "hide" }).catch(() => docEl.requestFullscreen().catch(() => {}));
-        } else if (docEl.webkitRequestFullscreen) {
-          await docEl.webkitRequestFullscreen().catch(() => {});
-        } else if (body.webkitRequestFullscreen) {
-          await body.webkitRequestFullscreen().catch(() => {});
-        }
-      } catch {}
-
-      try {
-        const phaser = (window as any).phaserGame;
-        if (phaser?.scale && !phaser.scale.isFullscreen) {
-          phaser.scale.startFullscreen();
-        }
-      } catch {}
-
-      try {
-        const ori = (screen as any).orientation;
-        if (ori && typeof ori.lock === "function") {
-          await ori.lock("landscape").catch(() => {});
-        }
-      } catch {}
-    }
+    toggleAppFullscreen();
   };
 
   return (
@@ -1072,14 +970,14 @@ function MobileControls() {
         <button
           type="button"
           onClick={handleQuickFullscreen}
-          title="Tela Cheia"
+          title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
           style={{
             width: 44,
             height: 44,
             borderRadius: "50%",
             background: "rgba(10, 22, 40, 0.9)",
-            border: "2px solid #38bdf8",
-            color: "#38bdf8",
+            border: `2px solid ${isFullscreen ? "#10b981" : "#38bdf8"}`,
+            color: isFullscreen ? "#10b981" : "#38bdf8",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -1090,7 +988,7 @@ function MobileControls() {
             boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
           }}
         >
-          <Maximize2 size={16} />
+          {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
         </button>
       </div>
 
