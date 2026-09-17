@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Play, ClipboardList, LogOut, Pause, BookOpen } from "lucide-react";
+import { Play, ClipboardList, LogOut, Pause, BookOpen, Maximize2, Minimize2 } from "lucide-react";
 import { hasSave, clearSave, loadGame, saveGame, DEFAULT_STATE } from "../game/utils/save";
 import { PlayerProfile, GameState, MISSIONS, getLevelInfo } from "../game/data/gameData";
 import { playSound } from "../game/utils/audio";
@@ -123,8 +123,13 @@ function RoutesWrapper({
 
   useEffect(() => {
     (window as any).reactNavigate = navigate;
+    const handleRequestPause = () => {
+      navigate("/pause");
+    };
+    window.addEventListener("requestpause", handleRequestPause);
     return () => {
       delete (window as any).reactNavigate;
+      window.removeEventListener("requestpause", handleRequestPause);
     };
   }, [navigate]);
 
@@ -430,6 +435,86 @@ function HomeMenu({
 
 function PauseMenu() {
   const navigate = useNavigate();
+  const [isFullscreen, setIsFullscreen] = useState(() => {
+    return !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement ||
+      (window as any).phaserGame?.scale?.isFullscreen
+    );
+  });
+
+  useEffect(() => {
+    const updateFs = () => {
+      setIsFullscreen(
+        !!(
+          document.fullscreenElement ||
+          (document as any).webkitFullscreenElement ||
+          (document as any).mozFullScreenElement ||
+          (document as any).msFullscreenElement ||
+          (window as any).phaserGame?.scale?.isFullscreen
+        )
+      );
+    };
+    document.addEventListener("fullscreenchange", updateFs);
+    document.addEventListener("webkitfullscreenchange", updateFs);
+    return () => {
+      document.removeEventListener("fullscreenchange", updateFs);
+      document.removeEventListener("webkitfullscreenchange", updateFs);
+    };
+  }, []);
+
+  const toggleFullscreen = async (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try { playSound("click"); } catch {}
+
+    if (isFullscreen) {
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen().catch(() => {});
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen().catch(() => {});
+        }
+        const phaser = (window as any).phaserGame;
+        if (phaser?.scale?.isFullscreen) {
+          phaser.scale.stopFullscreen();
+        }
+      } catch {}
+      setIsFullscreen(false);
+    } else {
+      try {
+        const docEl = document.documentElement as any;
+        const body = document.body as any;
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen({ navigationUI: "hide" }).catch(() => docEl.requestFullscreen().catch(() => {}));
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen().catch(() => {});
+        } else if (body.webkitRequestFullscreen) {
+          await body.webkitRequestFullscreen().catch(() => {});
+        }
+      } catch {}
+
+      try {
+        const phaser = (window as any).phaserGame;
+        if (phaser?.scale && !phaser.scale.isFullscreen) {
+          phaser.scale.startFullscreen();
+        }
+      } catch {}
+
+      try {
+        const ori = (screen as any).orientation;
+        if (ori && typeof ori.lock === "function") {
+          await ori.lock("landscape").catch(() => {});
+        }
+      } catch {}
+
+      setIsFullscreen(true);
+    }
+  };
 
   const resume = (e?: React.SyntheticEvent) => {
     if (e) {
@@ -553,6 +638,17 @@ function PauseMenu() {
           >
             <BookOpen className="w-4 h-4" />
             <span>CADERNO DE ERROS (C)</span>
+          </button>
+
+          {/* TELA CHEIA / MODO PAISAGEM */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            onMouseEnter={() => { try { playSound("hover"); } catch {} }}
+            className="w-full flex items-center justify-center gap-3 bg-sky-700 hover:bg-sky-600 active:bg-sky-800 text-white font-sans text-sm font-semibold py-3.5 px-5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer select-none touch-manipulation"
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span>{isFullscreen ? "SAIR DA TELA CHEIA" : "TELA CHEIA / PAISAGEM"}</span>
           </button>
 
           {/* VOLTAR AO MENU */}
@@ -823,8 +919,10 @@ function VirtualDPad() {
 }
 
 function MobileControls() {
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sprintToggle, setSprintToggle] = useState(false);
+  const isNavigatingRef = useRef(false);
 
   useEffect(() => {
     const handler = (e: Event) =>
@@ -837,7 +935,6 @@ function MobileControls() {
 
   const handleAction = (e?: React.SyntheticEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
     try { playSound("click"); } catch {}
@@ -847,7 +944,6 @@ function MobileControls() {
 
   const handleSprintDown = (e?: React.SyntheticEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
     const next = !sprintToggle;
@@ -858,7 +954,6 @@ function MobileControls() {
 
   const handleMission = (e?: React.SyntheticEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
     try { playSound("click"); } catch {}
@@ -867,27 +962,88 @@ function MobileControls() {
 
   const handlePause = (e?: React.SyntheticEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 800);
+
     try { playSound("click"); } catch {}
     setVPad("menuJustPressed", true);
 
-    // Direct immediate trigger for zero-lag mobile responsiveness
+    // Save state & pause scenes immediately
     try {
       const phaser = (window as any).phaserGame;
       if (phaser && phaser.scene) {
         const gameScene = phaser.scene.getScene("GameScene") as any;
-        if (gameScene && typeof gameScene.pauseGame === "function") {
-          gameScene.pauseGame();
-          return;
+        if (gameScene && gameScene.state) {
+          try { saveGame(gameScene.state); } catch {}
         }
-      }
-      if ((window as any).reactNavigate) {
-        (window as any).reactNavigate("/pause");
+        try { phaser.scene.pause("HUDScene"); } catch {}
+        try { phaser.scene.pause("GameScene"); } catch {}
       }
     } catch (err) {
-      console.warn("Pause menu navigation error:", err);
+      console.warn("Pause phaser error:", err);
+    }
+
+    // Direct React Router navigation
+    navigate("/pause");
+  };
+
+  const handleQuickFullscreen = async (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    try { playSound("click"); } catch {}
+
+    const isFs = !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement ||
+      (window as any).phaserGame?.scale?.isFullscreen
+    );
+
+    if (isFs) {
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen().catch(() => {});
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen().catch(() => {});
+        }
+        const phaser = (window as any).phaserGame;
+        if (phaser?.scale?.isFullscreen) {
+          phaser.scale.stopFullscreen();
+        }
+      } catch {}
+    } else {
+      try {
+        const docEl = document.documentElement as any;
+        const body = document.body as any;
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen({ navigationUI: "hide" }).catch(() => docEl.requestFullscreen().catch(() => {}));
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen().catch(() => {});
+        } else if (body.webkitRequestFullscreen) {
+          await body.webkitRequestFullscreen().catch(() => {});
+        }
+      } catch {}
+
+      try {
+        const phaser = (window as any).phaserGame;
+        if (phaser?.scale && !phaser.scale.isFullscreen) {
+          phaser.scale.startFullscreen();
+        }
+      } catch {}
+
+      try {
+        const ori = (screen as any).orientation;
+        if (ori && typeof ori.lock === "function") {
+          await ori.lock("landscape").catch(() => {});
+        }
+      } catch {}
     }
   };
 
@@ -903,14 +1059,49 @@ function MobileControls() {
       {/* D-Pad — bottom-left */}
       <VirtualDPad />
 
+      {/* Floating Quick Fullscreen button right above action pad */}
+      <div
+        style={{
+          position: "fixed",
+          right: "max(14px, env(safe-area-inset-right, 14px))",
+          bottom: "max(178px, calc(env(safe-area-inset-bottom, 14px) + 172px))",
+          pointerEvents: "auto",
+          zIndex: 86,
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleQuickFullscreen}
+          title="Tela Cheia"
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            background: "rgba(10, 22, 40, 0.9)",
+            border: "2px solid #38bdf8",
+            color: "#38bdf8",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 14,
+            cursor: "pointer",
+            touchAction: "manipulation",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+          }}
+        >
+          <Maximize2 size={16} />
+        </button>
+      </div>
+
       {/* Action buttons — bottom-right */}
       <div
         style={{
           position: "fixed",
-          right: "max(16px, env(safe-area-inset-right, 16px))",
-          bottom: "max(16px, env(safe-area-inset-bottom, 16px))",
-          width: 156,
-          height: 156,
+          right: "max(12px, env(safe-area-inset-right, 12px))",
+          bottom: "max(12px, env(safe-area-inset-bottom, 12px))",
+          width: 160,
+          height: 160,
           pointerEvents: "none",
           zIndex: 85,
         }}
@@ -919,15 +1110,16 @@ function MobileControls() {
         <button
           type="button"
           onPointerDown={handleSprintDown}
+          onClick={handleSprintDown}
           style={{
             position: "absolute",
-            left: 6,
-            top: 10,
-            width: 52,
-            height: 52,
+            left: 4,
+            top: 8,
+            width: 54,
+            height: 54,
             pointerEvents: "auto",
             borderRadius: "50%",
-            background: sprintToggle ? "#f39c12" : "rgba(15,23,42,0.9)",
+            background: sprintToggle ? "#f39c12" : "rgba(15,23,42,0.92)",
             border: "3px solid #f39c12",
             color: sprintToggle ? "#0a1628" : "#fff",
             fontFamily: "monospace",
@@ -937,7 +1129,7 @@ function MobileControls() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            touchAction: "none",
+            touchAction: "manipulation",
             userSelect: "none",
             WebkitUserSelect: "none",
             cursor: "pointer",
@@ -945,8 +1137,8 @@ function MobileControls() {
             transition: "all 0.1s",
           }}
         >
-          <span>🏃</span>
-          <span style={{ fontSize: 9, lineHeight: 1 }}>{sprintToggle ? "CORRER" : "CORRER"}</span>
+          <span style={{ fontSize: 16 }}>🏃</span>
+          <span style={{ fontSize: 9, lineHeight: 1 }}>{sprintToggle ? "CORRENDO" : "CORRER"}</span>
         </button>
 
         {/* FALAR / INTERAGIR */}
@@ -956,13 +1148,13 @@ function MobileControls() {
           onClick={handleAction}
           style={{
             position: "absolute",
-            right: 0,
-            top: 22,
-            width: 66,
-            height: 66,
+            right: 2,
+            top: 10,
+            width: 68,
+            height: 68,
             pointerEvents: "auto",
             borderRadius: "50%",
-            background: "linear-gradient(135deg, rgba(26,188,156,0.9), rgba(16,140,115,0.95))",
+            background: "linear-gradient(135deg, rgba(26,188,156,0.95), rgba(16,140,115,0.98))",
             border: "3.5px solid #2ecc71",
             color: "#fff",
             fontFamily: "monospace",
@@ -972,7 +1164,7 @@ function MobileControls() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            touchAction: "none",
+            touchAction: "manipulation",
             userSelect: "none",
             WebkitUserSelect: "none",
             cursor: "pointer",
@@ -980,7 +1172,7 @@ function MobileControls() {
             transition: "transform 0.08s",
           }}
         >
-          <span style={{ fontSize: 16 }}>💬</span>
+          <span style={{ fontSize: 18 }}>💬</span>
           <span style={{ fontSize: 10, letterSpacing: 0.5, marginTop: 1 }}>FALAR</span>
         </button>
 
@@ -991,13 +1183,13 @@ function MobileControls() {
           onClick={handleMission}
           style={{
             position: "absolute",
-            left: 2,
-            bottom: 6,
-            width: 50,
-            height: 50,
+            left: 4,
+            bottom: 8,
+            width: 52,
+            height: 52,
             pointerEvents: "auto",
             borderRadius: "50%",
-            background: "rgba(15,23,42,0.9)",
+            background: "rgba(15,23,42,0.92)",
             border: "2.5px solid #9b59b6",
             color: "#fff",
             fontFamily: "monospace",
@@ -1007,14 +1199,14 @@ function MobileControls() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            touchAction: "none",
+            touchAction: "manipulation",
             userSelect: "none",
             WebkitUserSelect: "none",
             cursor: "pointer",
             boxShadow: "0 4px 10px rgba(0,0,0,0.5)",
           }}
         >
-          <span style={{ fontSize: 14 }}>📋</span>
+          <span style={{ fontSize: 15 }}>📋</span>
           <span style={{ fontSize: 8 }}>MISSÃO</span>
         </button>
 
@@ -1025,14 +1217,14 @@ function MobileControls() {
           onClick={handlePause}
           style={{
             position: "absolute",
-            right: 16,
-            bottom: 0,
-            width: 48,
-            height: 48,
+            right: 8,
+            bottom: 8,
+            width: 54,
+            height: 54,
             pointerEvents: "auto",
             borderRadius: "50%",
-            background: "rgba(15,23,42,0.9)",
-            border: "2.5px solid #e74c3c",
+            background: "linear-gradient(135deg, rgba(30,15,15,0.95), rgba(15,23,42,0.95))",
+            border: "3px solid #e74c3c",
             color: "#fff",
             fontFamily: "monospace",
             fontSize: 9,
@@ -1041,15 +1233,15 @@ function MobileControls() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            touchAction: "none",
+            touchAction: "manipulation",
             userSelect: "none",
             WebkitUserSelect: "none",
             cursor: "pointer",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.5)",
+            boxShadow: "0 0 14px rgba(231,76,60,0.4), 0 4px 10px rgba(0,0,0,0.6)",
           }}
         >
-          <span style={{ fontSize: 14 }}>⚙️</span>
-          <span style={{ fontSize: 8 }}>MENU</span>
+          <span style={{ fontSize: 16 }}>⚙️</span>
+          <span style={{ fontSize: 9 }}>MENU</span>
         </button>
       </div>
     </div>
