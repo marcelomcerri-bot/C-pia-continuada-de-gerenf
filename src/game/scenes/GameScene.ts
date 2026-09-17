@@ -1902,14 +1902,24 @@ export class GameScene extends Phaser.Scene {
   }
 
   public pauseGame() {
-    if (this.isDialogOpen || this.isCrisisOpen) return;
-    saveGame(this.state);
+    try {
+      saveGame(this.state);
+    } catch (e) {
+      console.warn("Save state error before pause:", e);
+    }
     
     // Navigate to Pause Menu via React and pause the scenes
     if ((window as any).reactNavigate) {
        (window as any).reactNavigate('/pause');
-       this.scene.pause('HUDScene');
-       this.scene.pause('GameScene');
+    } else {
+       window.dispatchEvent(new CustomEvent('requestpause'));
+    }
+
+    try {
+      this.scene.pause('HUDScene');
+      this.scene.pause('GameScene');
+    } catch (e) {
+      console.warn("Pause scenes error:", e);
     }
   }
 
@@ -2242,7 +2252,9 @@ export class GameScene extends Phaser.Scene {
     this.lastActivity = `Falando com ${npc.def.name}`;
 
     // Smooth cinematic zoom and play click sound
-    this.cameras.main.zoomTo(1.8, 300, 'Quad.easeInOut');
+    const isMobile = typeof navigator !== 'undefined' && (navigator.maxTouchPoints > 1 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
+    const currentBaseZoom = isMobile ? 1.5 : CAMERA_ZOOM;
+    this.cameras.main.zoomTo(Math.min(1.55, currentBaseZoom + 0.15), 300, 'Quad.easeInOut');
     playSound('click');
 
     // Stop NPC and make them face the player during dialogue
@@ -2265,7 +2277,8 @@ export class GameScene extends Phaser.Scene {
       state: this.state,
       onClose: (updates: Partial<GameState>) => {
         // Zoom back to default
-        this.cameras.main.zoomTo(CAMERA_ZOOM, 300, 'Quad.easeInOut');
+        const targetZoom = (typeof navigator !== 'undefined' && (navigator.maxTouchPoints > 1 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent))) ? 1.5 : CAMERA_ZOOM;
+        this.cameras.main.zoomTo(targetZoom, 300, 'Quad.easeInOut');
 
         this.state = { ...this.state, ...updates };
         this.isDialogOpen = false;

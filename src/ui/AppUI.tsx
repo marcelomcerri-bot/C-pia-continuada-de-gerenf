@@ -7,10 +7,11 @@ import {
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Play, ClipboardList, LogOut, Pause, BookOpen } from "lucide-react";
+import { Play, ClipboardList, LogOut, Pause, BookOpen, Maximize2, Minimize2 } from "lucide-react";
 import { hasSave, clearSave, loadGame, saveGame, DEFAULT_STATE } from "../game/utils/save";
 import { PlayerProfile, GameState, MISSIONS, getLevelInfo } from "../game/data/gameData";
 import { playSound } from "../game/utils/audio";
+import { isAppFullscreen, toggleAppFullscreen, subscribeFullscreenChange } from "../game/utils/fullscreen";
 import { ProfessorView } from "./ProfessorView";
 import { ErrorNotebookModal } from "./ErrorNotebookModal";
 import { CharacterCreationModal } from "./CharacterCreationModal";
@@ -61,10 +62,12 @@ export function AppUI({
   onStartGame,
   isMobile = false,
   canvasBounds = { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight, scale: 1 },
+  isModalActive = false,
 }: {
   onStartGame: () => void;
   isMobile?: boolean;
   canvasBounds?: CanvasBounds;
+  isModalActive?: boolean;
 }) {
   return (
     <HashRouter>
@@ -72,6 +75,7 @@ export function AppUI({
         onStartGame={onStartGame}
         isMobile={isMobile}
         canvasBounds={canvasBounds}
+        isModalActive={isModalActive}
       />
     </HashRouter>
   );
@@ -81,10 +85,12 @@ function RoutesWrapper({
   onStartGame,
   isMobile,
   canvasBounds,
+  isModalActive = false,
 }: {
   onStartGame: () => void;
   isMobile: boolean;
   canvasBounds: CanvasBounds;
+  isModalActive?: boolean;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -123,8 +129,13 @@ function RoutesWrapper({
 
   useEffect(() => {
     (window as any).reactNavigate = navigate;
+    const handleRequestPause = () => {
+      navigate("/pause");
+    };
+    window.addEventListener("requestpause", handleRequestPause);
     return () => {
       delete (window as any).reactNavigate;
+      window.removeEventListener("requestpause", handleRequestPause);
     };
   }, [navigate]);
 
@@ -196,6 +207,7 @@ function RoutesWrapper({
               <HomeMenu
                 onStartGame={onStartGame}
                 canvasBounds={canvasBounds}
+                isBlocked={isModalActive}
               />
             }
           />
@@ -230,20 +242,29 @@ function RoutesWrapper({
 function HomeMenu({
   onStartGame,
   canvasBounds,
+  isBlocked = false,
 }: {
   onStartGame: () => void;
   canvasBounds: CanvasBounds;
+  isBlocked?: boolean;
 }) {
   const navigate = useNavigate();
   const [showHelp, setShowHelp] = useState(false);
   const [showCharCreation, setShowCharCreation] = useState(false);
   const startingRef = useRef(false);
 
+  const isGhostClickBlocked = () => {
+    if (isBlocked) return true;
+    const lastDismissed = (window as any).__lastModalDismissedTime || 0;
+    return Date.now() - lastDismissed < 500;
+  };
+
   const openNewGameModal = (e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    if (isGhostClickBlocked()) return;
     try { playSound("click"); } catch {}
     setShowCharCreation(true);
   };
@@ -288,6 +309,7 @@ function HomeMenu({
       e.preventDefault();
       e.stopPropagation();
     }
+    if (isGhostClickBlocked()) return;
     if (startingRef.current) return;
     startingRef.current = true;
 
@@ -300,6 +322,26 @@ function HomeMenu({
     setTimeout(() => {
       startingRef.current = false;
     }, 800);
+  };
+
+  const openHelp = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (isGhostClickBlocked()) return;
+    try { playSound("click"); } catch {}
+    setShowHelp(true);
+  };
+
+  const openProfessor = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (isGhostClickBlocked()) return;
+    try { playSound("click"); } catch {}
+    navigate("/professor");
   };
 
   // Align buttons with the lower entrance colonnade of the hospital in the 16:9 canvas
@@ -332,14 +374,15 @@ function HomeMenu({
             top: `${menuCenterY}px`,
             transformOrigin: "center center",
           }}
-          className="flex flex-col gap-2.5 w-80 max-w-[92vw] pointer-events-auto select-none p-3.5 bg-slate-950/65 backdrop-blur-md rounded-2xl border border-teal-500/30 shadow-[0_12px_36px_rgba(0,0,0,0.65)]"
+          className={`flex flex-col gap-2.5 w-80 max-w-[92vw] select-none p-3.5 bg-slate-950/65 backdrop-blur-md rounded-2xl border border-teal-500/30 shadow-[0_12px_36px_rgba(0,0,0,0.65)] ${
+            isBlocked ? "pointer-events-none opacity-40" : "pointer-events-auto"
+          }`}
         >
           {hasSave() && (
             <motion.button
               whileHover={{ scale: 1.03, y: -2 }}
               whileTap={{ scale: 0.97, y: 1 }}
               type="button"
-              onPointerDown={continueGame}
               onClick={continueGame}
               onMouseEnter={() => { try { playSound("hover"); } catch {} }}
               className="w-full flex items-center justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#312e81] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
@@ -352,7 +395,6 @@ function HomeMenu({
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
-            onPointerDown={openNewGameModal}
             onClick={openNewGameModal}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
             className="w-full flex items-center justify-center gap-2.5 bg-[#1abc9c] hover:bg-[#1dd2af] active:bg-[#16a085] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#0e6252] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
@@ -364,8 +406,7 @@ function HomeMenu({
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
-            onPointerDown={() => { try { playSound("click"); } catch {}; setShowHelp(true); }}
-            onClick={() => { try { playSound("click"); } catch {}; setShowHelp(true); }}
+            onClick={openHelp}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
             className="w-full flex items-center justify-center gap-2.5 bg-[#f39c12] hover:bg-[#f4a62a] active:bg-[#d68910] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#a66705] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
@@ -376,8 +417,7 @@ function HomeMenu({
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
-            onPointerDown={() => { try { playSound("click"); } catch {}; navigate("/professor"); }}
-            onClick={() => { try { playSound("click"); } catch {}; navigate("/professor"); }}
+            onClick={openProfessor}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
             className="w-full flex items-center justify-center gap-2.5 bg-[#2c3e70] hover:bg-[#344985] active:bg-[#1a2348] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#1a2348] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
@@ -430,6 +470,27 @@ function HomeMenu({
 
 function PauseMenu() {
   const navigate = useNavigate();
+  const [isFullscreen, setIsFullscreen] = useState(() => isAppFullscreen());
+
+  useEffect(() => {
+    return subscribeFullscreenChange((fs) => {
+      setIsFullscreen(fs);
+    });
+  }, []);
+
+  const lastFsToggleRef = useRef(0);
+
+  const handleToggleFullscreen = (e?: React.SyntheticEvent | React.PointerEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    const now = Date.now();
+    if (now - lastFsToggleRef.current < 350) return;
+    lastFsToggleRef.current = now;
+
+    try { playSound("click"); } catch {}
+    toggleAppFullscreen();
+  };
 
   const resume = (e?: React.SyntheticEvent) => {
     if (e) {
@@ -553,6 +614,18 @@ function PauseMenu() {
           >
             <BookOpen className="w-4 h-4" />
             <span>CADERNO DE ERROS (C)</span>
+          </button>
+
+          {/* TELA CHEIA / MODO PAISAGEM */}
+          <button
+            type="button"
+            onPointerDown={handleToggleFullscreen}
+            onClick={handleToggleFullscreen}
+            onMouseEnter={() => { try { playSound("hover"); } catch {} }}
+            className="w-full flex items-center justify-center gap-3 bg-sky-700 hover:bg-sky-600 active:bg-sky-800 text-white font-sans text-sm font-semibold py-3.5 px-5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer select-none touch-manipulation pointer-events-auto"
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span>{isFullscreen ? "SAIR DA TELA CHEIA" : "TELA CHEIA / PAISAGEM"}</span>
           </button>
 
           {/* VOLTAR AO MENU */}
@@ -823,8 +896,12 @@ function VirtualDPad() {
 }
 
 function MobileControls() {
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sprintToggle, setSprintToggle] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(() => isAppFullscreen());
+  const isNavigatingRef = useRef(false);
+  const lastQuickFsRef = useRef(0);
 
   useEffect(() => {
     const handler = (e: Event) =>
@@ -833,11 +910,16 @@ function MobileControls() {
     return () => window.removeEventListener("dialogactive", handler);
   }, []);
 
+  useEffect(() => {
+    return subscribeFullscreenChange((fs) => {
+      setIsFullscreen(fs);
+    });
+  }, []);
+
   if (dialogOpen) return null;
 
   const handleAction = (e?: React.SyntheticEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
     try { playSound("click"); } catch {}
@@ -847,7 +929,6 @@ function MobileControls() {
 
   const handleSprintDown = (e?: React.SyntheticEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
     const next = !sprintToggle;
@@ -858,7 +939,6 @@ function MobileControls() {
 
   const handleMission = (e?: React.SyntheticEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
     try { playSound("click"); } catch {}
@@ -867,28 +947,46 @@ function MobileControls() {
 
   const handlePause = (e?: React.SyntheticEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 800);
+
     try { playSound("click"); } catch {}
     setVPad("menuJustPressed", true);
 
-    // Direct immediate trigger for zero-lag mobile responsiveness
+    // Save state & pause scenes immediately
     try {
       const phaser = (window as any).phaserGame;
       if (phaser && phaser.scene) {
         const gameScene = phaser.scene.getScene("GameScene") as any;
-        if (gameScene && typeof gameScene.pauseGame === "function") {
-          gameScene.pauseGame();
-          return;
+        if (gameScene && gameScene.state) {
+          try { saveGame(gameScene.state); } catch {}
         }
-      }
-      if ((window as any).reactNavigate) {
-        (window as any).reactNavigate("/pause");
+        try { phaser.scene.pause("HUDScene"); } catch {}
+        try { phaser.scene.pause("GameScene"); } catch {}
       }
     } catch (err) {
-      console.warn("Pause menu navigation error:", err);
+      console.warn("Pause phaser error:", err);
     }
+
+    // Direct React Router navigation
+    navigate("/pause");
+  };
+
+  const handleQuickFullscreen = (e?: React.SyntheticEvent | React.PointerEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    const now = Date.now();
+    if (now - lastQuickFsRef.current < 350) return;
+    lastQuickFsRef.current = now;
+
+    try { playSound("click"); } catch {}
+    toggleAppFullscreen();
   };
 
   return (
@@ -903,14 +1001,50 @@ function MobileControls() {
       {/* D-Pad — bottom-left */}
       <VirtualDPad />
 
+      {/* Floating Quick Fullscreen button right above action pad */}
+      <div
+        style={{
+          position: "fixed",
+          right: "max(14px, env(safe-area-inset-right, 14px))",
+          bottom: "max(178px, calc(env(safe-area-inset-bottom, 14px) + 172px))",
+          pointerEvents: "auto",
+          zIndex: 86,
+        }}
+      >
+        <button
+          type="button"
+          onPointerDown={handleQuickFullscreen}
+          onClick={handleQuickFullscreen}
+          title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            background: "rgba(10, 22, 40, 0.9)",
+            border: `2px solid ${isFullscreen ? "#10b981" : "#38bdf8"}`,
+            color: isFullscreen ? "#10b981" : "#38bdf8",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 14,
+            cursor: "pointer",
+            touchAction: "manipulation",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+          }}
+        >
+          {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+        </button>
+      </div>
+
       {/* Action buttons — bottom-right */}
       <div
         style={{
           position: "fixed",
-          right: "max(16px, env(safe-area-inset-right, 16px))",
-          bottom: "max(16px, env(safe-area-inset-bottom, 16px))",
-          width: 156,
-          height: 156,
+          right: "max(12px, env(safe-area-inset-right, 12px))",
+          bottom: "max(12px, env(safe-area-inset-bottom, 12px))",
+          width: 160,
+          height: 160,
           pointerEvents: "none",
           zIndex: 85,
         }}
@@ -919,15 +1053,16 @@ function MobileControls() {
         <button
           type="button"
           onPointerDown={handleSprintDown}
+          onClick={handleSprintDown}
           style={{
             position: "absolute",
-            left: 6,
-            top: 10,
-            width: 52,
-            height: 52,
+            left: 4,
+            top: 8,
+            width: 54,
+            height: 54,
             pointerEvents: "auto",
             borderRadius: "50%",
-            background: sprintToggle ? "#f39c12" : "rgba(15,23,42,0.9)",
+            background: sprintToggle ? "#f39c12" : "rgba(15,23,42,0.92)",
             border: "3px solid #f39c12",
             color: sprintToggle ? "#0a1628" : "#fff",
             fontFamily: "monospace",
@@ -937,7 +1072,7 @@ function MobileControls() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            touchAction: "none",
+            touchAction: "manipulation",
             userSelect: "none",
             WebkitUserSelect: "none",
             cursor: "pointer",
@@ -945,8 +1080,8 @@ function MobileControls() {
             transition: "all 0.1s",
           }}
         >
-          <span>🏃</span>
-          <span style={{ fontSize: 9, lineHeight: 1 }}>{sprintToggle ? "CORRER" : "CORRER"}</span>
+          <span style={{ fontSize: 16 }}>🏃</span>
+          <span style={{ fontSize: 9, lineHeight: 1 }}>{sprintToggle ? "CORRENDO" : "CORRER"}</span>
         </button>
 
         {/* FALAR / INTERAGIR */}
@@ -956,13 +1091,13 @@ function MobileControls() {
           onClick={handleAction}
           style={{
             position: "absolute",
-            right: 0,
-            top: 22,
-            width: 66,
-            height: 66,
+            right: 2,
+            top: 10,
+            width: 68,
+            height: 68,
             pointerEvents: "auto",
             borderRadius: "50%",
-            background: "linear-gradient(135deg, rgba(26,188,156,0.9), rgba(16,140,115,0.95))",
+            background: "linear-gradient(135deg, rgba(26,188,156,0.95), rgba(16,140,115,0.98))",
             border: "3.5px solid #2ecc71",
             color: "#fff",
             fontFamily: "monospace",
@@ -972,7 +1107,7 @@ function MobileControls() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            touchAction: "none",
+            touchAction: "manipulation",
             userSelect: "none",
             WebkitUserSelect: "none",
             cursor: "pointer",
@@ -980,7 +1115,7 @@ function MobileControls() {
             transition: "transform 0.08s",
           }}
         >
-          <span style={{ fontSize: 16 }}>💬</span>
+          <span style={{ fontSize: 18 }}>💬</span>
           <span style={{ fontSize: 10, letterSpacing: 0.5, marginTop: 1 }}>FALAR</span>
         </button>
 
@@ -991,13 +1126,13 @@ function MobileControls() {
           onClick={handleMission}
           style={{
             position: "absolute",
-            left: 2,
-            bottom: 6,
-            width: 50,
-            height: 50,
+            left: 4,
+            bottom: 8,
+            width: 52,
+            height: 52,
             pointerEvents: "auto",
             borderRadius: "50%",
-            background: "rgba(15,23,42,0.9)",
+            background: "rgba(15,23,42,0.92)",
             border: "2.5px solid #9b59b6",
             color: "#fff",
             fontFamily: "monospace",
@@ -1007,14 +1142,14 @@ function MobileControls() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            touchAction: "none",
+            touchAction: "manipulation",
             userSelect: "none",
             WebkitUserSelect: "none",
             cursor: "pointer",
             boxShadow: "0 4px 10px rgba(0,0,0,0.5)",
           }}
         >
-          <span style={{ fontSize: 14 }}>📋</span>
+          <span style={{ fontSize: 15 }}>📋</span>
           <span style={{ fontSize: 8 }}>MISSÃO</span>
         </button>
 
@@ -1025,14 +1160,14 @@ function MobileControls() {
           onClick={handlePause}
           style={{
             position: "absolute",
-            right: 16,
-            bottom: 0,
-            width: 48,
-            height: 48,
+            right: 8,
+            bottom: 8,
+            width: 54,
+            height: 54,
             pointerEvents: "auto",
             borderRadius: "50%",
-            background: "rgba(15,23,42,0.9)",
-            border: "2.5px solid #e74c3c",
+            background: "linear-gradient(135deg, rgba(30,15,15,0.95), rgba(15,23,42,0.95))",
+            border: "3px solid #e74c3c",
             color: "#fff",
             fontFamily: "monospace",
             fontSize: 9,
@@ -1041,15 +1176,15 @@ function MobileControls() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            touchAction: "none",
+            touchAction: "manipulation",
             userSelect: "none",
             WebkitUserSelect: "none",
             cursor: "pointer",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.5)",
+            boxShadow: "0 0 14px rgba(231,76,60,0.4), 0 4px 10px rgba(0,0,0,0.6)",
           }}
         >
-          <span style={{ fontSize: 14 }}>⚙️</span>
-          <span style={{ fontSize: 8 }}>MENU</span>
+          <span style={{ fontSize: 16 }}>⚙️</span>
+          <span style={{ fontSize: 9 }}>MENU</span>
         </button>
       </div>
     </div>
@@ -1097,7 +1232,7 @@ function DialogueChoicesOverlay({
   const activeData = (window as any).activeChoices;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md pointer-events-auto select-none animate-fadeIn">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-black/45 backdrop-blur-sm pointer-events-auto select-none animate-fadeIn">
       <div className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-slate-900/95 border border-emerald-500/30 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.85)] overflow-hidden">
         
         {/* Fixed Header */}

@@ -1,0 +1,16 @@
+{
+  "name": "Simulador RPG 2D - Gestor de Enfermagem - HUAP",
+  "short_name": "Gestor HUAP",
+  "start_url": "/#/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0369a1",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

@@ -63,8 +63,9 @@ export class DialogScene extends Phaser.Scene {
     // Dimmer overlay
     this.overlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x000000, 0.45);
 
-    const W = Math.min(GAME_WIDTH - 60, this.scale.width - 40);
-    const boxX = this.scale.width / 2, boxY = BOX_Y + BOX_H / 2;
+    const W = Math.min(1200, this.scale.width - 40);
+    const boxY = Math.max(BOX_H / 2 + 30, this.scale.height - BOX_H / 2 - 20);
+    const boxX = this.scale.width / 2;
 
     this.boxContainer = this.add.container(0, 0);
 
@@ -123,11 +124,11 @@ export class DialogScene extends Phaser.Scene {
     const textMaxW = W - 64;
 
     this.bodyText = this.add.text(textX, textY, '', {
-      fontFamily: "'VT323', monospace",
-      fontSize: '38px',
+      fontFamily: "'VT323', 'Courier New', monospace",
+      fontSize: '28px',
       color: '#ecf0f1',
       wordWrap: { width: textMaxW },
-      lineSpacing: 6,
+      lineSpacing: 4,
     });
 
     // Cursor
