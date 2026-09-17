@@ -1902,24 +1902,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   public pauseGame() {
-    try {
-      saveGame(this.state);
-    } catch (e) {
-      console.warn("Save state error before pause:", e);
-    }
+    if (this.isDialogOpen || this.isCrisisOpen) return;
+    saveGame(this.state);
     
     // Navigate to Pause Menu via React and pause the scenes
     if ((window as any).reactNavigate) {
        (window as any).reactNavigate('/pause');
-    } else {
-       window.dispatchEvent(new CustomEvent('requestpause'));
-    }
-
-    try {
-      this.scene.pause('HUDScene');
-      this.scene.pause('GameScene');
-    } catch (e) {
-      console.warn("Pause scenes error:", e);
+       this.scene.pause('HUDScene');
+       this.scene.pause('GameScene');
     }
   }
 
