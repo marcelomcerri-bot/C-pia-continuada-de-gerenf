@@ -172,15 +172,42 @@ export default function App() {
   };
 
   const handleRequestFullscreenAndLandscape = async () => {
+    // 1. Try to enter Fullscreen using various vendor methods on documentElement
     try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen().catch(() => {});
+      const doc = document.documentElement as any;
+      const requestFS = doc.requestFullscreen || 
+                        doc.webkitRequestFullscreen || 
+                        doc.mozRequestFullScreen || 
+                        doc.msRequestFullscreen;
+      
+      if (requestFS && !document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        await requestFS.call(doc).catch((err: any) => {
+          console.warn("Fullscreen request was rejected by browser:", err);
+        });
       }
-      const ori = screen.orientation as ScreenOrientation & {
-        lock?: (o: string) => Promise<void>;
-      };
-      await ori?.lock?.("landscape").catch(() => {});
-    } catch {}
+    } catch (err) {
+      console.warn("Fullscreen request error:", err);
+    }
+
+    // 2. Try to lock screen orientation to landscape
+    try {
+      const ori = screen.orientation as any;
+      if (ori && ori.lock) {
+        await ori.lock("landscape").catch((err: any) => {
+          console.warn("Screen orientation lock rejected:", err);
+        });
+      } else if ((screen as any).lockOrientation) {
+        (screen as any).lockOrientation("landscape");
+      } else if ((screen as any).webkitLockOrientation) {
+        (screen as any).webkitLockOrientation("landscape");
+      } else if ((screen as any).mozLockOrientation) {
+        (screen as any).mozLockOrientation("landscape");
+      }
+    } catch (err) {
+      console.warn("Orientation lock error:", err);
+    }
+    
+    // Force immediate size recalculation
     applySize();
   };
 
@@ -240,11 +267,25 @@ export default function App() {
 
             <button
               type="button"
-              onClick={async () => {
+              onPointerDown={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 await handleRequestFullscreenAndLandscape();
                 setDismissedPortrait(true);
               }}
-              className="w-full py-2.5 px-4 bg-[#1abc9c] hover:bg-[#16a085] active:bg-[#148f77] text-[#020b14] font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+              onTouchStart={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await handleRequestFullscreenAndLandscape();
+                setDismissedPortrait(true);
+              }}
+              onClick={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await handleRequestFullscreenAndLandscape();
+                setDismissedPortrait(true);
+              }}
+              className="w-full py-3 px-4 bg-[#1abc9c] hover:bg-[#16a085] active:bg-[#148f77] text-[#020b14] font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 touch-manipulation cursor-pointer select-none active:scale-[0.98]"
             >
               <span>Entendido, girar tela</span>
             </button>
