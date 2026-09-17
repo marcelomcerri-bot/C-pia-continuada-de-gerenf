@@ -258,7 +258,7 @@ export class HUDScene extends Phaser.Scene {
     const isMobile = (window as any).__portraitMobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || this.scale.width < 900;
     const barW = Math.min(this.mmX - 20, this.scale.width - MM_W - 32);
     const isTwoRow = barW < 880 || isMobile;
-    const barH = isTwoRow ? 116 : 98;
+    const barH = isTwoRow ? 144 : 98;
     const bx = 12, by = 8;
     const gap = 6;
 
@@ -281,9 +281,9 @@ export class HUDScene extends Phaser.Scene {
 
       // Row 2 (Mission Banner): Full width below stats
       missionX = 0;
-      missionY = 50;
+      missionY = 68;
       missionW = barW;
-      missionH = 58;
+      missionH = 68;
     } else {
       // 1-row layout for Large Desktop screens:
       const availW = barW - (4 * gap);
@@ -314,14 +314,14 @@ export class HUDScene extends Phaser.Scene {
     // Drop shadow
     const shadow = this.add.graphics();
     shadow.fillStyle(0x000000, 0.45);
-    shadow.fillRoundedRect(bx + 3, by + 3, barW, barH, 12);
+    shadow.fillRoundedRect(bx + 3, by + 3, barW, barH, 14);
 
     // Background panel
     const bg = this.add.graphics();
-    bg.fillStyle(0x050b14, 0.96);
-    bg.fillRoundedRect(bx, by, barW, barH, 12);
-    bg.lineStyle(1.8, 0x1abc9c, 0.9);
-    bg.strokeRoundedRect(bx, by, barW, barH, 12);
+    bg.fillStyle(0x050c18, 0.94);
+    bg.fillRoundedRect(bx, by, barW, barH, 14);
+    bg.lineStyle(2, 0x1abc9c, 0.85);
+    bg.strokeRoundedRect(bx, by, barW, barH, 14);
 
     // Typography
     const TITLE_FONT = "'Rajdhani', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif";
@@ -331,50 +331,50 @@ export class HUDScene extends Phaser.Scene {
     // Panel drawer helper
     const sec = (x: number, y: number, w: number, h: number) => {
       const g = this.add.graphics();
-      g.fillStyle(0x0a1424, 0.98);
-      g.fillRoundedRect(bx + x, by + y, w, h, 8);
-      g.lineStyle(1.2, 0x1abc9c, 0.35);
-      g.strokeRoundedRect(bx + x, by + y, w, h, 8);
+      g.fillStyle(0x0a1628, 0.88);
+      g.fillRoundedRect(bx + x, by + y, w, h, 10);
+      g.lineStyle(1.5, 0x1abc9c, 0.4);
+      g.strokeRoundedRect(bx + x, by + y, w, h, 10);
       return g;
     };
 
-    const row1H = isTwoRow ? 46 : barH - 10;
+    const row1H = isTwoRow ? 60 : barH - 10;
 
     // ─── 1. TIME / SHIFT ────────────────────────────────
     sec(timeX, 5, timeW, row1H);
 
-    this.shiftIcon = this.add.text(bx + timeX + 6, by + (isTwoRow ? 5 : 7), 'TURNO', {
+    this.shiftIcon = this.add.text(bx + timeX + 8, by + (isTwoRow ? 8 : 7), 'TURNO', {
       fontFamily: TITLE_FONT,
-      fontSize: isTwoRow ? '12px' : '13px', fontStyle: 'bold', color: '#38bdf8',
+      fontSize: '13px', fontStyle: 'bold', color: '#38bdf8',
     });
 
-    this.dayText = this.add.text(bx + timeX + 6, by + (isTwoRow ? 20 : 28), isTwoRow ? 'D1 MANHÃ' : 'DIA 1\nMANHÃ', {
-      fontFamily: TITLE_FONT, fontSize: isTwoRow ? '13px' : '15px', fontStyle: 'bold', color: '#f1c40f',
+    this.dayText = this.add.text(bx + timeX + 8, by + (isTwoRow ? 34 : 28), isTwoRow ? 'D1 MANHÃ' : 'DIA 1\nMANHÃ', {
+      fontFamily: TITLE_FONT, fontSize: '15px', fontStyle: 'bold', color: '#f1c40f',
       lineSpacing: 1,
     });
 
-    this.timeText = this.add.text(bx + timeX + timeW - 6, by + (isTwoRow ? 12 : 8), '08:00', {
-      fontFamily: STAT_FONT, fontSize: isTwoRow ? '24px' : '32px', color: '#f1c40f',
+    this.timeText = this.add.text(bx + timeX + timeW - 8, by + (isTwoRow ? 18 : 8), '08:00', {
+      fontFamily: STAT_FONT, fontSize: isTwoRow ? '28px' : '32px', color: '#f1c40f',
     }).setOrigin(1, 0);
 
     // ─── 2. ENERGY ──────────────────────────────────────
     sec(energyX, 5, energyW, row1H);
 
-    this.add.text(bx + energyX + 6, by + (isTwoRow ? 5 : 7), 'ENERGIA', {
+    this.add.text(bx + energyX + 8, by + (isTwoRow ? 8 : 7), 'ENERGIA', {
       fontFamily: TITLE_FONT,
-      fontSize: isTwoRow ? '12px' : '13px', fontStyle: 'bold', color: '#2ecc71',
+      fontSize: '13px', fontStyle: 'bold', color: '#2ecc71',
     });
 
-    this.energyValText = this.add.text(bx + energyX + energyW - 6, by + (isTwoRow ? 4 : 5), '100%', {
-      fontFamily: STAT_FONT, fontSize: isTwoRow ? '22px' : '26px', color: '#2ecc71',
+    this.energyValText = this.add.text(bx + energyX + energyW - 8, by + (isTwoRow ? 6 : 5), '100%', {
+      fontFamily: STAT_FONT, fontSize: isTwoRow ? '24px' : '26px', color: '#2ecc71',
     }).setOrigin(1, 0);
 
-    const enTrackW = Math.max(4, energyW - (isTwoRow ? 12 : 16));
+    const enTrackW = Math.max(4, energyW - 16);
     const enBg = this.add.graphics();
     enBg.fillStyle(0x02070f, 1);
-    enBg.fillRoundedRect(bx + energyX + (isTwoRow ? 6 : 8), by + (isTwoRow ? 28 : 36), enTrackW, isTwoRow ? 12 : 16, 5);
-    enBg.lineStyle(1, 0x1abc9c, 0.3);
-    enBg.strokeRoundedRect(bx + energyX + (isTwoRow ? 6 : 8), by + (isTwoRow ? 28 : 36), enTrackW, isTwoRow ? 12 : 16, 5);
+    enBg.fillRoundedRect(bx + energyX + 8, by + (isTwoRow ? 38 : 36), enTrackW, isTwoRow ? 15 : 16, 5);
+    enBg.lineStyle(1.2, 0x1abc9c, 0.45);
+    enBg.strokeRoundedRect(bx + energyX + 8, by + (isTwoRow ? 38 : 36), enTrackW, isTwoRow ? 15 : 16, 5);
 
     this.energyBarFill = this.add.graphics();
 
@@ -387,21 +387,21 @@ export class HUDScene extends Phaser.Scene {
     // ─── 3. STRESS ──────────────────────────────────────
     sec(stressX, 5, stressW, row1H);
 
-    this.add.text(bx + stressX + 6, by + (isTwoRow ? 5 : 7), 'ESTRESSE', {
+    this.add.text(bx + stressX + 8, by + (isTwoRow ? 8 : 7), 'ESTRESSE', {
       fontFamily: TITLE_FONT,
-      fontSize: isTwoRow ? '12px' : '13px', fontStyle: 'bold', color: '#ff6b6b',
+      fontSize: '13px', fontStyle: 'bold', color: '#ff6b6b',
     });
 
-    this.stressValText = this.add.text(bx + stressX + stressW - 6, by + (isTwoRow ? 4 : 5), '0%', {
-      fontFamily: STAT_FONT, fontSize: isTwoRow ? '22px' : '26px', color: '#2ecc71',
+    this.stressValText = this.add.text(bx + stressX + stressW - 8, by + (isTwoRow ? 6 : 5), '0%', {
+      fontFamily: STAT_FONT, fontSize: isTwoRow ? '24px' : '26px', color: '#2ecc71',
     }).setOrigin(1, 0);
 
-    const stTrackW = Math.max(4, stressW - (isTwoRow ? 12 : 16));
+    const stTrackW = Math.max(4, stressW - 16);
     const stBg = this.add.graphics();
     stBg.fillStyle(0x02070f, 1);
-    stBg.fillRoundedRect(bx + stressX + (isTwoRow ? 6 : 8), by + (isTwoRow ? 28 : 36), stTrackW, isTwoRow ? 12 : 16, 5);
-    stBg.lineStyle(1, 0xe74c3c, 0.3);
-    stBg.strokeRoundedRect(bx + stressX + (isTwoRow ? 6 : 8), by + (isTwoRow ? 28 : 36), stTrackW, isTwoRow ? 12 : 16, 5);
+    stBg.fillRoundedRect(bx + stressX + 8, by + (isTwoRow ? 38 : 36), stTrackW, isTwoRow ? 15 : 16, 5);
+    stBg.lineStyle(1.2, 0xe74c3c, 0.45);
+    stBg.strokeRoundedRect(bx + stressX + 8, by + (isTwoRow ? 38 : 36), stTrackW, isTwoRow ? 15 : 16, 5);
 
     this.stressBarFill = this.add.graphics();
 
@@ -414,13 +414,13 @@ export class HUDScene extends Phaser.Scene {
     // ─── 4. CAREER ──────────────────────────────────────
     sec(careerX, 5, careerW, row1H);
 
-    this.add.text(bx + careerX + 6, by + (isTwoRow ? 5 : 7), 'PONTOS', {
+    this.add.text(bx + careerX + 8, by + (isTwoRow ? 8 : 7), 'PONTOS', {
       fontFamily: TITLE_FONT,
-      fontSize: isTwoRow ? '12px' : '13px', fontStyle: 'bold', color: '#f39c12',
+      fontSize: '13px', fontStyle: 'bold', color: '#f39c12',
     });
 
-    this.prestigeText = this.add.text(bx + careerX + 6, by + (isTwoRow ? 20 : 28), '0 pts', {
-      fontFamily: STAT_FONT, fontSize: isTwoRow ? '22px' : '26px', color: '#f39c12',
+    this.prestigeText = this.add.text(bx + careerX + 8, by + (isTwoRow ? 28 : 28), '0 pts', {
+      fontFamily: STAT_FONT, fontSize: isTwoRow ? '24px' : '26px', color: '#f39c12',
     });
 
     this.levelText = this.add.text(0, 0, '').setVisible(false);
@@ -430,17 +430,17 @@ export class HUDScene extends Phaser.Scene {
     if (missionW >= 80) {
       sec(missionX, missionY + 5, missionW, missionH);
 
-      this.add.text(bx + missionX + 10, by + missionY + 6, '🎯 MISSÃO ATIVA (Clique p/ trocar)', {
+      this.add.text(bx + missionX + 12, by + missionY + 11, '🎯 MISSÃO ATIVA (Clique p/ trocar)', {
         fontFamily: SUB_FONT,
-        fontSize: isTwoRow ? '13px' : '14px', fontStyle: 'bold', color: '#f1c40f',
+        fontSize: '13px', fontStyle: 'bold', color: '#f1c40f',
       });
 
-      this.missionText = this.add.text(bx + missionX + 10, by + missionY + (isTwoRow ? 22 : 24), '', {
+      this.missionText = this.add.text(bx + missionX + 12, by + missionY + (isTwoRow ? 32 : 25), '', {
         fontFamily: SUB_FONT,
-        fontSize: isTwoRow ? '18px' : '19px',
+        fontSize: isTwoRow ? '16px' : '19px',
         fontStyle: 'bold',
         color: '#ffffff',
-        wordWrap: { width: missionW - 20 },
+        wordWrap: { width: missionW - 24 },
         maxLines: 2,
         lineSpacing: 1,
       });
@@ -809,13 +809,13 @@ export class HUDScene extends Phaser.Scene {
     const eColor = ep > 0.5 ? 0x2ecc71 : ep > 0.25 ? 0xf1c40f : 0xe74c3c;
     const eHexStr = ep > 0.5 ? '#2ecc71' : ep > 0.25 ? '#f1c40f' : '#e74c3c';
     this.energyBarFill.clear();
-    const enTrackW = Math.max(4, cfg.energyW - (cfg.isTwoRow ? 12 : 16));
+    const enTrackW = Math.max(4, cfg.energyW - 16);
     const eW = Math.max(0, enTrackW * ep);
     if (eW > 2) {
       this.energyBarFill.fillStyle(eColor, 1);
-      const fillX = cfg.bx + cfg.energyX + (cfg.isTwoRow ? 6 : 8);
-      const fillY = cfg.by + (cfg.isTwoRow ? 28 : 36);
-      const fillH = cfg.isTwoRow ? 12 : 16;
+      const fillX = cfg.bx + cfg.energyX + 8;
+      const fillY = cfg.by + (cfg.isTwoRow ? 38 : 36);
+      const fillH = cfg.isTwoRow ? 15 : 16;
       this.energyBarFill.fillRoundedRect(fillX, fillY, eW, fillH, Math.min(5, eW / 2));
     }
     this.energyValText.setText(`${Math.round(state.energy || 0)}%`).setColor(eHexStr);
@@ -825,13 +825,13 @@ export class HUDScene extends Phaser.Scene {
     const sColor = sp < 0.3 ? 0x2ecc71 : sp < 0.6 ? 0xf1c40f : 0xe74c3c;
     const sHexStr = sp < 0.3 ? '#2ecc71' : sp < 0.6 ? '#f1c40f' : '#e74c3c';
     this.stressBarFill.clear();
-    const stTrackW = Math.max(4, cfg.stressW - (cfg.isTwoRow ? 12 : 16));
+    const stTrackW = Math.max(4, cfg.stressW - 16);
     const sW = Math.max(0, stTrackW * sp);
     if (sW > 2) {
       this.stressBarFill.fillStyle(sColor, 1);
-      const fillX = cfg.bx + cfg.stressX + (cfg.isTwoRow ? 6 : 8);
-      const fillY = cfg.by + (cfg.isTwoRow ? 28 : 36);
-      const fillH = cfg.isTwoRow ? 12 : 16;
+      const fillX = cfg.bx + cfg.stressX + 8;
+      const fillY = cfg.by + (cfg.isTwoRow ? 38 : 36);
+      const fillH = cfg.isTwoRow ? 15 : 16;
       this.stressBarFill.fillRoundedRect(fillX, fillY, sW, fillH, Math.min(5, sW / 2));
     }
     this.stressValText.setText(`${Math.round(state.stress || 0)}%`).setColor(sHexStr);
