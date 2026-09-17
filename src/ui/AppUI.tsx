@@ -444,11 +444,16 @@ function PauseMenu() {
     });
   }, []);
 
-  const handleToggleFullscreen = (e?: React.SyntheticEvent) => {
+  const lastFsToggleRef = useRef(0);
+
+  const handleToggleFullscreen = (e?: React.SyntheticEvent | React.PointerEvent) => {
     if (e) {
-      e.preventDefault();
       e.stopPropagation();
     }
+    const now = Date.now();
+    if (now - lastFsToggleRef.current < 350) return;
+    lastFsToggleRef.current = now;
+
     try { playSound("click"); } catch {}
     toggleAppFullscreen();
   };
@@ -580,9 +585,10 @@ function PauseMenu() {
           {/* TELA CHEIA / MODO PAISAGEM */}
           <button
             type="button"
+            onPointerDown={handleToggleFullscreen}
             onClick={handleToggleFullscreen}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
-            className="w-full flex items-center justify-center gap-3 bg-sky-700 hover:bg-sky-600 active:bg-sky-800 text-white font-sans text-sm font-semibold py-3.5 px-5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer select-none touch-manipulation"
+            className="w-full flex items-center justify-center gap-3 bg-sky-700 hover:bg-sky-600 active:bg-sky-800 text-white font-sans text-sm font-semibold py-3.5 px-5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer select-none touch-manipulation pointer-events-auto"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             <span>{isFullscreen ? "SAIR DA TELA CHEIA" : "TELA CHEIA / PAISAGEM"}</span>
@@ -937,10 +943,16 @@ function MobileControls() {
     });
   }, []);
 
-  const handleQuickFullscreen = (e?: React.SyntheticEvent) => {
+  const lastQuickFsRef = useRef(0);
+
+  const handleQuickFullscreen = (e?: React.SyntheticEvent | React.PointerEvent) => {
     if (e) {
       e.stopPropagation();
     }
+    const now = Date.now();
+    if (now - lastQuickFsRef.current < 350) return;
+    lastQuickFsRef.current = now;
+
     try { playSound("click"); } catch {}
     toggleAppFullscreen();
   };
@@ -969,6 +981,7 @@ function MobileControls() {
       >
         <button
           type="button"
+          onPointerDown={handleQuickFullscreen}
           onClick={handleQuickFullscreen}
           title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
           style={{
