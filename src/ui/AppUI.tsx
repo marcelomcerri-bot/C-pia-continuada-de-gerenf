@@ -62,10 +62,12 @@ export function AppUI({
   onStartGame,
   isMobile = false,
   canvasBounds = { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight, scale: 1 },
+  isModalActive = false,
 }: {
   onStartGame: () => void;
   isMobile?: boolean;
   canvasBounds?: CanvasBounds;
+  isModalActive?: boolean;
 }) {
   return (
     <HashRouter>
@@ -73,6 +75,7 @@ export function AppUI({
         onStartGame={onStartGame}
         isMobile={isMobile}
         canvasBounds={canvasBounds}
+        isModalActive={isModalActive}
       />
     </HashRouter>
   );
@@ -82,10 +85,12 @@ function RoutesWrapper({
   onStartGame,
   isMobile,
   canvasBounds,
+  isModalActive = false,
 }: {
   onStartGame: () => void;
   isMobile: boolean;
   canvasBounds: CanvasBounds;
+  isModalActive?: boolean;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -202,6 +207,7 @@ function RoutesWrapper({
               <HomeMenu
                 onStartGame={onStartGame}
                 canvasBounds={canvasBounds}
+                isBlocked={isModalActive}
               />
             }
           />
@@ -236,20 +242,29 @@ function RoutesWrapper({
 function HomeMenu({
   onStartGame,
   canvasBounds,
+  isBlocked = false,
 }: {
   onStartGame: () => void;
   canvasBounds: CanvasBounds;
+  isBlocked?: boolean;
 }) {
   const navigate = useNavigate();
   const [showHelp, setShowHelp] = useState(false);
   const [showCharCreation, setShowCharCreation] = useState(false);
   const startingRef = useRef(false);
 
+  const isGhostClickBlocked = () => {
+    if (isBlocked) return true;
+    const lastDismissed = (window as any).__lastModalDismissedTime || 0;
+    return Date.now() - lastDismissed < 500;
+  };
+
   const openNewGameModal = (e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    if (isGhostClickBlocked()) return;
     try { playSound("click"); } catch {}
     setShowCharCreation(true);
   };
@@ -294,6 +309,7 @@ function HomeMenu({
       e.preventDefault();
       e.stopPropagation();
     }
+    if (isGhostClickBlocked()) return;
     if (startingRef.current) return;
     startingRef.current = true;
 
@@ -306,6 +322,26 @@ function HomeMenu({
     setTimeout(() => {
       startingRef.current = false;
     }, 800);
+  };
+
+  const openHelp = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (isGhostClickBlocked()) return;
+    try { playSound("click"); } catch {}
+    setShowHelp(true);
+  };
+
+  const openProfessor = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (isGhostClickBlocked()) return;
+    try { playSound("click"); } catch {}
+    navigate("/professor");
   };
 
   // Align buttons with the lower entrance colonnade of the hospital in the 16:9 canvas
@@ -338,14 +374,15 @@ function HomeMenu({
             top: `${menuCenterY}px`,
             transformOrigin: "center center",
           }}
-          className="flex flex-col gap-2.5 w-80 max-w-[92vw] pointer-events-auto select-none p-3.5 bg-slate-950/65 backdrop-blur-md rounded-2xl border border-teal-500/30 shadow-[0_12px_36px_rgba(0,0,0,0.65)]"
+          className={`flex flex-col gap-2.5 w-80 max-w-[92vw] select-none p-3.5 bg-slate-950/65 backdrop-blur-md rounded-2xl border border-teal-500/30 shadow-[0_12px_36px_rgba(0,0,0,0.65)] ${
+            isBlocked ? "pointer-events-none opacity-40" : "pointer-events-auto"
+          }`}
         >
           {hasSave() && (
             <motion.button
               whileHover={{ scale: 1.03, y: -2 }}
               whileTap={{ scale: 0.97, y: 1 }}
               type="button"
-              onPointerDown={continueGame}
               onClick={continueGame}
               onMouseEnter={() => { try { playSound("hover"); } catch {} }}
               className="w-full flex items-center justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#312e81] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
@@ -358,7 +395,6 @@ function HomeMenu({
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
-            onPointerDown={openNewGameModal}
             onClick={openNewGameModal}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
             className="w-full flex items-center justify-center gap-2.5 bg-[#1abc9c] hover:bg-[#1dd2af] active:bg-[#16a085] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#0e6252] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
@@ -370,8 +406,7 @@ function HomeMenu({
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
-            onPointerDown={() => { try { playSound("click"); } catch {}; setShowHelp(true); }}
-            onClick={() => { try { playSound("click"); } catch {}; setShowHelp(true); }}
+            onClick={openHelp}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
             className="w-full flex items-center justify-center gap-2.5 bg-[#f39c12] hover:bg-[#f4a62a] active:bg-[#d68910] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#a66705] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >
@@ -382,8 +417,7 @@ function HomeMenu({
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.97, y: 1 }}
             type="button"
-            onPointerDown={() => { try { playSound("click"); } catch {}; navigate("/professor"); }}
-            onClick={() => { try { playSound("click"); } catch {}; navigate("/professor"); }}
+            onClick={openProfessor}
             onMouseEnter={() => { try { playSound("hover"); } catch {} }}
             className="w-full flex items-center justify-center gap-2.5 bg-[#2c3e70] hover:bg-[#344985] active:bg-[#1a2348] text-white font-sans font-bold text-[15px] tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-[0_4px_0_#1a2348] active:translate-y-1 active:shadow-none border-2 border-white/90 cursor-pointer select-none touch-manipulation transition-all"
           >

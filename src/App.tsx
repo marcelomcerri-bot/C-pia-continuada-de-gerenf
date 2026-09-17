@@ -183,6 +183,7 @@ export default function App() {
   };
 
   const lastActionTimeRef = useRef(0);
+  const [isClosingModal, setIsClosingModal] = useState(false);
 
   const executeOnce = (fn: () => void) => {
     const now = Date.now();
@@ -203,22 +204,40 @@ export default function App() {
 
   const handleActivateFullscreen = (e?: React.SyntheticEvent | React.PointerEvent | React.TouchEvent) => {
     if (e) {
+      e.preventDefault();
       e.stopPropagation();
     }
     executeOnce(() => {
-      try { playSound("click"); } catch {}
-      setDismissedPortrait(true);
+      // Trigger fullscreen immediately synchronously while the user gesture is active
       handleRequestFullscreenAndLandscape();
+      try { playSound("click"); } catch {}
+
+      // Mark dismissal timestamp so underlying buttons ignore ghost clicks
+      (window as any).__lastModalDismissedTime = Date.now();
+      setIsClosingModal(true);
+
+      // Keep backdrop active absorbing clicks for 350ms until touch sequence finishes
+      setTimeout(() => {
+        setDismissedPortrait(true);
+        setIsClosingModal(false);
+      }, 350);
     });
   };
 
   const handleDismissToVertical = (e?: React.SyntheticEvent | React.PointerEvent | React.TouchEvent) => {
     if (e) {
+      e.preventDefault();
       e.stopPropagation();
     }
     executeOnce(() => {
       try { playSound("click"); } catch {}
-      setDismissedPortrait(true);
+      (window as any).__lastModalDismissedTime = Date.now();
+      setIsClosingModal(true);
+
+      setTimeout(() => {
+        setDismissedPortrait(true);
+        setIsClosingModal(false);
+      }, 350);
     });
   };
 
@@ -245,6 +264,7 @@ export default function App() {
         onStartGame={handleStartGame}
         isMobile={IS_MOBILE_DEVICE}
         canvasBounds={{ left, top, width, height, scale }}
+        isModalActive={isPortrait && !dismissedPortrait}
       />
 
       {/* Full Portrait Helper Modal: guides user to rotate phone to landscape */}
@@ -252,12 +272,16 @@ export default function App() {
         <div
           onPointerDown={handleDismissToVertical}
           onClick={handleDismissToVertical}
-          className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md pointer-events-auto transition-opacity duration-300"
+          className={`fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md pointer-events-auto transition-opacity duration-300 ${
+            isClosingModal ? "opacity-0 pointer-events-auto" : "opacity-100"
+          }`}
         >
           <div
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            className="relative max-w-sm w-full bg-[#0a1628] border-2 border-[#1abc9c]/70 rounded-2xl p-6 text-center shadow-2xl flex flex-col items-center pointer-events-auto"
+            onPointerDown={(e) => { e.stopPropagation(); }}
+            onClick={(e) => { e.stopPropagation(); }}
+            className={`relative max-w-sm w-full bg-[#0a1628] border-2 border-[#1abc9c]/70 rounded-2xl p-6 text-center shadow-2xl flex flex-col items-center pointer-events-auto transition-all duration-300 ${
+              isClosingModal ? "scale-95 opacity-50" : "scale-100 opacity-100"
+            }`}
           >
             {/* Close button to allow vertical play */}
             <button
