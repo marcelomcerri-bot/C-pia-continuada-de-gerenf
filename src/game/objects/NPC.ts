@@ -349,7 +349,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       if (d.id === 'idle') continue;
       if (d.condition && !d.condition(state)) continue;
 
-      // Check if this dialogue's mission is already completed
+      // Check if this dialogue's mission is already completed/started
       let isCompleted = false;
       if (d.choices && d.choices.length > 0) {
         const effects = d.choices
@@ -358,7 +358,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
         if (effects.length > 0) {
           const uncompleted = effects.filter(e => {
-            const [mId] = e.split(':');
+            const [mId, action] = e.split(':');
+            if (action === 'start') {
+              return !state.missionProgress[mId] && !state.completedMissions.includes(mId);
+            }
             return !state.completedMissions.includes(mId);
           });
           if (uncompleted.length === 0) {
@@ -373,7 +376,28 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // 2. If no active uncompleted mission dialogue is available, return 'idle' dialogue
+    // 2. If no active uncompleted primary mission dialogue is available, check dialoguePools
+    if (!found && this.def.dialoguePools && this.def.dialoguePools.length > 0) {
+      const pools = this.def.dialoguePools;
+      // Flatten all pool dialogues
+      const allPoolDialogues: DialogueDef[] = [];
+      for (const pool of pools) {
+        if (Array.isArray(pool)) {
+          allPoolDialogues.push(...pool);
+        }
+      }
+
+      if (allPoolDialogues.length > 0) {
+        // Find pool dialogue matching conversation count cycle or first valid
+        const index = this.conversationCount % allPoolDialogues.length;
+        const candidate = allPoolDialogues[index] || allPoolDialogues[0];
+        if (candidate && (!candidate.condition || candidate.condition(state))) {
+          found = candidate;
+        }
+      }
+    }
+
+    // 3. Fallback to 'idle' dialogue
     if (!found) {
       for (const d of this.def.dialogues) {
         if (d.id === 'idle') {

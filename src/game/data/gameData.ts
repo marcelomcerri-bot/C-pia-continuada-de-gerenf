@@ -1621,7 +1621,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'escala_intro',
-        condition: (s) => !s.completedMissions.includes('escala_plantao'),
+        condition: (s) => !s.completedMissions.includes('escala_plantao') && !s.missionProgress['escala_plantao'],
         topic: 'Dimensionamento de Enfermagem',
         text: [
           'Bom dia! Seja bem-vinda ao HUAP.',
@@ -2493,6 +2493,7 @@ export const NPC_DEFS: NPCDef[] = [
             tooltip: 'Surviving Sepsis Campaign / ILAS — Pacote de 1 Hora da Sepse',
             feedback: 'Perfeito! O reconhecimento rápido da sepse e administração do pacote de 1 hora reduz em até 40% a mortalidade por choque séptico.',
             effect: (s) => ({ prestige: s.prestige + 35 }),
+            missionEffect: 'protocolo_sepse:complete',
           },
           {
             text: 'Aguardar 12 horas de observação antes de solicitar qualquer exame de sangue ou culturas.',
@@ -2500,6 +2501,7 @@ export const NPC_DEFS: NPCDef[] = [
             tooltip: 'Atraso de 12 horas no antibiótico leva o paciente ao choque irrreversível e óbito',
             feedback: 'Incorreto. A cada hora de atraso na administração do antimicrobiano na sepse grave, a mortalidade aumenta cerca de 8%.',
             effect: (s) => ({ prestige: s.prestige - 10 }),
+            missionEffect: 'protocolo_sepse:complete',
           },
           {
             text: 'Administrar corticoides em altas doses sem coletar hemoculturas prévias.',
@@ -2507,6 +2509,7 @@ export const NPC_DEFS: NPCDef[] = [
             tooltip: 'Corticoide não substitui antibioticoterapia e cultura imediata',
             feedback: 'Incorreto. Hemoculturas devem ser coletadas antes da antibioticoterapia sem atrasar o início do pacote de 1 hora.',
             effect: (s) => ({ prestige: s.prestige - 5 }),
+            missionEffect: 'protocolo_sepse:complete',
           },
           {
             text: 'Dar alta ao paciente com febre e prescrever antitérmico para tomar em casa.',
@@ -2514,6 +2517,7 @@ export const NPC_DEFS: NPCDef[] = [
             tooltip: 'Dar alta para paciente com critérios de resposta inflamatória e disfunção é erro grave',
             feedback: 'Incorreto. Pacientes com critérios de sepse precisam de internamento imediato e protocolo de choque.',
             effect: (s) => ({ prestige: s.prestige - 10 }),
+            missionEffect: 'protocolo_sepse:complete',
           },
         ],
       },

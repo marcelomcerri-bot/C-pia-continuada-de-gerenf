@@ -357,8 +357,8 @@ export class DialogScene extends Phaser.Scene {
       stateUpdate.prestige = newPrestige;
     }
 
-    // Only process mission completion / advancement if the choice is CORRECT
-    if (choice.missionEffect && !isIncorrectChoice) {
+    // Process mission completion / advancement whenever a choice with missionEffect is selected
+    if (choice.missionEffect) {
       const [missionId, actionType] = choice.missionEffect.split(':');
       const progress = { ...this.state.missionProgress };
       const completed = [...this.state.completedMissions];
@@ -368,14 +368,18 @@ export class DialogScene extends Phaser.Scene {
       } else if (actionType?.startsWith('step')) {
         progress[missionId] = parseInt(actionType.replace('step', ''), 10);
       } else if (actionType === 'complete') {
-        progress[missionId] = 2; // Mark as completed in progress too so condition (!s.missionProgress[id]) evaluates to false!
+        progress[missionId] = 2; // Mark as completed in progress too
         const mission = MISSIONS.find(m => m.id === missionId);
         if (mission && !completed.includes(missionId)) {
           completed.push(missionId);
-          const basePrestige = stateUpdate.prestige ?? this.state.prestige;
-          stateUpdate.prestige = basePrestige + mission.prestige;
-          this.showPedagogyNote(mission.title, mission.pedagogy, mission.pedagogyRef, mission.prestige);
-          try { playSound('success'); } catch {}
+          if (!isIncorrectChoice) {
+            const basePrestige = stateUpdate.prestige ?? this.state.prestige;
+            stateUpdate.prestige = basePrestige + mission.prestige;
+            this.showPedagogyNote(mission.title, mission.pedagogy, mission.pedagogyRef, mission.prestige);
+            try { playSound('success'); } catch {}
+          } else {
+            try { playSound('error'); } catch {}
+          }
         }
       }
 
