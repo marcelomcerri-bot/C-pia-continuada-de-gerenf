@@ -562,6 +562,16 @@ function HomeMenu({
               </p>
             </div>
 
+            {/* Professor Mode Notice */}
+            <div className="w-full bg-indigo-950/70 border border-indigo-500/40 rounded-xl p-3 text-left space-y-1 text-xs">
+              <h4 className="font-mono text-indigo-300 font-bold uppercase tracking-wider text-[11px] border-b border-indigo-500/30 pb-1 flex items-center gap-1.5">
+                🎓 Modo Professor (Painel do Desenvolvedor & Docente)
+              </h4>
+              <p className="text-slate-200 font-sans text-[11px] leading-relaxed pt-0.5">
+                Esta aba é voltada exclusivamente para o <strong className="text-indigo-300 font-semibold">desenvolvedor do game</strong> e os <strong className="text-indigo-300 font-semibold">professores/monitores da UFF</strong> acompanharem a gameplay dos alunos em tempo real, observando o progresso no HUAP, histórico de erros e acertos em cada missão de enfermagem.
+              </p>
+            </div>
+
             <button
               type="button"
               onClick={(e) => {
