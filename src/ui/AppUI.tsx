@@ -270,6 +270,7 @@ function HomeMenu({
   };
 
   const confirmNewGame = (profile: PlayerProfile) => {
+    (window as any).__lastModalDismissedTime = Date.now();
     setShowCharCreation(false);
     if (startingRef.current) return;
     startingRef.current = true;
@@ -452,9 +453,11 @@ function HomeMenu({
             </div>
             <button
               type="button"
-              onPointerDown={() => { try { playSound("click"); } catch {}; setShowHelp(false); }}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
                 try { playSound("click"); } catch {};
+                (window as any).__lastModalDismissedTime = Date.now();
                 setShowHelp(false);
               }}
               className="mt-2 px-8 py-2.5 rounded-xl bg-teal-600/30 text-teal-300 border-2 border-teal-400 hover:bg-teal-500 hover:text-white active:bg-teal-600 font-mono font-bold text-xs cursor-pointer select-none touch-manipulation"
@@ -949,6 +952,9 @@ function MobileControls() {
     if (e) {
       e.stopPropagation();
     }
+    const lastDismissed = (window as any).__lastModalDismissedTime || 0;
+    if (Date.now() - lastDismissed < 700) return;
+
     if (isNavigatingRef.current) return;
     isNavigatingRef.current = true;
     setTimeout(() => {
@@ -1156,7 +1162,6 @@ function MobileControls() {
         {/* PAUSA / MENU */}
         <button
           type="button"
-          onPointerDown={handlePause}
           onClick={handlePause}
           style={{
             position: "absolute",

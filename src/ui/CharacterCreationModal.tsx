@@ -81,6 +81,7 @@ export function CharacterCreationModal({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     dismissKeyboard();
+    (window as any).__lastModalDismissedTime = Date.now();
     const finalName = name.trim() || (gender === "female" ? "Ana Silva" : "Carlos Eduardo");
     try { playSound("click"); } catch {}
     onConfirm({
@@ -333,8 +334,13 @@ export function CharacterCreationModal({
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { dismissKeyboard(); try { playSound("click"); } catch {}; onClose(); }}
-                onPointerDown={(e) => { e.stopPropagation(); dismissKeyboard(); try { playSound("click"); } catch {}; onClose(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissKeyboard();
+                  try { playSound("click"); } catch {};
+                  (window as any).__lastModalDismissedTime = Date.now();
+                  onClose();
+                }}
                 className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 font-sans font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-600 transition-all cursor-pointer touch-manipulation min-h-[40px]"
               >
                 VOLTAR
@@ -342,7 +348,11 @@ export function CharacterCreationModal({
               <button
                 type="submit"
                 onMouseDown={(e) => e.preventDefault()}
-                onPointerDown={(e) => { e.stopPropagation(); handleSubmit(); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSubmit();
+                }}
                 className="flex-1 py-2.5 px-3 bg-[#1abc9c] hover:bg-[#1dd2af] active:bg-[#16a085] text-slate-950 font-sans font-extrabold text-xs uppercase tracking-wider rounded-xl border-2 border-white/80 shadow-[0_3px_0_#0e6252] active:translate-y-0.5 active:shadow-none transition-all cursor-pointer touch-manipulation min-h-[40px]"
               >
                 INICIAR JOGO ▶

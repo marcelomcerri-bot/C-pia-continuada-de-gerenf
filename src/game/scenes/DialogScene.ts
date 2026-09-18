@@ -34,6 +34,7 @@ export class DialogScene extends Phaser.Scene {
   private overlay!: Phaser.GameObjects.Rectangle;
   private onClose!: (s: Partial<GameState>) => void;
   private inputReady = false;
+  private lastAdvanceTime = 0;
   private domPointerdownListener?: (e: PointerEvent) => void;
   private hasChosen = false;
   private pendingStateUpdate: Partial<GameState> = {};
@@ -174,11 +175,12 @@ export class DialogScene extends Phaser.Scene {
     // dialog doesn't immediately skip the very first line (caused the
     // "NPC só diz uma frase" bug).
     this.inputReady = false;
-    this.time.delayedCall(260, () => { this.inputReady = true; });
+    this.lastAdvanceTime = 0;
+    this.time.delayedCall(300, () => { this.inputReady = true; });
+
     this.input.keyboard?.on('keydown-E', this.handleAdvance, this);
     this.input.keyboard?.on('keydown-SPACE', this.handleAdvance, this);
     this.input.keyboard?.on('keydown-ESC', this.handleEsc, this);
-    this.input.on('pointerdown', this.handleAdvance, this);
 
     this.domPointerdownListener = (e: PointerEvent) => {
       if ((e.target as HTMLElement)?.closest('.pointer-events-auto')) return;
@@ -198,6 +200,9 @@ export class DialogScene extends Phaser.Scene {
     this.charIdx = 0;
     this.charTimer = 0;
     this.isTyping = true;
+    this.lastAdvanceTime = Date.now();
+    this.inputReady = false;
+    this.time.delayedCall(160, () => { this.inputReady = true; });
     this.bodyText.setText('');
     this.cursor.setVisible(false);
     this.showingChoices = false;
@@ -251,14 +256,23 @@ export class DialogScene extends Phaser.Scene {
     if (this.showingChoices) return;
     if (!this.inputReady) return;
 
+    const now = Date.now();
+    if (now - this.lastAdvanceTime < 180) return;
+    this.lastAdvanceTime = now;
+
     if (this.isTyping) {
       this.bodyText.setText(this.lines[this.lineIdx]);
       this.charIdx = this.lines[this.lineIdx].length + 1;
       this.isTyping = false;
+
+      // Gate next click so this click ONLY completes the text without skipping to the next line
+      this.inputReady = false;
+      this.time.delayedCall(220, () => { this.inputReady = true; });
+
       if (this.lineIdx >= this.lines.length - 1) {
         if (!this.hasChosen) {
           this.cursor.setVisible(false);
-          this.time.delayedCall(180, () => this.showChoices());
+          this.time.delayedCall(240, () => this.showChoices());
         } else {
           this.cursor.setVisible(true);
         }
