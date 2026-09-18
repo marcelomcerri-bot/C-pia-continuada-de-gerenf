@@ -208,6 +208,7 @@ function RoutesWrapper({
                 onStartGame={onStartGame}
                 canvasBounds={canvasBounds}
                 isBlocked={isModalActive}
+                isMobile={isMobile}
               />
             }
           />
@@ -217,9 +218,11 @@ function RoutesWrapper({
       </AnimatePresence>
 
       {isMobile && inGame && <MobileControls />}
-      {activeChoices && (
-        <DialogueChoicesOverlay choices={activeChoices} />
-      )}
+      <AnimatePresence>
+        {activeChoices && (
+          <DialogueChoicesOverlay choices={activeChoices} key="dialogue-choices-overlay" />
+        )}
+      </AnimatePresence>
 
       <ErrorNotebookModal
         isOpen={isNotebookOpen}
@@ -243,15 +246,23 @@ function HomeMenu({
   onStartGame,
   canvasBounds,
   isBlocked = false,
+  isMobile = false,
 }: {
   onStartGame: () => void;
   canvasBounds: CanvasBounds;
   isBlocked?: boolean;
+  isMobile?: boolean;
 }) {
   const navigate = useNavigate();
   const [showHelp, setShowHelp] = useState(false);
   const [showCharCreation, setShowCharCreation] = useState(false);
   const startingRef = useRef(false);
+
+  const isMobileDevice =
+    isMobile ||
+    (typeof navigator !== "undefined" &&
+      (navigator.maxTouchPoints > 1 ||
+        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)));
 
   const isGhostClickBlocked = () => {
     if (isBlocked) return true;
@@ -426,31 +437,131 @@ function HomeMenu({
           </motion.button>
         </motion.div>
       ) : (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 pointer-events-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 pointer-events-auto">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#0a1628]/95 border-4 border-teal-500 rounded-2xl p-6 w-[480px] max-w-full shadow-2xl flex flex-col items-center gap-4 max-h-[88vh] overflow-y-auto select-none"
+            initial={{ opacity: 0, scale: 0.92, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-[#0a1628]/95 border-2 border-teal-500/80 rounded-2xl p-5 sm:p-6 w-[540px] max-w-full shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col items-center gap-4 max-h-[90vh] overflow-y-auto select-none"
           >
-            <h2 className="text-base sm:text-lg font-mono text-teal-400 font-bold text-center">
-              COMO JOGAR — HUAP/UFF
-            </h2>
-            <div className="text-teal-50 font-mono text-xs space-y-1.5 text-center">
-              <p>🎮 WASD / Setas / D-Pad — Mover</p>
-              <p>🏃 SHIFT / Botão RUN — Correr</p>
-              <p>💬 E / Botão FALAR — Interagir</p>
-              <p>📋 M / Botão MISSÃO — Missões</p>
-              <p>⏸️ ESC / Botão PAUSA — Menu</p>
-              <br />
-              <p className="text-teal-200">
-                Explore o HUAP, fale com a equipe e complete tarefas de enfermagem.
-              </p>
-              <p className="text-orange-400">
-                🚨 CRISES: Eventos clínicos aleatórios exigem decisões rápidas!
-              </p>
-              <p className="text-green-400">⚡ Energia: descanse na Copa (+6/s)</p>
-              <p className="text-red-400">😰 Estresse: reduza no jardim ou copa</p>
+            {/* Header Badge */}
+            <div className="w-full flex items-center justify-between border-b border-teal-500/30 pb-2.5">
+              <span className="text-[11px] font-mono text-teal-400 uppercase tracking-widest font-bold">
+                {isMobileDevice ? "📱 Dispositivo Mobile" : "💻 Computador / Notebook"}
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 font-mono text-[10px] font-semibold">
+                HUAP / UFF
+              </span>
             </div>
+
+            <h2 className="text-lg sm:text-xl font-mono text-teal-300 font-extrabold text-center tracking-tight">
+              📖 COMO JOGAR O SIMULADOR
+            </h2>
+
+            {/* Objective Banner */}
+            <div className="w-full bg-teal-950/60 border border-teal-500/40 rounded-xl p-3 text-left space-y-1.5">
+              <div className="flex items-center gap-2 text-teal-300 font-mono font-bold text-xs">
+                <span>🎯 OBJETIVO PRINCIPAL:</span>
+              </div>
+              <p className="text-slate-200 font-sans text-xs leading-relaxed">
+                O jogo possui um total de <strong className="text-teal-300 font-bold">23 missões de enfermagem</strong>. Seu objetivo é completar todas elas e resolver os <strong className="text-amber-300 font-bold">eventos de crise aleatórios</strong> que surgem durante o plantão no HUAP.
+              </p>
+              <div className="pt-2 flex items-start gap-1.5 text-xs text-teal-200/90 font-sans border-t border-teal-500/20 mt-1">
+                <span className="text-sm">📍</span>
+                <span>
+                  <strong className="text-teal-300 font-semibold">Barra Superior (Aba de Orientação):</strong> Na parte superior da tela durante a partida, há uma barra que mostra para onde ir, qual é a missão ativa e seu progresso atual no hospital.
+                </span>
+              </div>
+            </div>
+
+            {/* Controls Section */}
+            <div className="w-full space-y-2">
+              <h3 className="text-xs font-mono text-teal-400 font-bold uppercase tracking-wider text-left border-b border-slate-700/60 pb-1">
+                {isMobileDevice ? "🎮 Controles da Tela (Mobile)" : "🎮 Comandos no Teclado (PC)"}
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono text-slate-200 text-left">
+                {isMobileDevice ? (
+                  <>
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                      <span className="text-lg">🕹️</span>
+                      <div>
+                        <div className="text-teal-300 font-bold text-xs">D-Pad Virtual</div>
+                        <div className="text-[11px] text-slate-400 font-sans">Direcional no canto inferior esquerdo</div>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                      <span className="text-lg">💬</span>
+                      <div>
+                        <div className="text-teal-300 font-bold text-xs">Botão FALAR</div>
+                        <div className="text-[11px] text-slate-400 font-sans">Interagir no canto inferior direito</div>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                      <span className="text-lg">🏃</span>
+                      <div>
+                        <div className="text-teal-300 font-bold text-xs">Botão RUN</div>
+                        <div className="text-[11px] text-slate-400 font-sans">Alternar corrida rápida</div>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                      <span className="text-lg">📋</span>
+                      <div>
+                        <div className="text-teal-300 font-bold text-xs">Ícone de Caderno</div>
+                        <div className="text-[11px] text-slate-400 font-sans">Abrir missões e pendências</div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                      <span className="text-lg">🕹️</span>
+                      <div>
+                        <div className="text-teal-300 font-bold text-xs">WASD / Setas</div>
+                        <div className="text-[11px] text-slate-400 font-sans">Mover o enfermeiro pelo hospital</div>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                      <span className="text-lg">💬</span>
+                      <div>
+                        <div className="text-teal-300 font-bold text-xs">Tecla E / Espaço</div>
+                        <div className="text-[11px] text-slate-400 font-sans">Falar e interagir com NPCs</div>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                      <span className="text-lg">🏃</span>
+                      <div>
+                        <div className="text-teal-300 font-bold text-xs">Tecla SHIFT</div>
+                        <div className="text-[11px] text-slate-400 font-sans">Segure para correr</div>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                      <span className="text-lg">📋</span>
+                      <div>
+                        <div className="text-teal-300 font-bold text-xs">Tecla M / P</div>
+                        <div className="text-[11px] text-slate-400 font-sans">Abrir missões / Pausar jogo</div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Vital Stats Guidance */}
+            <div className="w-full bg-slate-900/70 border border-slate-800 rounded-xl p-3 text-left space-y-1 text-xs">
+              <h4 className="font-mono text-teal-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-800 pb-1">
+                ⚖️ Recursos & Gestão do Plantão
+              </h4>
+              <p className="text-amber-300 font-sans text-[11px] pt-1">
+                🚨 <strong>Crises Aleatórias:</strong> Surgem periodicamente e exigem tomada de decisão rápida.
+              </p>
+              <p className="text-emerald-300 font-sans text-[11px]">
+                ⚡ <strong>Energia:</strong> Descanse na Copa para recuperar energia se o enfermeiro cansar.
+              </p>
+              <p className="text-rose-300 font-sans text-[11px]">
+                😰 <strong>Estresse:</strong> Reduza no Jardim ou na Copa para manter o bom rendimento.
+              </p>
+            </div>
+
             <button
               type="button"
               onClick={(e) => {
@@ -460,9 +571,9 @@ function HomeMenu({
                 (window as any).__lastModalDismissedTime = Date.now();
                 setShowHelp(false);
               }}
-              className="mt-2 px-8 py-2.5 rounded-xl bg-teal-600/30 text-teal-300 border-2 border-teal-400 hover:bg-teal-500 hover:text-white active:bg-teal-600 font-mono font-bold text-xs cursor-pointer select-none touch-manipulation"
+              className="mt-1 px-8 py-2.5 rounded-xl bg-teal-600/30 text-teal-300 border-2 border-teal-400 hover:bg-teal-500 hover:text-white active:bg-teal-600 font-mono font-bold text-xs cursor-pointer select-none touch-manipulation transition-all shadow-[0_3px_0_#0e6252] active:translate-y-0.5 active:shadow-none"
             >
-              VOLTAR
+              ENTENDI, VOLTAR
             </button>
           </motion.div>
         </div>
@@ -1214,26 +1325,53 @@ function MobileControls() {
 function DialogueChoicesOverlay({
   choices,
 }: {
-  choices: { text: string; index: number }[] | null;
+  choices: { text: string; index: number; correct?: boolean }[] | null;
 }) {
   const selectedRef = useRef(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
     selectedRef.current = false;
+    setSelectedIndex(null);
+    setIsClosing(false);
   }, [choices]);
+
+  const activeData = (window as any).activeChoices;
 
   const handleSelect = useCallback((idx: number) => {
     if (selectedRef.current) return;
     selectedRef.current = true;
+    setSelectedIndex(idx);
+
     const data = (window as any).activeChoices;
-    if (data?.select) {
-      data.select(idx);
-    }
+    const choiceItem = data?.choices?.[idx];
+    const hasExplicitCorrect = data?.choices?.some((c: any) => c.correct === true);
+    const isCorrect =
+      choiceItem?.correct === true ||
+      (!hasExplicitCorrect && choiceItem?.correct !== false);
+
+    try {
+      if (isCorrect) {
+        playSound("success");
+      } else {
+        playSound("error");
+      }
+    } catch {}
+
+    setTimeout(() => {
+      setIsClosing(true);
+      setTimeout(() => {
+        if (data?.select) {
+          data.select(idx);
+        }
+      }, 180);
+    }, 450);
   }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!choices || choices.length === 0) return;
+      if (!choices || choices.length === 0 || selectedIndex !== null) return;
       const num = parseInt(e.key, 10);
       if (!isNaN(num) && num >= 1 && num <= choices.length) {
         e.preventDefault();
@@ -1245,27 +1383,44 @@ function DialogueChoicesOverlay({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [choices, handleSelect]);
+  }, [choices, handleSelect, selectedIndex]);
 
   if (!choices || choices.length === 0) return null;
 
-  const activeData = (window as any).activeChoices;
-
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-black/45 backdrop-blur-sm pointer-events-auto select-none animate-fadeIn">
-      <div className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-slate-900/95 border border-emerald-500/30 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.85)] overflow-hidden">
-        
-        {/* Fixed Header */}
-        <div className="flex-shrink-0 p-3 sm:p-4 bg-slate-900/90 border-b border-slate-800 flex flex-col gap-2">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isClosing ? 0 : 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-md pointer-events-auto select-none"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.88, y: 30 }}
+        animate={{
+          opacity: isClosing ? 0 : 1,
+          scale: isClosing ? 0.92 : 1,
+          y: isClosing ? -15 : 0,
+        }}
+        exit={{ opacity: 0, scale: 0.9, y: -20 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+        className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-slate-900/95 border-2 border-emerald-500/50 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden"
+      >
+        {/* Top Header */}
+        <div className="flex-shrink-0 p-3.5 sm:p-4 bg-slate-900/90 border-b border-slate-800/80 flex flex-col gap-2">
           {activeData?.topic && (
-            <div className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 font-mono text-[10px] sm:text-xs font-semibold tracking-wide uppercase max-w-full">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-300 font-mono text-[10px] sm:text-xs font-semibold tracking-wide uppercase max-w-full shadow-sm"
+            >
               <span className="flex-shrink-0">📚</span>
               <span className="truncate">{activeData.topic}</span>
-            </div>
+            </motion.div>
           )}
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-emerald-400 font-bold font-mono text-xs sm:text-sm tracking-wider uppercase flex items-center gap-2">
-              <span className="text-base leading-none">💬</span> Selecione a melhor conduta
+              <span className="text-base leading-none animate-pulse">💬</span> Selecione a melhor conduta
             </h3>
             <span className="text-[10px] text-slate-400 font-mono hidden xs:inline">
               Toque ou use o teclado [1-{choices.length}]
@@ -1273,39 +1428,131 @@ function DialogueChoicesOverlay({
           </div>
         </div>
 
-        {/* Scrollable Choice Items Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-900 [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb]:rounded-full">
-          {choices.map((choice) => (
-            <button
-              key={choice.index}
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSelect(choice.index);
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSelect(choice.index);
-              }}
-              className="group relative w-full text-left p-2.5 sm:p-3.5 rounded-xl bg-slate-800/60 hover:bg-slate-800/90 active:bg-emerald-950/50 border border-slate-700/70 hover:border-emerald-500/50 active:border-emerald-400 transition-all duration-150 flex items-start gap-3 cursor-pointer touch-manipulation shadow-sm active:scale-[0.99]"
-            >
-              <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 group-hover:bg-emerald-500 group-hover:text-slate-950 font-mono font-bold text-xs flex items-center justify-center transition-colors mt-0.5">
-                {choice.index + 1}
-              </span>
-              <span className="flex-1 text-xs sm:text-sm text-slate-100 font-sans font-medium leading-relaxed group-hover:text-white transition-colors">
-                {choice.text}
-              </span>
-              <span className="hidden sm:inline-block text-[10px] text-slate-500 font-mono mt-0.5 group-hover:text-emerald-400 transition-colors">
-                [{choice.index + 1}]
-              </span>
-            </button>
-          ))}
-        </div>
+        {/* Choice Buttons List */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-2.5 sm:space-y-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-900 [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb]:rounded-full">
+          {choices.map((choice, idx) => {
+            const isSelected = selectedIndex === choice.index;
+            const choicePayload = activeData?.choices?.[choice.index];
+            const hasExplicitCorrect = activeData?.choices?.some((c: any) => c.correct === true);
+            const isCorrectChoice =
+              choicePayload?.correct === true ||
+              (!hasExplicitCorrect && choicePayload?.correct !== false);
 
-      </div>
-    </div>
+            let buttonStyle =
+              "bg-slate-800/70 hover:bg-slate-800/95 border-slate-700/80 hover:border-emerald-500/60 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)]";
+            if (selectedIndex !== null) {
+              if (isSelected) {
+                if (isCorrectChoice) {
+                  buttonStyle =
+                    "bg-emerald-950/90 border-2 border-emerald-400 text-emerald-100 shadow-[0_0_25px_rgba(16,185,129,0.6)] ring-2 ring-emerald-400/60";
+                } else {
+                  buttonStyle =
+                    "bg-rose-950/90 border-2 border-rose-500 text-rose-100 shadow-[0_0_25px_rgba(244,63,94,0.6)] ring-2 ring-rose-500/60";
+                }
+              } else {
+                buttonStyle = "bg-slate-900/40 border-slate-800/40 opacity-30 scale-[0.98]";
+              }
+            }
+
+            return (
+              <motion.button
+                key={choice.index}
+                type="button"
+                initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                animate={
+                  isSelected && !isCorrectChoice
+                    ? {
+                        opacity: 1,
+                        x: [-6, 6, -5, 5, -2, 2, 0],
+                        scale: [1, 1.02, 1],
+                      }
+                    : isSelected && isCorrectChoice
+                    ? {
+                        opacity: 1,
+                        x: 0,
+                        scale: [1, 1.03, 1],
+                      }
+                    : {
+                        opacity: selectedIndex !== null ? 0.35 : 1,
+                        x: 0,
+                        scale: selectedIndex !== null ? 0.97 : 1,
+                      }
+                }
+                transition={
+                  isSelected && !isCorrectChoice
+                    ? { duration: 0.4, ease: "easeInOut" }
+                    : isSelected && isCorrectChoice
+                    ? { duration: 0.3, ease: "easeOut" }
+                    : {
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 22,
+                        delay: selectedIndex === null ? idx * 0.06 : 0,
+                      }
+                }
+                whileHover={{
+                  scale: selectedIndex === null ? 1.015 : 1,
+                  x: selectedIndex === null ? 3 : 0,
+                }}
+                whileTap={{ scale: 0.98 }}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSelect(choice.index);
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSelect(choice.index);
+                }}
+                className={`group relative w-full text-left p-3 sm:p-4 rounded-xl border transition-all duration-200 flex items-start gap-3 cursor-pointer touch-manipulation shadow-sm ${buttonStyle}`}
+              >
+                <span
+                  className={`flex-shrink-0 w-6 h-6 rounded-lg font-mono font-bold text-xs flex items-center justify-center transition-all mt-0.5 ${
+                    isSelected
+                      ? isCorrectChoice
+                        ? "bg-emerald-400 text-slate-950 shadow-md"
+                        : "bg-rose-500 text-white shadow-md animate-bounce"
+                      : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 group-hover:bg-emerald-500 group-hover:text-slate-950"
+                  }`}
+                >
+                  {choice.index + 1}
+                </span>
+
+                <span className="flex-1 text-xs sm:text-sm text-slate-100 font-sans font-medium leading-relaxed group-hover:text-white transition-colors">
+                  {choice.text}
+                </span>
+
+                {/* Right Badge Feedback */}
+                {isSelected && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex-shrink-0 self-center"
+                  >
+                    {isCorrectChoice ? (
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/30 text-emerald-300 border border-emerald-400/60 font-mono text-[10px] sm:text-xs font-bold tracking-wider flex items-center gap-1 shadow-lg animate-pulse">
+                        <span>✅</span> CORRETO
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-lg bg-rose-500/30 text-rose-300 border border-rose-400/60 font-mono text-[10px] sm:text-xs font-bold tracking-wider flex items-center gap-1 shadow-lg animate-bounce">
+                        <span>❌</span> INADEQUADO
+                      </span>
+                    )}
+                  </motion.div>
+                )}
+
+                {!isSelected && (
+                  <span className="hidden sm:inline-block text-[10px] text-slate-500 font-mono mt-0.5 group-hover:text-emerald-400 transition-colors">
+                    [{choice.index + 1}]
+                  </span>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

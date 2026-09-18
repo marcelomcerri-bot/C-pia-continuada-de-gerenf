@@ -2904,7 +2904,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['(Bip... bip... bip...)', 'Agradeço pelo cuidado... estou me sentindo mais seguro.'],
-      choices: [{ text: 'Pode descansar.'}]
+      choices: [{ text: 'Pode descansar, Sr. João.', feedback: 'Obrigado, enfermeiro. Vocês são verdadeiros anjos aqui na UTI.' }]
     }]
   },
   {
@@ -2921,7 +2921,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['(Geme de dor...)', 'Enfermeiro, por favor, a dor não passa.'],
-      choices: [{ text: 'Já enviei a prescrição de analgesia.'}]
+      choices: [{ text: 'Já solicitei a medicação de analgesia no sistema.', feedback: 'Graças a Deus... muito obrigado pelo atendimento rápido no PS.' }]
     }]
   },
   {
@@ -2938,7 +2938,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Sabe se o médico vai passar hoje?', 'O almoço do hospital até que não está ruim.'],
-      choices: [{ text: 'O médico já deve passar, Dona Maria.'}]
+      choices: [{ text: 'O médico já deve passar, Dona Maria.', feedback: 'Tá certo, meu filho. Vou aguardar no leito. Obrigada pela atenção!' }]
     }]
   },
   {
@@ -2955,7 +2955,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Bom dia, eu queria informações sobre a internação.', 'A senhora poderia me ajudar?'],
-      choices: [{ text: 'Claro, por favor se dirija à recepção.'}]
+      choices: [{ text: 'Claro, por favor se dirija à recepção.', feedback: 'Muito obrigado! Vou conversar com a recepcionista agora.' }]
     }]
   },
   {
@@ -3070,7 +3070,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['O jardim me traz muita paz e tranquilidade...', 'Você já viu a fonte dágua lá fora?'],
-      choices: [{ text: 'É muito bonito.'}]
+      choices: [{ text: 'É muito bonito.', feedback: 'Sim! Ficar perto da natureza ajuda muito no meu tratamento aqui no HUAP.' }]
     }]
   },
   {
@@ -3087,7 +3087,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Nossa, estou sentindo umas contrações...', 'A enfermeira disse que ainda está cedo.'],
-      choices: [{ text: 'Fique calma, estamos com você!'}]
+      choices: [{ text: 'Fique calma, estamos acompanhando!', feedback: 'Obrigada, enfermeira! Saber que a equipe está atenta me deixa bem mais calma.' }]
     }]
   },
   {
@@ -3104,7 +3104,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Cuidar dos pequenos é gratificante!', 'Mas também requer muita atenção aos protocolos.'],
-      choices: [{ text: 'Bom trabalho!'}]
+      choices: [{ text: 'Bom trabalho, Joana!', feedback: 'Obrigada, enfermeira! Seguimos com total atenção no plantão da maternidade.' }]
     }],
     dialoguePools: [
       [{
@@ -3153,7 +3153,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Minha senha nunca é chamada...', 'Sinto muita dor de cabeça.'],
-      choices: [{ text: 'Aguarde um momento, vou avisar a enfermagem.'}]
+      choices: [{ text: 'Aguarde um momento, vou avisar a enfermagem.', feedback: 'Muito obrigado! Fico aguardando na cadeira da recepção.' }]
     }]
   },
   {
@@ -3170,7 +3170,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Tenho fobia de agulha...', 'A moça foi muito cuidadosa na coleta.'],
-      choices: [{ text: 'Que bom que deu tudo certo.'}]
+      choices: [{ text: 'Que bom que deu tudo certo.', feedback: 'Verdade! O atendimento humanizado da equipe de coleta fez toda a diferença.' }]
     }]
   },
   {
@@ -3187,7 +3187,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['As prescrições da enfermaria já foram liberadas hoje.', 'Vou revisar os exames pendentes da Dona Maria.'],
-      choices: [{ text: 'Perfeito, doutor.'}]
+      choices: [{ text: 'Perfeito, doutor.', feedback: 'Excelente. Qualquer alteração nos exames eu sinalizo ao posto.' }]
     }]
   },
   {
@@ -3204,7 +3204,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['É tão difícil ver meu pai assim na UTI...', 'A equipe está sendo incrível.'],
-      choices: [{ text: 'Estamos torcendo pela recuperação dele.'}]
+      choices: [{ text: 'Estamos torcendo pela recuperação dele.', feedback: 'Muito obrigado pelas palavras de apoio, enfermeira. Dá muita força para nossa família.' }]
     }]
   },
   {
@@ -3270,7 +3270,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Com licença, o piso está úmido.', 'Hospital limpo é hospital seguro.'],
-      choices: [{ text: 'Obrigada pelo cuidado, Dona Rita.'}]
+      choices: [{ text: 'Obrigada pelo cuidado, Dona Rita.', feedback: 'Imagina, gerente! Trabalho em equipe pela higiene e segurança de todos no HUAP.' }]
     }]
   },
   {
@@ -3287,7 +3287,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Estou adorando o estágio! Mas a sonda vesical ainda me deixa nervoso.', 'Vou revisar a anatomia.'],
-      choices: [{ text: 'Se precisar de ajuda, pode chamar.'}]
+      choices: [{ text: 'Se precisar de ajuda, pode chamar.', feedback: 'Muito obrigado, professora! Ter esse suporte na preceptoria dá muita confiança no estágio.' }]
     }],
     dialoguePools: [
       [{
@@ -3336,7 +3336,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Minha pressão subiu muito hoje, não estou me sentindo bem...', 'Espero que chamem logo.'],
-      choices: [{ text: 'Vou checar a sua vez na triagem.'}]
+      choices: [{ text: 'Vou checar a sua vez na triagem.', feedback: 'Muito obrigado, enfermeira. Fico aguardando aqui na cadeira.' }]
     }]
   },
   {
@@ -3353,7 +3353,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Boa tarde. Tudo sob controle na portaria principal.', 'Apenas visitantes cadastrados estão entrando.'],
-      choices: [{ text: 'Excelente serviço, Paulo.'}]
+      choices: [{ text: 'Excelente serviço, Paulo.', feedback: 'Obrigado, gerente! Qualquer intercorrência na portaria eu comunico à enfermagem.' }]
     }]
   },
   {
@@ -3370,7 +3370,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['A quimioterapia cansa, mas a equipe daqui me dá muita força.', 'Um dia de cada vez.'],
-      choices: [{ text: 'Você é muito guerreira, Márcia.'}]
+      choices: [{ text: 'Você é muito guerreira, Márcia.', feedback: 'Muito obrigada! O carinho de vocês da enfermagem renova minhas forças todos os dias.' }]
     }]
   },
   {
@@ -3387,7 +3387,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Estou tão nervoso! É nossa primeira filha.', 'Será que estou esquecendo alguma coisa na bolsa?'],
-      choices: [{ text: 'Vai dar tudo certo, fique calmo!'}]
+      choices: [{ text: 'Vai dar tudo certo, fique calmo!', feedback: 'Muito obrigado, enfermeira! Ter a equipe por perto dá uma tranquilidade enorme pra nossa família.' }]
     }]
   },
   {
@@ -3550,7 +3550,7 @@ export const NPC_DEFS: NPCDef[] = [
     ],
     schedule: [],
     missionIds: [],
-    dialogues: [{ id: 'idle', text: ['Ainda estou aguardando minha consulta.'], choices: [{text: 'Vou verificar a fila.'}] }]
+    dialogues: [{ id: 'idle', text: ['Ainda estou aguardando minha consulta.'], choices: [{text: 'Vou verificar a fila.', feedback: 'Muito obrigado! Fico aguardando aqui perto da sala do consultório.'}] }]
   },
   {
     id: 'paciente_amb_2',
@@ -3563,7 +3563,7 @@ export const NPC_DEFS: NPCDef[] = [
     patrolPoints: [],
     schedule: [],
     missionIds: [],
-    dialogues: [{ id: 'idle', text: ['Estou aguardando ser chamada. O doutor me pediu exames.'], choices: [{text: 'Logo você será atendida!'}] }]
+    dialogues: [{ id: 'idle', text: ['Estou aguardando ser chamada. O doutor me pediu exames.'], choices: [{text: 'Logo você será atendida!', feedback: 'Amém, meu filho! A equipe de enfermagem do HUAP é sempre muito atenciosa.'}] }]
   },
   {
     id: 'paciente_amb_3',
@@ -3576,7 +3576,7 @@ export const NPC_DEFS: NPCDef[] = [
     patrolPoints: [],
     schedule: [],
     missionIds: [],
-    dialogues: [{ id: 'idle', text: ['Minha pressão está alta hoje. O consultório ali parece estar livre.'], choices: [{text: 'Vou encaminhá-lo.'}] }]
+    dialogues: [{ id: 'idle', text: ['Minha pressão está alta hoje. O consultório ali parece estar livre.'], choices: [{text: 'Vou encaminhá-lo para aferir os sinais.', feedback: 'Deus lhe pague, enfermeiro! Vou sentar perto do consultório.'}] }]
   },
   {
     id: 'mae_maternidade',
@@ -3591,7 +3591,7 @@ export const NPC_DEFS: NPCDef[] = [
     ],
     schedule: [{ hour: 9, col: 18, row: 33 }],
     missionIds: [],
-    dialogues: [{ id: 'idle', text: ['O berçário ficou lindo! Minha bebê está bem cuidada.'], choices: [{text: 'Que bom!'}] }]
+    dialogues: [{ id: 'idle', text: ['O berçário ficou lindo! Minha bebê está bem cuidada.'], choices: [{text: 'Que bom, Laura!', feedback: 'Obrigada pelo carinho e dedicação de toda a equipe da maternidade do HUAP!'}] }]
   },
   {
     id: 'pai_maternidade',
@@ -3606,7 +3606,7 @@ export const NPC_DEFS: NPCDef[] = [
     ],
     schedule: [{ hour: 10, col: 17, row: 38 }],
     missionIds: [],
-    dialogues: [{ id: 'idle', text: ['Estou olhando pelos vidros da UTI Neonatal. Quanta tecnologia!', 'Mas o ambiente está mais humano.'], choices: [{text: 'Essa era a ideia.'}] }]
+    dialogues: [{ id: 'idle', text: ['Estou olhando pelos vidros da UTI Neonatal. Quanta tecnologia!', 'Mas o ambiente está mais humano.'], choices: [{text: 'Essa era a ideia, humanizar o cuidado.', feedback: 'E conseguiram! Ver a equipe acolhendo os bebês com tanto amor emociona a gente.'}] }]
   },
   {
     id: 'paciente_enf_2',
@@ -3622,7 +3622,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [{
       id: 'idle',
       text: ['Oh menina, será que o lanche já vai passar?', 'Eu já tô com fome.'],
-      choices: [{ text: 'O almoço será servido logo, Seu Zé.'}]
+      choices: [{ text: 'O almoço será servido em breve, Seu Zé.', feedback: 'Que notícia boa! A comida daqui é cheirosa. Obrigado pela atenção!' }]
     }]
   }
 ];

@@ -307,10 +307,17 @@ export class DialogScene extends Phaser.Scene {
 
     const rawChoices = this.dialogue.choices;
     const choices = (rawChoices && rawChoices.length > 0) ? rawChoices : [{ text: 'Entendido / Continuar' }];
+    const hasExplicitCorrect = choices.some((c: any) => (c as any).correct === true);
 
     (window as any).activeChoices = {
       topic: this.dialogue.topic || (this.npcDef as any).sector || 'Gerência Assistencial & Enfermagem',
-      choices: choices.map((c, i) => ({ text: c.text, index: i })),
+      choices: choices.map((c: any, i) => ({
+        text: c.text,
+        index: i,
+        correct: c.correct,
+        hasExplicitCorrect,
+        feedback: c.feedback,
+      })),
       select: (idx: number) => {
         this.selectChoice(idx);
       }
@@ -436,7 +443,23 @@ export class DialogScene extends Phaser.Scene {
     // Choose appropriate feedback line — role-aware so it never feels generic
     const isMission = !!choice.missionEffect;
     const actionType = choice.missionEffect ? choice.missionEffect.split(':')[1] : null;
-    const role = (this.npcDef as any).role as string | undefined;
+    let role = (this.npcDef as any).role as string | undefined;
+    const nameLower = (this.npcDef.name || '').toLowerCase();
+    const titleLower = ((this.npcDef.title as string) || '').toLowerCase();
+
+    if (!role || role === 'other') {
+      if (titleLower.includes('limpeza') || titleLower.includes('higieniz') || nameLower.includes('rita')) {
+        role = 'cleaner';
+      } else if (titleLower.includes('paciente') || nameLower.includes('moreira') || nameLower.includes('márcia') || nameLower.includes('zé') || nameLower.includes('silva') || nameLower.includes('joão')) {
+        role = 'patient';
+      } else if (titleLower.includes('acompanhante') || titleLower.includes('visitante') || titleLower.includes('mãe') || titleLower.includes('pai') || nameLower.includes('lucas') || nameLower.includes('laura') || nameLower.includes('felipe') || nameLower.includes('roberto')) {
+        role = 'family';
+      } else if (titleLower.includes('estudante') || titleLower.includes('estagiá') || nameLower.includes('tiago')) {
+        role = 'student';
+      } else if (titleLower.includes('segurança') || titleLower.includes('portaria') || nameLower.includes('paulo')) {
+        role = 'security';
+      }
+    }
 
     const fallbackByRole: Record<string, { start: string[]; complete: string[]; idle: string[] }> = {
       doctor: {
@@ -464,10 +487,35 @@ export class DialogScene extends Phaser.Scene {
         complete: ['Pronto, fluxo de atendimento ajustado.', 'Tudo registrado no sistema do HUAP.'],
         idle: ['Combinado.', 'Qualquer dúvida, é só chamar aqui na recepção.'],
       },
+      cleaner: {
+        start: ['Pode deixar, vou higienizar a área imediatamente com os produtos adequados.', 'Certo! Mantendo a higienização do setor em dia.'],
+        complete: ['Área higienizada e sinalizada com sucesso!', 'Piso limpo e seco. Obrigado pelo alerta.'],
+        idle: ['Imagina, gerente! Trabalho em equipe pela higiene e segurança de todos no HUAP.', 'Por nada! Com licença, sigo com a rotina de limpeza.'],
+      },
+      patient: {
+        start: ['Muito obrigado por me ouvir e me explicar, enfermeira.', 'Agradeço pelo carinho e pela atenção com meu tratamento.'],
+        complete: ['Que alívio! Muito obrigado pelo cuidado, me sinto bem mais seguro aqui.', 'Deus abençoe toda a equipe de enfermagem do HUAP!'],
+        idle: ['Muito obrigado pela atenção e pelo carinho!', 'Com o cuidado de vocês, me sinto muito bem acolhido aqui no hospital.'],
+      },
+      family: {
+        start: ['Muito obrigado pelas orientações! Nos dá uma tranquilidade enorme.', 'Agradeço por explicar tudo com tanto carinho para nossa família.'],
+        complete: ['Que notícia maravilhosa! Agradecemos de coração a toda a equipe.', 'Muito obrigado pelo cuidado exemplar com nosso familiar.'],
+        idle: ['Muito obrigado pelo suporte e atenção à nossa família!', 'Saber que nosso familiar está em boas mãos nos deixa muito em paz.'],
+      },
+      student: {
+        start: ['Perfeito, professora/gerente! Anotei para o meu relatório de estágio.', 'Certo! Vou aplicar essa orientação técnica no procedimento.'],
+        complete: ['Atividade de estágio concluída! Muito obrigado pelo aprendizado.', 'Aprendi muito hoje. Muito obrigado pela mentoria no plantão!'],
+        idle: ['Muito obrigado pelas orientações! Estou aprendendo muito na prática aqui no HUAP.', 'Ótimas dicas de enfermagem. Sigo acompanhando as rotinas!'],
+      },
+      security: {
+        start: ['Entendido, gerente. Vou averiguar a movimentação imediatamente.', 'Certo! Reforçando o controle de acesso no setor.'],
+        complete: ['Acesso normalizado e registro no livro de ocorrências feito.', 'Situação sob controle na portaria.'],
+        idle: ['Tudo calmo e sob controle por aqui, enfermeira.', 'Segurança do HUAP a postos. Bom plantão!'],
+      },
       other: {
-        start: ['Obrigada pela atenção, gerente.', 'Fico mais tranquila sabendo que vai resolver.'],
-        complete: ['Muito obrigada por tudo!', 'Faz diferença ter alguém atento ao nosso cuidado.'],
-        idle: ['Tá bem, obrigada.', 'Bom dia, viu?'],
+        start: ['Obrigada pela atenção e pelo direcionamento.', 'Fico mais tranquila sabendo que vai resolver.'],
+        complete: ['Muito obrigada por tudo!', 'Faz toda a diferença ter uma equipe atenciosa.'],
+        idle: ['Muito obrigada pela atenção e bom trabalho!', 'Agradeço pelo suporte no plantão!'],
       },
     };
 
