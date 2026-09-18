@@ -159,6 +159,27 @@ function RoutesWrapper({
   }, []);
 
   const [missionsModalData, setMissionsModalData] = useState<GameState | null>(null);
+  const [victoryModalData, setVictoryModalData] = useState<GameState | null>(null);
+
+  useEffect(() => {
+    const handleGameCompleted = (e: any) => {
+      const state = e?.detail?.state || (window as any).phaserGame?.scene?.getScene("GameScene")?.state || loadGame();
+      if (state && state.completedMissions?.length === MISSIONS.length) {
+        setVictoryModalData(state);
+      }
+    };
+    const handleOpenVictory = (e: any) => {
+      const state = e?.detail?.state || (window as any).phaserGame?.scene?.getScene("GameScene")?.state || loadGame();
+      setVictoryModalData(state);
+    };
+
+    window.addEventListener("gamecompleted" as any, handleGameCompleted);
+    window.addEventListener("openvictory" as any, handleOpenVictory);
+    return () => {
+      window.removeEventListener("gamecompleted" as any, handleGameCompleted);
+      window.removeEventListener("openvictory" as any, handleOpenVictory);
+    };
+  }, []);
 
   useEffect(() => {
     const handleToggleMissions = (e: any) => {
@@ -233,6 +254,13 @@ function RoutesWrapper({
         isOpen={!!missionsModalData}
         onClose={() => setMissionsModalData(null)}
         gameState={missionsModalData}
+      />
+
+      <VictoryModal
+        isOpen={!!victoryModalData}
+        onClose={() => setVictoryModalData(null)}
+        gameState={victoryModalData}
+        onOpenNotebook={() => setIsNotebookOpen(true)}
       />
     </>
   );
@@ -1719,6 +1747,22 @@ function MissionsModal({
             </div>
           </div>
 
+          {/* Victory Banner if 23/23 completed */}
+          {doneCount === totalCount && (
+            <div 
+              onClick={() => {
+                try { playSound("click"); } catch {}
+                onClose();
+                window.dispatchEvent(new CustomEvent("openvictory", { detail: { state: gameState } }));
+              }}
+              className="p-3 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-500/50 rounded-xl text-center cursor-pointer hover:bg-amber-500/30 transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+            >
+              <p className="text-amber-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 font-mono">
+                <span>🏆</span> VOCÊ ZEROU O JOGO! (23/23 Missões Concluídas) — Clique para ver a homenagem e agradecimento <span>✨</span>
+              </p>
+            </div>
+          )}
+
           {/* Filters and Search */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
@@ -1824,6 +1868,121 @@ function MissionsModal({
               ))}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Victory Modal Component (23/23 Missions Completed)
+// ---------------------------------------------------------------------------
+
+function VictoryModal({
+  isOpen,
+  onClose,
+  gameState,
+  onOpenNotebook,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  gameState: GameState | null;
+  onOpenNotebook: () => void;
+}) {
+  if (!isOpen || !gameState) return null;
+
+  const levelInfo = getLevelInfo(gameState.prestige);
+  const pName = gameState.playerProfile?.name || "Enf. Alex Santos";
+
+  return (
+    <div
+      onClick={() => {
+        try { playSound("click"); } catch {}
+        onClose();
+      }}
+      className="fixed inset-0 z-[180] flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-fadeIn select-none pointer-events-auto cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-2xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-2 border-amber-400/60 rounded-3xl p-6 sm:p-8 shadow-[0_0_60px_rgba(245,158,11,0.25)] text-center text-slate-100 flex flex-col items-center gap-5 overflow-hidden cursor-default max-h-[92vh] overflow-y-auto"
+      >
+        {/* Glow Effects */}
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Trophy Header */}
+        <div className="relative z-10 flex flex-col items-center gap-2">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-amber-500/10 border-2 border-amber-400/50 flex items-center justify-center text-4xl sm:text-5xl shadow-[0_0_30px_rgba(245,158,11,0.3)] animate-pulse">
+            🏆
+          </div>
+          <span className="text-xs font-mono font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/30 px-3 py-1 rounded-full">
+            Jornada Concluída Com Sucesso
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-mono bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-sm">
+            VOCÊ ZEROU O JOGO!
+          </h2>
+          <p className="text-sm sm:text-base font-semibold text-emerald-400">
+            Parabéns, {pName}!
+          </p>
+        </div>
+
+        {/* Thank You & Pedagogical Message */}
+        <div className="relative z-10 space-y-3 bg-slate-950/60 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left text-xs sm:text-sm leading-relaxed text-slate-200">
+          <p className="font-bold text-amber-300 text-sm sm:text-base text-center">
+            ✨ Agradecemos imensamente você por jogar o Gestor HUAP - UFF! ✨
+          </p>
+          <p>
+            Você concluiu com excelência todas as <strong>23 diretrizes e missões estratégicas</strong> de Gerência de Enfermagem do Hospital Universitário Antônio Pedro.
+          </p>
+          <p className="text-slate-300">
+            Sua jornada cobriu desde dimensionamento de pessoal, acolhimento e triagem, até o gerenciamento de eventos de crise, acreditação ONA, segurança do paciente e liderança assistencial.
+          </p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="relative z-10 w-full grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center font-mono">
+          <div className="bg-slate-950/80 border border-amber-500/30 rounded-xl p-3">
+            <span className="text-[10px] text-slate-400 block">MISSÕES</span>
+            <span className="text-base sm:text-lg font-bold text-emerald-400">23 / 23</span>
+          </div>
+          <div className="bg-slate-950/80 border border-amber-500/30 rounded-xl p-3">
+            <span className="text-[10px] text-slate-400 block">PRESTÍGIO</span>
+            <span className="text-base sm:text-lg font-bold text-amber-400">{gameState.prestige} PTS</span>
+          </div>
+          <div className="bg-slate-950/80 border border-amber-500/30 rounded-xl p-3">
+            <span className="text-[10px] text-slate-400 block">NÍVEL</span>
+            <span className="text-xs sm:text-sm font-bold text-cyan-300 truncate block" title={levelInfo.title}>
+              {levelInfo.title}
+            </span>
+          </div>
+          <div className="bg-slate-950/80 border border-amber-500/30 rounded-xl p-3">
+            <span className="text-[10px] text-slate-400 block">STATUS</span>
+            <span className="text-xs sm:text-sm font-bold text-emerald-400">100% CONCLUÍDO</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="relative z-10 w-full flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => {
+              try { playSound("click"); } catch {}
+              onClose();
+              onOpenNotebook();
+            }}
+            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm font-mono transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 cursor-pointer touch-manipulation"
+          >
+            <span>📖</span> Ver Caderno de Erros & Resumo
+          </button>
+
+          <button
+            onClick={() => {
+              try { playSound("click"); } catch {}
+              onClose();
+            }}
+            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs sm:text-sm font-mono transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
+          >
+            <span>🏛️</span> Continuar Explorando o HUAP
+          </button>
         </div>
       </div>
     </div>
