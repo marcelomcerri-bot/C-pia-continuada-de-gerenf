@@ -344,35 +344,48 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   getDialogue(state: GameState): DialogueDef {
     let found: DialogueDef | null = null;
 
-    // 1. First, check if there is an active (unlocked and not completed) mission dialogue in this.def.dialogues
-    // A non-idle dialogue is considered an active mission dialogue if its condition evaluates to true
-    let activeMissionDialogue: DialogueDef | null = null;
+    // 1. Check for an active (unlocked AND uncompleted) mission dialogue in this.def.dialogues
     for (const d of this.def.dialogues) {
-      if (d.id !== 'idle') {
-        if (!d.condition || d.condition(state)) {
-          activeMissionDialogue = d;
-          break;
+      if (d.id === 'idle') continue;
+      if (d.condition && !d.condition(state)) continue;
+
+      // Check if this dialogue's mission is already completed
+      let isCompleted = false;
+      if (d.choices && d.choices.length > 0) {
+        const effects = d.choices
+          .map(c => c.missionEffect)
+          .filter((e): e is string => !!e);
+
+        if (effects.length > 0) {
+          const uncompleted = effects.filter(e => {
+            const [mId] = e.split(':');
+            return !state.completedMissions.includes(mId);
+          });
+          if (uncompleted.length === 0) {
+            isCompleted = true;
+          }
         }
+      }
+
+      if (!isCompleted) {
+        found = d;
+        break;
       }
     }
 
-    if (activeMissionDialogue) {
-      found = activeMissionDialogue;
-    } else {
-      // 2. If no active mission dialogue is available, fall back to dialogue pools (quizzes) if defined
-      if (this.def.dialoguePools && this.def.dialoguePools.length > 0) {
-        const poolIdx = this.conversationCount % this.def.dialoguePools.length;
-        const pool = this.def.dialoguePools[poolIdx];
-        for (const d of pool) {
-          if (!d.condition || d.condition(state)) { found = d; break; }
+    // 2. If no active uncompleted mission dialogue is available, return 'idle' dialogue
+    if (!found) {
+      for (const d of this.def.dialogues) {
+        if (d.id === 'idle') {
+          if (!d.condition || d.condition(state)) {
+            found = d;
+            break;
+          }
         }
-        if (!found) found = pool[pool.length - 1];
-      } else {
-        // Fall back to the 'idle' dialogue in this.def.dialogues
-        for (const d of this.def.dialogues) {
-          if (!d.condition || d.condition(state)) { found = d; break; }
-        }
-        if (!found) found = this.def.dialogues[this.def.dialogues.length - 1];
+      }
+      if (!found) {
+        // Find any idle or last dialogue
+        found = this.def.dialogues.find(d => d.id === 'idle') || this.def.dialogues[this.def.dialogues.length - 1];
       }
     }
 

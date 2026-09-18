@@ -902,7 +902,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'fluxo_start',
-        condition: (s) => s.completedMissions.includes('triagem_ps') && s.completedMissions.length >= 3 && !s.completedMissions.includes('fluxo_recepcao'),
+        condition: (s) => s.completedMissions.includes('triagem_ps') && !s.completedMissions.includes('fluxo_recepcao'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Com o Manchester funcionando bem, a triagem melhorou muito!',
@@ -1067,7 +1067,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'superlot_intro',
-        condition: (s) => s.completedMissions.includes('protocolo_sepse') && s.completedMissions.length >= 3 && !s.completedMissions.includes('superlotacao_ps'),
+        condition: (s) => s.completedMissions.includes('protocolo_sepse') && !s.completedMissions.includes('superlotacao_ps'),
         topic: 'Tomada de Decisão',
         text: [
           'Protocolo de sepse funcionando. Mas o PS está cheio de novo!',
@@ -1229,7 +1229,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'reconciliacao_intro',
-        condition: (s) => s.completedMissions.includes('estoque_farmacia') && s.completedMissions.length >= 3 && !s.completedMissions.includes('reconciliacao_medicamentosa'),
+        condition: (s) => s.completedMissions.includes('estoque_farmacia') && !s.completedMissions.includes('reconciliacao_medicamentosa'),
         topic: 'Segurança do Paciente',
         text: [
           'Obrigado pela agilidade no estoque!',
@@ -1391,7 +1391,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'coleta_intro',
-        condition: (s) => s.completedMissions.includes('resultados_criticos') && s.completedMissions.length >= 3 && !s.completedMissions.includes('coleta_sistematizada'),
+        condition: (s) => s.completedMissions.includes('resultados_criticos') && !s.completedMissions.includes('coleta_sistematizada'),
         topic: 'Segurança do Paciente',
         text: [
           'Protocolo de valores críticos funcionando bem!',
@@ -1666,7 +1666,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'pesquisa_indicadores_intro',
-        condition: (s) => s.completedMissions.length >= 9 && !s.completedMissions.includes('pesquisa_indicadores'),
+        condition: (s) => s.completedMissions.includes('acreditacao_ona') && !s.completedMissions.includes('pesquisa_indicadores'),
         topic: 'Indicadores de Saúde: Ferramentas que Subsidiam a Tomada de Decisão',
         text: [
           'Um grande favor — o MEC exige relatório de pesquisa e indicadores do HUAP.',
@@ -1710,7 +1710,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'orcamento_intro',
-        condition: (s) => s.completedMissions.length >= 3 && !s.completedMissions.includes('orcamento'),
+        condition: (s) => s.completedMissions.includes('escala_plantao') && !s.completedMissions.includes('orcamento'),
         topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Excelente progresso! Preciso de mais um favor de gestão.',
@@ -1754,7 +1754,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'acreditacao_intro',
-        condition: (s) => s.completedMissions.length >= 6 && !s.completedMissions.includes('acreditacao_ona'),
+        condition: (s) => s.completedMissions.includes('orcamento') && !s.completedMissions.includes('acreditacao_ona'),
         topic: 'Acreditação Hospitalar',
         text: [
           'A ONA fará visita de acreditação em 60 dias!',
@@ -1913,7 +1913,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'rastreabilidade_intro',
-        condition: (s) => s.completedMissions.includes('cme_protocolo') && s.completedMissions.length >= 3 && !s.completedMissions.includes('rastreabilidade_esterilizacao'),
+        condition: (s) => s.completedMissions.includes('cme_protocolo') && !s.completedMissions.includes('rastreabilidade_esterilizacao'),
         topic: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
         text: [
           'Com o protocolo de reprocessamento aprovado, podemos avançar.',
@@ -2072,7 +2072,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'protocolo_dieta_intro',
-        condition: (s) => s.completedMissions.includes('terapia_nutricional') && s.completedMissions.length >= 3 && !s.completedMissions.includes('protocolo_dieta'),
+        condition: (s) => s.completedMissions.includes('terapia_nutricional') && !s.completedMissions.includes('protocolo_dieta'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Com o protocolo ASPEN em vigor, a equipe precisa de um guia prático de dietas.',
@@ -2276,7 +2276,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'capacitacao_intro',
-        condition: (s) => s.completedMissions.length >= 3 && !s.completedMissions.includes('capacitacao_sae'),
+        condition: (s) => s.completedMissions.includes('ronda_enfermaria') && !s.completedMissions.includes('capacitacao_sae'),
         topic: 'Competências Gerenciais e Assistenciais',
         text: [
           'A equipe precisa muito de capacitação em SAE (Sistematização da Assistência).',
@@ -2320,7 +2320,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'passagem_plantao_intro',
-        condition: (s) => s.completedMissions.includes('ronda_enfermaria') && s.completedMissions.length >= 3 && !s.completedMissions.includes('passagem_plantao'),
+        condition: (s) => s.completedMissions.includes('capacitacao_sae') && !s.completedMissions.includes('passagem_plantao'),
         topic: 'Tomada de Decisão',
         text: [
           'A passagem de plantão é nossa maior vulnerabilidade em segurança do paciente.',
@@ -2435,7 +2435,7 @@ export const NPC_DEFS: NPCDef[] = [
     dialogues: [
       {
         id: 'protocolo_start',
-        condition: (s) => s.completedMissions.includes('protocolo_sepse') && s.completedMissions.length >= 2 && !s.completedMissions.includes('indicadores_qualidade'),
+        condition: (s) => s.completedMissions.includes('protocolo_sepse') && !s.completedMissions.includes('indicadores_qualidade'),
         topic: 'Indicadores de Saúde: Ferramentas que Subsidiam a Tomada de Decisão',
         text: [
           'Excelente trabalho com o protocolo de sepse no PS!',
@@ -2634,7 +2634,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'paliativos_intro',
-        condition: (s) => s.completedMissions.includes('quimioterapia_segura') && s.completedMissions.length >= 3 && !s.completedMissions.includes('cuidados_paliativos'),
+        condition: (s) => s.completedMissions.includes('quimioterapia_segura') && !s.completedMissions.includes('cuidados_paliativos'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Precisamos de um protocolo de cuidados paliativos para pacientes em fase avançada.',
@@ -2793,7 +2793,7 @@ export const NPC_DEFS: NPCDef[] = [
       },
       {
         id: 'humanizacao_intro',
-        condition: (s) => s.completedMissions.includes('banco_leite') && s.completedMissions.length >= 3 && !s.completedMissions.includes('humanizacao_parto'),
+        condition: (s) => s.completedMissions.includes('banco_leite') && !s.completedMissions.includes('humanizacao_parto'),
         topic: 'Gestão do Cuidado em Enfermagem',
         text: [
           'Precisamos implementar práticas de humanização do parto aqui no HUAP!',
