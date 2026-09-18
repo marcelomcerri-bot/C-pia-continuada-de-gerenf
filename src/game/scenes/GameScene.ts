@@ -43,6 +43,7 @@ export class GameScene extends Phaser.Scene {
   private nextCrisisTime = 0;
   private lastActivity = 'Explorando o hospital';
   private lastDustTime = 0;
+  private lastDialogCloseTime = 0;
 
   // Ambient lights/decor
   private darkOverlay!: Phaser.GameObjects.RenderTexture;
@@ -130,6 +131,7 @@ export class GameScene extends Phaser.Scene {
       if (detail?.action === 'falar') {
         this.detectNearbyNPC();
         if (this.nearbyNPC && !this.isDialogOpen && !this.isCrisisOpen) {
+          if (Date.now() - this.lastDialogCloseTime < 700) return;
           this.openDialog(this.nearbyNPC);
         }
       }
@@ -2111,7 +2113,9 @@ export class GameScene extends Phaser.Scene {
     // Interaction
     if (!this.isDialogOpen && (Phaser.Input.Keyboard.JustDown(this.eKey) || vpad.actionJustPressed) && this.nearbyNPC) {
       if (vpad.actionJustPressed) vpad.actionJustPressed = false;
-      this.openDialog(this.nearbyNPC);
+      if (Date.now() - this.lastDialogCloseTime >= 700) {
+        this.openDialog(this.nearbyNPC);
+      }
     } else {
        if (vpad.actionJustPressed) vpad.actionJustPressed = false;
     }
@@ -2294,6 +2298,9 @@ export class GameScene extends Phaser.Scene {
 
         this.state = { ...this.state, ...updates };
         this.isDialogOpen = false;
+        this.lastDialogCloseTime = Date.now();
+        const vpad = (window as any).vpadState;
+        if (vpad) vpad.actionJustPressed = false;
         npc.resumeMoving();
         for (const n of this.npcs) n.updateMissionStatus(this.state);
         saveGame(this.state);

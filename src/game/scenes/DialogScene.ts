@@ -368,18 +368,21 @@ export class DialogScene extends Phaser.Scene {
       } else if (actionType?.startsWith('step')) {
         progress[missionId] = parseInt(actionType.replace('step', ''), 10);
       } else if (actionType === 'complete') {
-        progress[missionId] = 2; // Mark as completed in progress too
-        const mission = MISSIONS.find(m => m.id === missionId);
-        if (mission && !completed.includes(missionId)) {
-          completed.push(missionId);
-          if (!isIncorrectChoice) {
+        // ONLY mark as completed if the choice was CORRECT!
+        // If choice was incorrect, progress remains 1 so player can retry, learn from feedback, and earn prestige!
+        if (!isIncorrectChoice) {
+          progress[missionId] = 2; // Mark as completed in progress
+          const mission = MISSIONS.find(m => m.id === missionId);
+          if (mission && !completed.includes(missionId)) {
+            completed.push(missionId);
             const basePrestige = stateUpdate.prestige ?? this.state.prestige;
             stateUpdate.prestige = basePrestige + mission.prestige;
             this.showPedagogyNote(mission.title, mission.pedagogy, mission.pedagogyRef, mission.prestige);
             try { playSound('success'); } catch {}
-          } else {
-            try { playSound('error'); } catch {}
           }
+        } else {
+          // Incorrect choice: player loses prestige (-5), error is logged, and mission stays active for retry
+          try { playSound('error'); } catch {}
         }
       }
 
@@ -608,7 +611,11 @@ export class DialogScene extends Phaser.Scene {
     });
   }
 
+  private isClosing = false;
+
   private closeDialog(stateUpdate: Partial<GameState>) {
+    if (this.isClosing) return;
+    this.isClosing = true;
     this.input.keyboard?.off('keydown-E', this.handleAdvance, this);
     this.input.keyboard?.off('keydown-SPACE', this.handleAdvance, this);
     this.input.keyboard?.off('keydown-ESC', this.handleEsc, this);
