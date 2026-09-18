@@ -161,20 +161,28 @@ export default function App() {
 
   const handleStartGame = () => {
     try {
+      if ((window as any).virtualPad) {
+        (window as any).virtualPad = {
+          up: false, down: false, left: false, right: false,
+          sprint: false, actionJustPressed: false,
+          missionJustPressed: false, menuJustPressed: false,
+        };
+      }
+      (window as any).__lastModalDismissedTime = Date.now();
+
       if (typeof (window as any).triggerStartGame === "function") {
         (window as any).triggerStartGame();
         return;
       }
       const game = gameRef.current || (window as any).phaserGame;
       if (game && game.scene) {
-        if (game.scene.isActive("MenuScene")) {
-          const menu = game.scene.getScene("MenuScene") as any;
-          if (menu && typeof menu.startGame === "function") {
-            menu.startGame();
-            return;
-          }
-        }
-        game.scene.stop("MenuScene");
+        try { game.scene.resume("GameScene"); } catch {}
+        try { game.scene.resume("HUDScene"); } catch {}
+        try { game.scene.stop("MenuScene"); } catch {}
+        try { game.scene.stop("HUDScene"); } catch {}
+        try { game.scene.stop("DialogScene"); } catch {}
+        try { game.scene.stop("GameScene"); } catch {}
+
         game.scene.start("GameScene");
       }
     } catch (e) {

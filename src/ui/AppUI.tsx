@@ -15,7 +15,6 @@ import { isAppFullscreen, toggleAppFullscreen, subscribeFullscreenChange } from 
 import { ProfessorView } from "./ProfessorView";
 import { ErrorNotebookModal } from "./ErrorNotebookModal";
 import { CharacterCreationModal } from "./CharacterCreationModal";
-import { HospitalGlobalHUD } from "./HospitalGlobalHUD";
 
 // Students are identified by a generated ID stored in sessionStorage so the
 // professor dashboard can track them across the session without any login.
@@ -217,7 +216,6 @@ function RoutesWrapper({
         </Routes>
       </AnimatePresence>
 
-      {inGame && <HospitalGlobalHUD />}
       {isMobile && inGame && <MobileControls />}
       {activeChoices && (
         <DialogueChoicesOverlay choices={activeChoices} />
@@ -273,7 +271,6 @@ function HomeMenu({
 
   const confirmNewGame = (profile: PlayerProfile) => {
     (window as any).__lastModalDismissedTime = Date.now();
-    resetVPad();
     setShowCharCreation(false);
     if (startingRef.current) return;
     startingRef.current = true;
@@ -289,17 +286,18 @@ function HomeMenu({
 
     try { registerInGlobalRoom(profile.name); } catch {}
 
-    const phaser = (window as any).phaserGame;
-    if (phaser && phaser.scene) {
-      try { phaser.scene.stop("HUDScene"); } catch {}
-      try { phaser.scene.stop("DialogScene"); } catch {}
-      try { phaser.scene.stop("GameScene"); } catch {}
-      try { phaser.scene.stop("MenuScene"); } catch {}
-      phaser.scene.start("GameScene");
-    } else {
-      onStartGame();
-    }
+    // Update phaser textures if Phaser game is running or when BootScene starts
+    try {
+      const phaser = (window as any).phaserGame;
+      if (phaser && phaser.scene) {
+        const bootScene = phaser.scene.getScene("BootScene") as any;
+        if (bootScene && typeof bootScene.createPlayerSprite === "function") {
+          bootScene.createPlayerSprite(profile);
+        }
+      }
+    } catch {}
 
+    onStartGame();
     navigate("/game");
 
     setTimeout(() => {
@@ -312,8 +310,6 @@ function HomeMenu({
       e.preventDefault();
       e.stopPropagation();
     }
-    (window as any).__lastModalDismissedTime = Date.now();
-    resetVPad();
     if (isGhostClickBlocked()) return;
     if (startingRef.current) return;
     startingRef.current = true;
@@ -321,19 +317,7 @@ function HomeMenu({
     try { playSound("click"); } catch {}
     try { registerInGlobalRoom(); } catch {}
 
-    const phaser = (window as any).phaserGame;
-    if (phaser && phaser.scene) {
-      if (phaser.scene.isPaused("GameScene")) {
-        phaser.scene.resume("GameScene");
-        phaser.scene.resume("HUDScene");
-      } else {
-        try { phaser.scene.stop("MenuScene"); } catch {}
-        phaser.scene.start("GameScene");
-      }
-    } else {
-      onStartGame();
-    }
-
+    onStartGame();
     navigate("/game");
 
     setTimeout(() => {
@@ -516,8 +500,6 @@ function PauseMenu() {
       e.preventDefault();
       e.stopPropagation();
     }
-    (window as any).__lastModalDismissedTime = Date.now();
-    resetVPad();
     try { playSound("click"); } catch {}
     navigate("/game");
     try {
@@ -534,23 +516,32 @@ function PauseMenu() {
       e.preventDefault();
       e.stopPropagation();
     }
-    (window as any).__lastModalDismissedTime = Date.now();
-    resetVPad();
     try { playSound("click"); } catch {}
-    navigate("/");
+    (window as any).__lastModalDismissedTime = Date.now();
+
+    if ((window as any).virtualPad) {
+      (window as any).virtualPad = {
+        up: false, down: false, left: false, right: false,
+        sprint: false, actionJustPressed: false,
+        missionJustPressed: false, menuJustPressed: false,
+      };
+    }
+
     try {
       const phaser = (window as any).phaserGame;
       if (phaser && phaser.scene) {
+        try { phaser.scene.resume("GameScene"); } catch {}
+        try { phaser.scene.resume("HUDScene"); } catch {}
+        try { phaser.scene.resume("DialogScene"); } catch {}
+
         phaser.scene.stop("HUDScene");
         phaser.scene.stop("DialogScene");
         phaser.scene.stop("GameScene");
-        const gameScene = phaser.scene.getScene("GameScene");
-        if (gameScene && gameScene.scene.isPaused()) {
-          gameScene.scene.resume();
-        }
         phaser.scene.start("MenuScene");
       }
     } catch {}
+
+    navigate("/");
   };
 
   const openMissions = (e?: React.SyntheticEvent) => {
@@ -558,8 +549,6 @@ function PauseMenu() {
       e.preventDefault();
       e.stopPropagation();
     }
-    (window as any).__lastModalDismissedTime = Date.now();
-    resetVPad();
     try { playSound("click"); } catch {}
     navigate("/game");
     try {
@@ -584,20 +573,8 @@ function PauseMenu() {
       e.preventDefault();
       e.stopPropagation();
     }
-    (window as any).__lastModalDismissedTime = Date.now();
-    resetVPad();
     try { playSound("click"); } catch {}
-    navigate("/game");
-    try {
-      const phaser = (window as any).phaserGame;
-      if (phaser && phaser.scene) {
-        phaser.scene.resume("GameScene");
-        phaser.scene.resume("HUDScene");
-      }
-    } catch {}
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("opennotebook"));
-    }, 80);
+    window.dispatchEvent(new CustomEvent("opennotebook"));
   };
 
   return (
@@ -714,19 +691,6 @@ function setVPad(key: PadKey, value: boolean) {
     };
   }
   (window as any).virtualPad[key] = value;
-}
-
-export function resetVPad() {
-  if ((window as any).virtualPad) {
-    (window as any).virtualPad.up = false;
-    (window as any).virtualPad.down = false;
-    (window as any).virtualPad.left = false;
-    (window as any).virtualPad.right = false;
-    (window as any).virtualPad.sprint = false;
-    (window as any).virtualPad.actionJustPressed = false;
-    (window as any).virtualPad.missionJustPressed = false;
-    (window as any).virtualPad.menuJustPressed = false;
-  }
 }
 
 function VirtualDPad() {
@@ -1013,7 +977,7 @@ function MobileControls() {
     }, 800);
 
     try { playSound("click"); } catch {}
-    resetVPad();
+    setVPad("menuJustPressed", true);
 
     // Save state & pause scenes immediately
     try {

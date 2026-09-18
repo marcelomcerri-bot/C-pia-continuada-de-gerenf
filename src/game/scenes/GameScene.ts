@@ -56,38 +56,6 @@ export class GameScene extends Phaser.Scene {
 
   constructor() { super({ key: SCENES.GAME }); }
 
-  init() {
-    this.isDialogOpen = false;
-    this.isCrisisOpen = false;
-    this.nearbyNPC = null;
-    this.npcs = [];
-    this.solidPropTiles.clear();
-    this.interactionPoints = [];
-    this.doorTileKeys.clear();
-    this.timeAccum = 0;
-    this.energyTimer = 0;
-    this.energyRestoreTimer = 0;
-    this.stressDecayTimer = 0;
-    this.lastHudEmit = 0;
-    this.lastServerHeartbeat = 0;
-    this.crisisTimer = 0;
-    this.nextCrisisTime = 0;
-
-    if (this.physics?.world?.isPaused) {
-      this.physics.world.resume();
-    }
-    if ((window as any).virtualPad) {
-      (window as any).virtualPad.up = false;
-      (window as any).virtualPad.down = false;
-      (window as any).virtualPad.left = false;
-      (window as any).virtualPad.right = false;
-      (window as any).virtualPad.sprint = false;
-      (window as any).virtualPad.actionJustPressed = false;
-      (window as any).virtualPad.missionJustPressed = false;
-      (window as any).virtualPad.menuJustPressed = false;
-    }
-  }
-
   create() {
     this.physics.world.OVERLAP_BIAS = 16;
     this.physics.world.TILE_BIAS = 32;
@@ -1934,6 +1902,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   public pauseGame() {
+    const lastDismissed = (window as any).__lastModalDismissedTime || 0;
+    if (Date.now() - lastDismissed < 700) {
+      if ((window as any).virtualPad) {
+        (window as any).virtualPad.menuJustPressed = false;
+      }
+      return;
+    }
+
     try {
       saveGame(this.state);
     } catch (e) {
@@ -1942,9 +1918,8 @@ export class GameScene extends Phaser.Scene {
 
     if ((window as any).virtualPad) {
       (window as any).virtualPad.menuJustPressed = false;
-      (window as any).virtualPad.actionJustPressed = false;
     }
-    
+
     // Navigate to Pause Menu via React and pause the scenes
     if ((window as any).reactNavigate) {
        (window as any).reactNavigate('/pause');

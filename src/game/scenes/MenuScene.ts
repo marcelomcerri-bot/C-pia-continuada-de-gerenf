@@ -10,25 +10,27 @@ export class MenuScene extends Phaser.Scene {
   public startGame() {
     if (this.starting) return;
     this.starting = true;
-    fadeOutMusic(700);
-    this.cameras.main.fadeOut(500, 0, 0, 0);
+    fadeOutMusic(300);
 
-    let transitioned = false;
-    const doTransition = () => {
-      if (transitioned) return;
-      transitioned = true;
-      try {
-        if (this.scene.isActive(SCENES.MENU) || this.scene.isPaused(SCENES.MENU)) {
-          this.scene.start(SCENES.GAME);
-        }
-      } catch (e) {
-        console.warn('Transition error:', e);
-      }
-    };
+    if ((window as any).virtualPad) {
+      (window as any).virtualPad = {
+        up: false, down: false, left: false, right: false,
+        sprint: false, actionJustPressed: false,
+        missionJustPressed: false, menuJustPressed: false,
+      };
+    }
+    (window as any).__lastModalDismissedTime = Date.now();
 
-    this.cameras.main.once('camerafadeoutcomplete', doTransition);
-    this.time.delayedCall(550, doTransition);
-    setTimeout(doTransition, 600);
+    try {
+      this.scene.stop(SCENES.HUD);
+      this.scene.stop(SCENES.DIALOG);
+      this.scene.stop(SCENES.GAME);
+      this.scene.resume(SCENES.GAME);
+      this.scene.resume(SCENES.HUD);
+      this.scene.start(SCENES.GAME);
+    } catch (e) {
+      console.warn('Transition error:', e);
+    }
   }
 
   shutdown() {
