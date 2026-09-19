@@ -32,6 +32,7 @@ export const DEFAULT_STATE: GameState = {
   decisionLog: [],
   unlockedSectors: ['RECEPTION', 'CORRIDOR', 'EMERGENCY', 'PHARMACY'],
   playerProfile: { ...DEFAULT_PLAYER_PROFILE },
+  answeredPools: [],
 };
 
 export function saveGame(state: GameState): void {

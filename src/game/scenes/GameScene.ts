@@ -2336,7 +2336,7 @@ export class GameScene extends Phaser.Scene {
 
   private checkMilestones() {
     if (this.state.completedMissions.length === MISSIONS.length) {
-      this.showFloatingText(this.player.x, this.player.y - 60, '🏆 TODAS AS 23 MISSÕES CONCLUÍDAS!', '#f1c40f', 24);
+      this.showFloatingText(this.player.x, this.player.y - 60, `🏆 TODAS AS ${MISSIONS.length} MISSÕES CONCLUÍDAS!`, '#f1c40f', 24);
       if (!this.victoryTriggered) {
         this.victoryTriggered = true;
         try { playSound('success'); } catch {}

@@ -491,7 +491,7 @@ function HomeMenu({
                 <span>🎯 OBJETIVO PRINCIPAL:</span>
               </div>
               <p className="text-slate-200 font-sans text-xs leading-relaxed">
-                O jogo possui um total de <strong className="text-teal-300 font-bold">23 missões de enfermagem</strong>. Seu objetivo é completar todas elas e resolver os <strong className="text-amber-300 font-bold">eventos de crise aleatórios</strong> que surgem durante o plantão no HUAP.
+                O jogo possui um total de <strong className="text-teal-300 font-bold">{MISSIONS.length} missões de enfermagem</strong>. Seu objetivo é completar todas elas e resolver os <strong className="text-amber-300 font-bold">eventos de crise aleatórios</strong> que surgem durante o plantão no HUAP.
               </p>
               <div className="pt-2 flex items-start gap-1.5 text-xs text-teal-200/90 font-sans border-t border-teal-500/20 mt-1">
                 <span className="text-sm">📍</span>
@@ -1747,7 +1747,7 @@ function MissionsModal({
             </div>
           </div>
 
-          {/* Victory Banner if 23/23 completed */}
+          {/* Victory Banner if all completed */}
           {doneCount === totalCount && (
             <div 
               onClick={() => {
@@ -1758,7 +1758,7 @@ function MissionsModal({
               className="p-3 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-500/50 rounded-xl text-center cursor-pointer hover:bg-amber-500/30 transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)]"
             >
               <p className="text-amber-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 font-mono">
-                <span>🏆</span> VOCÊ ZEROU O JOGO! (23/23 Missões Concluídas) — Clique para ver a homenagem e agradecimento <span>✨</span>
+                <span>🏆</span> VOCÊ ZEROU O JOGO! ({doneCount}/{totalCount} Missões Concluídas) — Clique para ver a homenagem e agradecimento <span>✨</span>
               </p>
             </div>
           )}
@@ -1932,7 +1932,7 @@ function VictoryModal({
             ✨ Agradecemos imensamente você por jogar o Gestor HUAP - UFF! ✨
           </p>
           <p>
-            Você concluiu com excelência todas as <strong>23 diretrizes e missões estratégicas</strong> de Gerência de Enfermagem do Hospital Universitário Antônio Pedro.
+            Você concluiu com excelência todas as <strong>{MISSIONS.length} diretrizes e missões estratégicas</strong> de Gerência de Enfermagem do Hospital Universitário Antônio Pedro.
           </p>
           <p className="text-slate-300">
             Sua jornada cobriu desde dimensionamento de pessoal, acolhimento e triagem, até o gerenciamento de eventos de crise, acreditação ONA, segurança do paciente e liderança assistencial.
@@ -1943,7 +1943,7 @@ function VictoryModal({
         <div className="relative z-10 w-full grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center font-mono">
           <div className="bg-slate-950/80 border border-amber-500/30 rounded-xl p-3">
             <span className="text-[10px] text-slate-400 block">MISSÕES</span>
-            <span className="text-base sm:text-lg font-bold text-emerald-400">23 / 23</span>
+            <span className="text-base sm:text-lg font-bold text-emerald-400">{gameState.completedMissions.length} / {MISSIONS.length}</span>
           </div>
           <div className="bg-slate-950/80 border border-amber-500/30 rounded-xl p-3">
             <span className="text-[10px] text-slate-400 block">PRESTÍGIO</span>

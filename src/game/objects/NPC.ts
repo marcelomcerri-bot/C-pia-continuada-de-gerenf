@@ -388,12 +388,20 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
 
       if (allPoolDialogues.length > 0) {
-        // Find pool dialogue matching conversation count cycle or first valid
-        const index = this.conversationCount % allPoolDialogues.length;
-        const candidate = allPoolDialogues[index] || allPoolDialogues[0];
-        if (candidate && (!candidate.condition || candidate.condition(state))) {
-          found = candidate;
+        // Filter questions that have already been completed/answered correctly
+        const answered = state.answeredPools || [];
+        const uncompleted = allPoolDialogues.filter(d => {
+          const key = `${this.def.id}:${d.id}`;
+          return !answered.includes(key);
+        });
+
+        if (uncompleted.length > 0) {
+          const candidate = uncompleted.find(c => !c.condition || c.condition(state));
+          if (candidate) {
+            found = candidate;
+          }
         }
+        // When all pool questions are completed, found remains null and falls through to idle dialogue!
       }
     }
 

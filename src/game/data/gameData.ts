@@ -489,6 +489,7 @@ export interface GameState {
   decisionLog: string[];
   unlockedSectors: string[];
   playerProfile?: PlayerProfile;
+  answeredPools?: string[];
 }
 
 export interface MissionDef {
@@ -3885,5 +3886,27 @@ export const MISSIONS: MissionDef[] = [
     prerequisiteIds: ['indicadores_qualidade', 'capacitacao_sae'],
     pedagogy: 'A pesquisa em enfermagem fortalece a prática baseada em evidências. Os indicadores NDNQI (Nursing-Sensitive Quality Indicators) são referência internacional.',
     pedagogyRef: 'ANA — NDNQI: Nursing Sensitive Quality Indicators; UFF — Semana de Monitoria',
+  },
+  {
+    id: 'rastreabilidade_esterilizacao',
+    title: 'Rastreabilidade de Esterilização — CME',
+    description: 'Implementar a rotulagem e rastreabilidade obrigatória dos pacotes estéreis conforme RDC 15/2012.',
+    category: 'Gestão de Recursos Materiais e Custos nos Serviços de Saúde e Enfermagem',
+    prestige: 110,
+    steps: 1,
+    prerequisiteIds: ['cme_protocolo'],
+    pedagogy: 'A RDC 15/2012 (Art. 83) exige a identificação do produto, lote, data de esterilização, validade, método e responsável no rótulo de cada artigo estéril.',
+    pedagogyRef: 'ANVISA — RDC 15, de 15 de março de 2012',
+  },
+  {
+    id: 'protocolo_dieta',
+    title: 'Segurança na Administração de Dietas',
+    description: 'Padronizar a checagem da prescrição dietética e aprazamento para prevenção de broncoaspiração.',
+    category: 'Gestão do Cuidado em Enfermagem',
+    prestige: 105,
+    steps: 1,
+    prerequisiteIds: ['terapia_nutricional'],
+    pedagogy: 'A validação da prescrição dietética e da via de administração reduz os eventos adversos e broncoaspirações na assistência hospitalar.',
+    pedagogyRef: 'EBSERH / HUAP — Protocolo Multiprofissional de Terapia Nutricional',
   },
 ];

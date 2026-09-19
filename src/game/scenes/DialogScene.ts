@@ -54,6 +54,15 @@ export class DialogScene extends Phaser.Scene {
     this.hasChosen = false;
     this.pendingStateUpdate = {};
     this.choiceButtons = [];
+    this.isClosing = false;
+    this.inputReady = false;
+    this.lastAdvanceTime = 0;
+  }
+
+  private get hasQuestions(): boolean {
+    if (this.dialogue.id === 'idle') return false;
+    if (!this.dialogue.choices || this.dialogue.choices.length <= 1) return false;
+    return true;
   }
 
   create() {
@@ -141,15 +150,22 @@ export class DialogScene extends Phaser.Scene {
     this.tweens.add({ targets: this.cursor, alpha: 0, duration: 350, yoyo: true, repeat: -1 });
 
     // ── Matéria / Topic Badge Box above Dialogue Box
-    const topicText = this.dialogue.topic || (this.npcDef as any).sector || 'Gerência Assistencial & Enfermagem';
+    const isIdle = this.dialogue.id === 'idle';
+    const topicText = isIdle
+      ? 'ROTINA DO PLANTÃO'
+      : (this.dialogue.topic || (this.npcDef as any).sector || 'Gerência Assistencial & Enfermagem');
+    const badgeColor = isIdle ? '#1abc9c' : '#f1c40f';
+    const badgeBorderColor = isIdle ? 0x1abc9c : 0xf1c40f;
+    const badgeIcon = isIdle ? '💬' : '📚 CONTEÚDO:';
+
     if (topicText) {
       const badgeY = boxY - BOX_H / 2 - 18;
       const badgeGraphics = this.add.graphics();
 
-      const badgeTxt = this.add.text(boxX - W / 2 + 16, badgeY, `📚 CONTEÚDO: ${topicText.toUpperCase()}`, {
+      const badgeTxt = this.add.text(boxX - W / 2 + 16, badgeY, `${badgeIcon} ${topicText.toUpperCase()}`, {
         fontFamily: "'Rajdhani', 'Press Start 2P', monospace",
         fontSize: '13px',
-        color: '#f1c40f',
+        color: badgeColor,
         fontStyle: '700',
       }).setOrigin(0, 0.5);
 
@@ -158,7 +174,7 @@ export class DialogScene extends Phaser.Scene {
 
       badgeGraphics.fillStyle(0x0a1829, 0.95);
       badgeGraphics.fillRoundedRect(boxX - W / 2 + 4, badgeY - badgeH / 2, badgeW, badgeH, 6);
-      badgeGraphics.lineStyle(2, 0xf1c40f, 0.9);
+      badgeGraphics.lineStyle(2, badgeBorderColor, 0.9);
       badgeGraphics.strokeRoundedRect(boxX - W / 2 + 4, badgeY - badgeH / 2, badgeW, badgeH, 6);
 
       badgeTxt.setPosition(boxX - W / 2 + 16, badgeY);
@@ -242,7 +258,7 @@ export class DialogScene extends Phaser.Scene {
       this.bodyText.setText(currentLine);
 
       if (this.lineIdx >= this.lines.length - 1) {
-        if (!this.hasChosen) {
+        if (!this.hasChosen && this.hasQuestions) {
           this.cursor.setVisible(false);
           this.time.delayedCall(180, () => this.showChoices());
         } else {
@@ -270,7 +286,7 @@ export class DialogScene extends Phaser.Scene {
       this.time.delayedCall(220, () => { this.inputReady = true; });
 
       if (this.lineIdx >= this.lines.length - 1) {
-        if (!this.hasChosen) {
+        if (!this.hasChosen && this.hasQuestions) {
           this.cursor.setVisible(false);
           this.time.delayedCall(240, () => this.showChoices());
         } else {
@@ -289,6 +305,12 @@ export class DialogScene extends Phaser.Scene {
 
     if (this.lineIdx < this.lines.length - 1) {
       this.startLine(this.lineIdx + 1);
+    } else {
+      // Last line on dialogue without questions: close cleanly
+      if (!this.hasQuestions) {
+        this.closeDialog(this.pendingStateUpdate);
+        return;
+      }
     }
   }
 
@@ -372,12 +394,18 @@ export class DialogScene extends Phaser.Scene {
         // If choice was incorrect, progress remains 1 so player can retry, learn from feedback, and earn prestige!
         if (!isIncorrectChoice) {
           progress[missionId] = 2; // Mark as completed in progress
-          const mission = MISSIONS.find(m => m.id === missionId);
-          if (mission && !completed.includes(missionId)) {
+          if (!completed.includes(missionId)) {
             completed.push(missionId);
+            const mission = MISSIONS.find(m => m.id === missionId);
+            const prestigeGain = mission ? mission.prestige : 100;
             const basePrestige = stateUpdate.prestige ?? this.state.prestige;
-            stateUpdate.prestige = basePrestige + mission.prestige;
-            this.showPedagogyNote(mission.title, mission.pedagogy, mission.pedagogyRef, mission.prestige);
+            stateUpdate.prestige = basePrestige + prestigeGain;
+            
+            const title = mission ? mission.title : 'Missão Concluída';
+            const pedagogy = mission ? mission.pedagogy : 'Conduta de gerência aplicada com sucesso conforme protocolos hospitalares.';
+            const pedagogyRef = mission ? mission.pedagogyRef : 'Referencial Teórico HUAP / UFF';
+            
+            this.showPedagogyNote(title, pedagogy, pedagogyRef, prestigeGain);
             try { playSound('success'); } catch {}
           }
         } else {
@@ -388,6 +416,20 @@ export class DialogScene extends Phaser.Scene {
 
       stateUpdate.missionProgress = progress;
       stateUpdate.completedMissions = completed;
+    }
+
+    // Process pool question completion (so questions don't repeat after being answered correctly)
+    const isPoolQuestion = !!(
+      this.npcDef.dialoguePools?.some(p => Array.isArray(p) && p.some(d => d.id === this.dialogue.id)) ||
+      this.dialogue.id?.startsWith('pool')
+    );
+    if (isPoolQuestion && !isIncorrectChoice) {
+      const poolKey = `${this.npcDef.id}:${this.dialogue.id}`;
+      const answered = [...(this.state.answeredPools || [])];
+      if (!answered.includes(poolKey)) {
+        answered.push(poolKey);
+        stateUpdate.answeredPools = answered;
+      }
     }
 
     // Update relationship
