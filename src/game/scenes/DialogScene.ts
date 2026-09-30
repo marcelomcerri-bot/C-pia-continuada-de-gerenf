@@ -34,10 +34,12 @@ export class DialogScene extends Phaser.Scene {
   private overlay!: Phaser.GameObjects.Rectangle;
   private onClose!: (s: Partial<GameState>) => void;
   private inputReady = false;
+  private inputReadyTimer?: Phaser.Time.TimerEvent;
   private lastAdvanceTime = 0;
   private domPointerdownListener?: (e: PointerEvent) => void;
   private hasChosen = false;
   private pendingStateUpdate: Partial<GameState> = {};
+  private advanceHint!: Phaser.GameObjects.Text;
 
   constructor() { super({ key: SCENES.DIALOG, active: false }); }
 
@@ -149,6 +151,14 @@ export class DialogScene extends Phaser.Scene {
     }).setVisible(false);
     this.tweens.add({ targets: this.cursor, alpha: 0, duration: 350, yoyo: true, repeat: -1 });
 
+    // Advance / action hint at bottom-right of dialogue box
+    this.advanceHint = this.add.text(boxX + W / 2 - 20, boxY + BOX_H / 2 - 15, '', {
+      fontFamily: "'Rajdhani', 'Segoe UI', monospace",
+      fontSize: '14px',
+      fontStyle: 'bold',
+      color: '#1abc9c',
+    }).setOrigin(1, 0.5);
+
     // ── Matéria / Topic Badge Box above Dialogue Box
     const isIdle = this.dialogue.id === 'idle';
     const topicText = isIdle
@@ -182,17 +192,15 @@ export class DialogScene extends Phaser.Scene {
       this.boxContainer.add([badgeGraphics, badgeTxt]);
     }
 
-    this.boxContainer.add([shadow, bg, header, border, nameTxt, titleTxt, closeHint, this.bodyText, this.cursor]);
+    this.boxContainer.add([shadow, bg, header, border, nameTxt, titleTxt, closeHint, this.bodyText, this.cursor, this.advanceHint]);
 
     // Choice area (rendered separately, on top)
     this.choiceArea = this.add.container(0, 0).setDepth(10);
 
     // Input — gated by a short grace period so the keypress that opened the
-    // dialog doesn't immediately skip the very first line (caused the
-    // "NPC só diz uma frase" bug).
+    // dialog doesn't immediately skip the very first line.
     this.inputReady = false;
     this.lastAdvanceTime = 0;
-    this.time.delayedCall(300, () => { this.inputReady = true; });
 
     this.input.keyboard?.on('keydown-E', this.handleAdvance, this);
     this.input.keyboard?.on('keydown-SPACE', this.handleAdvance, this);
@@ -208,20 +216,50 @@ export class DialogScene extends Phaser.Scene {
     this.boxContainer.setAlpha(0).setY(30);
     this.tweens.add({ targets: this.boxContainer, alpha: 1, y: 0, duration: 300, ease: 'Back.easeOut' });
 
-    this.startLine(0);
+    this.startLine(0, 300);
   }
 
-  private startLine(idx: number) {
+  private setInputGate(delayMs: number) {
+    this.inputReady = false;
+    if (this.inputReadyTimer) {
+      this.inputReadyTimer.remove(false);
+    }
+    this.inputReadyTimer = this.time.delayedCall(delayMs, () => {
+      this.inputReady = true;
+    });
+  }
+
+  private updateAdvanceHint() {
+    if (!this.advanceHint) return;
+    if (this.showingChoices) {
+      this.advanceHint.setVisible(false);
+      return;
+    }
+    this.advanceHint.setVisible(true);
+    if (this.isTyping) {
+      this.advanceHint.setText('[Clique / E / Espaço] Exibir texto').setColor('#94a3b8');
+    } else if (this.hasChosen) {
+      this.advanceHint.setText('[Clique / E / Espaço] Concluir conversa ▶').setColor('#1abc9c');
+    } else if (this.lineIdx < this.lines.length - 1) {
+      this.advanceHint.setText(`[Clique / E / Espaço] Continuar (${this.lineIdx + 1}/${this.lines.length}) ▶`).setColor('#1abc9c');
+    } else if (this.hasQuestions) {
+      this.advanceHint.setText('[Clique / E / Espaço] Ver opções de resposta ▶').setColor('#f1c40f');
+    } else {
+      this.advanceHint.setText('[Clique / E / Espaço] Concluir ▶').setColor('#1abc9c');
+    }
+  }
+
+  private startLine(idx: number, gateMs = 220) {
     this.lineIdx = idx;
     this.charIdx = 0;
     this.charTimer = 0;
     this.isTyping = true;
     this.lastAdvanceTime = Date.now();
-    this.inputReady = false;
-    this.time.delayedCall(160, () => { this.inputReady = true; });
+    this.setInputGate(gateMs);
     this.bodyText.setText('');
     this.cursor.setVisible(false);
     this.showingChoices = false;
+    this.updateAdvanceHint();
   }
 
   update(_t: number, delta: number) {
@@ -256,15 +294,8 @@ export class DialogScene extends Phaser.Scene {
     if (this.charIdx > currentLine.length) {
       this.isTyping = false;
       this.bodyText.setText(currentLine);
-
-      if (this.lineIdx >= this.lines.length - 1) {
-        if (!this.hasChosen && this.hasQuestions) {
-          this.cursor.setVisible(false);
-          this.time.delayedCall(180, () => this.showChoices());
-        } else {
-          this.cursor.setVisible(true);
-        }
-      }
+      this.cursor.setVisible(true);
+      this.updateAdvanceHint();
     }
   }
 
@@ -280,21 +311,11 @@ export class DialogScene extends Phaser.Scene {
       this.bodyText.setText(this.lines[this.lineIdx]);
       this.charIdx = this.lines[this.lineIdx].length + 1;
       this.isTyping = false;
+      this.cursor.setVisible(true);
+      this.updateAdvanceHint();
 
-      // Gate next click so this click ONLY completes the text without skipping to the next line
-      this.inputReady = false;
-      this.time.delayedCall(220, () => { this.inputReady = true; });
-
-      if (this.lineIdx >= this.lines.length - 1) {
-        if (!this.hasChosen && this.hasQuestions) {
-          this.cursor.setVisible(false);
-          this.time.delayedCall(240, () => this.showChoices());
-        } else {
-          this.cursor.setVisible(true);
-        }
-      } else {
-        this.cursor.setVisible(true);
-      }
+      // Gate next click so this click ONLY completes the text without skipping to the next line or opening choices
+      this.setInputGate(260);
       return;
     }
 
@@ -304,13 +325,14 @@ export class DialogScene extends Phaser.Scene {
     }
 
     if (this.lineIdx < this.lines.length - 1) {
-      this.startLine(this.lineIdx + 1);
+      this.startLine(this.lineIdx + 1, 220);
     } else {
-      // Last line on dialogue without questions: close cleanly
-      if (!this.hasQuestions) {
-        this.closeDialog(this.pendingStateUpdate);
+      // Last line finished and player explicitly clicked to advance:
+      if (!this.hasChosen && this.hasQuestions) {
+        this.showChoices();
         return;
       }
+      this.closeDialog(this.pendingStateUpdate);
     }
   }
 
@@ -326,6 +348,7 @@ export class DialogScene extends Phaser.Scene {
     if (this.showingChoices) return;
     this.showingChoices = true;
     this.cursor.setVisible(false);
+    this.updateAdvanceHint();
 
     const rawChoices = this.dialogue.choices;
     const choices = (rawChoices && rawChoices.length > 0) ? rawChoices : [{ text: 'Entendido / Continuar' }];
@@ -333,6 +356,9 @@ export class DialogScene extends Phaser.Scene {
 
     (window as any).activeChoices = {
       topic: this.dialogue.topic || (this.npcDef as any).sector || 'Gerência Assistencial & Enfermagem',
+      npcName: this.npcDef.name,
+      npcTitle: this.npcDef.title,
+      questionText: this.lines.join(' '),
       choices: choices.map((c: any, i) => ({
         text: c.text,
         index: i,
@@ -578,11 +604,7 @@ export class DialogScene extends Phaser.Scene {
     const fbStr = Array.isArray(rawFb) ? rawFb.join(' ') : (typeof rawFb === 'string' ? rawFb : pickFromPool);
 
     this.lines = [fbStr];
-    this.startLine(0);
-    
-    // Gated by a short grace period so touch release on choice button doesn't immediately advance
-    this.inputReady = false;
-    this.time.delayedCall(300, () => { this.inputReady = true; });
+    this.startLine(0, 320);
   }
 
   private showPedagogyNote(missionTitle: string, pedagogy: string, pedagogyRef: string, pts: number) {

@@ -1446,17 +1446,31 @@ function DialogueChoicesOverlay({
       >
         {/* Top Header */}
         <div className="flex-shrink-0 p-3.5 sm:p-4 bg-slate-900/90 border-b border-slate-800/80 flex flex-col gap-2">
-          {activeData?.topic && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-300 font-mono text-[10px] sm:text-xs font-semibold tracking-wide uppercase max-w-full shadow-sm"
-            >
-              <span className="flex-shrink-0">📚</span>
-              <span className="truncate">{activeData.topic}</span>
-            </motion.div>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {activeData?.topic && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-300 font-mono text-[10px] sm:text-xs font-semibold tracking-wide uppercase max-w-full shadow-sm"
+              >
+                <span className="flex-shrink-0">📚</span>
+                <span className="truncate">{activeData.topic}</span>
+              </motion.div>
+            )}
+            {activeData?.npcName && (
+              <span className="text-[11px] sm:text-xs font-mono font-bold text-cyan-300">
+                {activeData.npcName}{activeData.npcTitle ? ` · ${activeData.npcTitle}` : ""}
+              </span>
+            )}
+          </div>
+
+          {activeData?.questionText && (
+            <div className="p-2.5 sm:p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-slate-200 text-xs sm:text-sm leading-relaxed font-sans max-h-32 overflow-y-auto">
+              {activeData.questionText}
+            </div>
           )}
-          <div className="flex items-center justify-between gap-2">
+
+          <div className="flex items-center justify-between gap-2 pt-0.5">
             <h3 className="text-emerald-400 font-bold font-mono text-xs sm:text-sm tracking-wider uppercase flex items-center gap-2">
               <span className="text-base leading-none animate-pulse">💬</span> Selecione a melhor conduta
             </h3>
