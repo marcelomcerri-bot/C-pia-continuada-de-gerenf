@@ -4,8 +4,8 @@ import {
   CAMERA_ZOOM, SCENES, EVENTS, EVENTS as EV,
   INTERACTION_DISTANCE, GAME_MINUTES_PER_SECOND, ROOM_NAMES, TILE_ID,
 } from '../constants';
-import { generateMapTiles, getDoorTileKeys, NPC_DEFS, MISSIONS, CRISIS_EVENTS, getLevelInfo } from '../data/gameData';
-import type { GameState, CrisisEvent } from '../data/gameData';
+import { generateMapTiles, getDoorTileKeys, NPC_DEFS, MISSIONS, CRISIS_EVENTS, getLevelInfo, getStatusDefForError } from '../data/gameData';
+import type { GameState, CrisisEvent, ActiveHospitalStatus } from '../data/gameData';
 import { Player } from '../objects/Player';
 import { NPC } from '../objects/NPC';
 import { loadGame, saveGame } from '../utils/save';
@@ -1962,6 +1962,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     const available = CRISIS_EVENTS.filter(e => {
+      // Do not randomly pick derived crises — they only fire as consequences of bad decisions
+      if (e.id.startsWith('desdobramento_')) return false;
       const lvl = getLevelInfo(this.state.prestige).level;
       return e.minCareerLevel <= lvl;
     });
@@ -1989,17 +1991,75 @@ export class GameScene extends Phaser.Scene {
     this.scheduleCrisis();
   }
 
+  public triggerCrisisById(crisisId: string) {
+    if (this.isCrisisOpen || this.isDialogOpen) return;
+    const targetCrisis = CRISIS_EVENTS.find(e => e.id === crisisId);
+    if (!targetCrisis) return;
+
+    const shuffledChoices = [...targetCrisis.choices];
+    for (let i = shuffledChoices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledChoices[i], shuffledChoices[j]] = [shuffledChoices[j], shuffledChoices[i]];
+    }
+    const event = { ...targetCrisis, choices: shuffledChoices };
+
+    this.isCrisisOpen = true;
+    this.lastActivity = `Respondendo a desdobramento: ${event.title}`;
+    const hud = this.scene.get('HUDScene') as any;
+    if (hud) {
+      hud.showCrisisOverlay(event, (choiceIdx: number) => {
+        this.resolveCrisis(event, choiceIdx);
+      });
+    }
+
+    this.state.crisisCount = (this.state.crisisCount || 0) + 1;
+  }
+
   public resolveCrisis(event: CrisisEvent, choiceIdx: number) {
     if (!this.isCrisisOpen) return;
     this.isCrisisOpen = false;
 
     const choice = event.choices[choiceIdx];
+    const isDesdobramento = event.id.startsWith('desdobramento_');
 
     // Apply effects
     this.state.prestige = Math.max(0, this.state.prestige + choice.prestigeEffect);
     this.state.energy = Math.max(0, Math.min(100, this.state.energy + choice.energyEffect));
     this.state.stress = Math.max(0, Math.min(100, (this.state.stress || 0) + choice.stressEffect));
     this.state.decisionLog = [...(this.state.decisionLog || []), `${event.id}:${choiceIdx}`].slice(-20);
+
+    // Consequence and Redemption status handling
+    if (isDesdobramento) {
+      // Remove corresponding status — consequence has run
+      const currentStatuses = (this.state.activeStatuses || []).filter(s => s.triggerCrisisId !== event.id);
+      this.state.activeStatuses = currentStatuses;
+      if (choice.correct) {
+        this.showFloatingText(this.player.x, this.player.y - 70, '🌟 REDENÇÃO ALCANÇADA!', '#2ecc71', 22);
+      }
+    } else if (!choice.correct) {
+      // Create negative status consequence from error (45s duration, 14s trigger)
+      const statusDef = getStatusDefForError({
+        title: event.title,
+        questionText: event.description,
+        wrongChoiceText: choice.text,
+        category: 'Crise & Tomada de Decisão',
+      });
+      const currentStatuses = [...(this.state.activeStatuses || [])];
+      if (!currentStatuses.some(s => s.id === statusDef.id)) {
+        currentStatuses.push({
+          id: statusDef.id,
+          title: statusDef.title,
+          icon: statusDef.icon,
+          description: statusDef.description,
+          consequenceSummary: statusDef.consequenceSummary,
+          remainingSeconds: 45,
+          triggerCrisisId: statusDef.triggerCrisisId,
+          triggerInSeconds: 14,
+        });
+        this.state.activeStatuses = currentStatuses;
+        this.showFloatingText(this.player.x, this.player.y - 70, `⚠️ STATUS: ${statusDef.title}!`, '#e74c3c', 20);
+      }
+    }
 
     const hud = this.scene.get('HUDScene') as any;
     if (hud) {
@@ -2143,6 +2203,38 @@ export class GameScene extends Phaser.Scene {
       this.crisisTimer -= 1000;
       if (this.state.gameTime >= this.nextCrisisTime) {
         this.triggerCrisis();
+      }
+    }
+
+    // Active hospital statuses ticking (optimized for 10-15m session)
+    if (this.state.activeStatuses && this.state.activeStatuses.length > 0) {
+      const deltaSec = delta / 1000;
+      let changed = false;
+      const updatedStatuses: ActiveHospitalStatus[] = [];
+
+      for (const st of this.state.activeStatuses) {
+        st.remainingSeconds -= deltaSec;
+        if (st.triggerInSeconds !== undefined && st.triggerInSeconds > 0) {
+          st.triggerInSeconds -= deltaSec;
+        }
+
+        // Trigger derived consequence if timer is ready and player is free
+        if (st.triggerInSeconds !== undefined && st.triggerInSeconds <= 0 && st.triggerInSeconds > -500 && !this.isCrisisOpen && !this.isDialogOpen) {
+          st.triggerInSeconds = -999; // mark triggered
+          changed = true;
+          this.triggerCrisisById(st.triggerCrisisId);
+        }
+
+        if (st.remainingSeconds > 0) {
+          updatedStatuses.push(st);
+        } else {
+          changed = true;
+          this.showFloatingText(this.player.x, this.player.y - 50, `[i] Status ${st.title} normalizado`, '#94a3b8', 16);
+        }
+      }
+
+      if (changed || updatedStatuses.length !== this.state.activeStatuses.length) {
+        this.state.activeStatuses = updatedStatuses;
       }
     }
 

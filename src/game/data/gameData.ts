@@ -476,6 +476,17 @@ export interface PlayerProfile {
   skinTone: string;
 }
 
+export interface ActiveHospitalStatus {
+  id: string; // 'paciente_instavel' | 'estresse_equipe' | 'risco_infeccao' | 'risco_juridico' | 'desfalque_operacional'
+  title: string;
+  icon: string;
+  description: string;
+  consequenceSummary: string;
+  remainingSeconds: number;
+  triggerCrisisId: string;
+  triggerInSeconds: number;
+}
+
 export interface GameState {
   prestige: number;
   energy: number;
@@ -490,6 +501,76 @@ export interface GameState {
   unlockedSectors: string[];
   playerProfile?: PlayerProfile;
   answeredPools?: string[];
+  activeStatuses?: ActiveHospitalStatus[];
+}
+
+export function getStatusDefForError(context: {
+  title?: string;
+  questionText?: string;
+  wrongChoiceText?: string;
+  category?: string;
+}): {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  consequenceSummary: string;
+  triggerCrisisId: string;
+} {
+  const text = `${context.title || ''} ${context.questionText || ''} ${context.wrongChoiceText || ''} ${context.category || ''}`.toLowerCase();
+
+  if (text.includes('medic') || text.includes('heparina') || text.includes('dose') || text.includes('clínic') || text.includes('sinais') || text.includes('parada') || text.includes('queda') || text.includes('paciente')) {
+    if (text.includes('família') || text.includes('ocult') || text.includes('ouvidor') || text.includes('registro') || text.includes('comunica')) {
+      return {
+        id: 'risco_juridico',
+        title: 'Risco Ético & Ouvidoria',
+        icon: '⚖️',
+        description: 'Falta de transparência e acolhimento gerou desconfiança e atrito com familiares.',
+        consequenceSummary: 'Em instantes: familiar recorre à Ouvidoria com queixa formal!',
+        triggerCrisisId: 'desdobramento_risco_juridico',
+      };
+    }
+    return {
+      id: 'paciente_instavel',
+      title: 'Paciente Instável',
+      icon: '🩸',
+      description: 'Conduta clínica insuficiente no leito. Risco iminente de deterioração aguda.',
+      consequenceSummary: 'Em instantes: paciente descompensa com complicação clínica!',
+      triggerCrisisId: 'desdobramento_paciente_instavel',
+    };
+  }
+
+  if (text.includes('esteriliz') || text.includes('cme') || text.includes('luva') || text.includes('infecç') || text.includes('resíduo') || text.includes('perfuro') || text.includes('assep')) {
+    return {
+      id: 'risco_infeccao',
+      title: 'Risco de Infecção (CCIH)',
+      icon: '🛡️',
+      description: 'Quebra de barreira sanitária detectada no setor. Risco de cluster microbiológico.',
+      consequenceSummary: 'Em instantes: auditoria relâmpago da CCIH no setor!',
+      triggerCrisisId: 'desdobramento_risco_infeccao',
+    };
+  }
+
+  if (text.includes('escala') || text.includes('faltou') || text.includes('superlota') || text.includes('realo') || text.includes('leito') || text.includes('material') || text.includes('compra')) {
+    return {
+      id: 'desfalque_operacional',
+      title: 'Desfalque Operacional',
+      icon: '📉',
+      description: 'Dimensionamento ou fluxo prejudicado. Setor vulnerável a sobrecarga assistencial.',
+      consequenceSummary: 'Em instantes: alarme crítico no setor desguarnecido!',
+      triggerCrisisId: 'desdobramento_desfalque_operacional',
+    };
+  }
+
+  // Padrão: Clima Tenso na Equipe
+  return {
+    id: 'estresse_equipe',
+    title: 'Clima Tenso na Equipe',
+    icon: '⚡',
+    description: 'Postura gerencial desgastante gerou desmotivação e atrito entre os profissionais.',
+    consequenceSummary: 'Em instantes: atrito no posto e risco de quase-erro por fadiga!',
+    triggerCrisisId: 'desdobramento_estresse_equipe',
+  };
 }
 
 export interface MissionDef {
@@ -834,6 +915,157 @@ export const CRISIS_EVENTS: CrisisEvent[] = [
         correct: false,
         prestigeEffect: -15, energyEffect: -5, stressEffect: 20,
         feedback: 'Contestar indicadores sem evidência é evasão. O enfermeiro gerente deve responder com propostas de melhoria.',
+      },
+    ],
+  },
+  // ── DESDOBRAMENTOS NARRATIVOS (CULTURA JUSTA & REDENÇÃO) ──
+  {
+    id: 'desdobramento_paciente_instavel',
+    title: '🚨 DESDOBRAMENTO: Complicação Clínica Aguda!',
+    description: 'Consequência de falha anterior de vigilância: o paciente do leito evoluiu com rebaixamento e queda brusca de saturação!',
+    urgent: true,
+    minCareerLevel: 0,
+    choices: [
+      {
+        text: 'Acionar Equipe de Resposta Rápida (ERR), ofertar O2 em alto fluxo e instalar monitorização imediata',
+        tooltip: 'Conduta exemplar de contenção clínica imediata',
+        correct: true,
+        prestigeEffect: 45, energyEffect: -15, stressEffect: -10,
+        feedback: '🌟 REDENÇÃO DA CULTURA JUSTA! Atuação clínica ágil estabilizou o paciente e evitou PCR. Status "Paciente Instável" neutralizado!',
+      },
+      {
+        text: 'Aguardar o médico assistente terminar a visita da tarde para relatar o quadro',
+        tooltip: 'Atraso crítico em paciente instável',
+        correct: false,
+        prestigeEffect: -25, energyEffect: -5, stressEffect: 20,
+        feedback: 'Atraso no atendimento de deterioração clínica aguda aumenta mortalidade em 40%. Ação de ERR é mandatória (ACLS).',
+      },
+      {
+        text: 'Apenas colocar o paciente em decúbito dorsal e pedir para a família vigiar',
+        tooltip: 'Risco de broncoaspiração em rebaixamento',
+        correct: false,
+        prestigeEffect: -20, energyEffect: -5, stressEffect: 15,
+        feedback: 'Decúbito dorsal com nível de consciência rebaixado favorece aspiração pulmonar. Conduta contraindicada.',
+      },
+    ],
+  },
+  {
+    id: 'desdobramento_estresse_equipe',
+    title: '⚡ DESDOBRAMENTO: Conflito no Posto & Quase-Erro!',
+    description: 'Consequência do clima tenso e sobrecarga: técnicos discutiram e quase trocaram frascos de antibióticos na bancada!',
+    urgent: true,
+    minCareerLevel: 0,
+    choices: [
+      {
+        text: 'Pausar 3 minutos para debriefing acolhedor sem culpa, revisar a dupla checagem e reorganizar as tarefas',
+        tooltip: 'Liderança transformadora e segurança psicológica',
+        correct: true,
+        prestigeEffect: 40, energyEffect: -10, stressEffect: -15,
+        feedback: '🌟 REDENÇÃO DA CULTURA JUSTA! Sua liderança transformadora restaurou a segurança psicológica da equipe (Marquis & Huston). Status "Clima Tenso" neutralizado!',
+      },
+      {
+        text: 'Aplicar advertência oral na frente de todos e exigir silêncio absoluto no posto',
+        tooltip: 'Postura autocrática agrava o medo e o estresse',
+        correct: false,
+        prestigeEffect: -25, energyEffect: -10, stressEffect: 25,
+        feedback: 'Ameaças e humilhação pública agravam o burnout e disparam subnotificação de erros (Cultura Justa).',
+      },
+      {
+        text: 'Assumir todas as medicações sozinho e mandar a equipe para o descanso',
+        tooltip: 'Centralização perigosa',
+        correct: false,
+        prestigeEffect: -15, energyEffect: -25, stressEffect: 20,
+        feedback: 'Centralização de tarefas sobrecarrega o enfermeiro e desqualifica a equipe técnica.',
+      },
+    ],
+  },
+  {
+    id: 'desdobramento_risco_infeccao',
+    title: '🛡️ DESDOBRAMENTO: Auditoria Relâmpago da CCIH!',
+    description: 'Consequência da quebra de barreira sanitária: a CCIH identificou inconformidades graves com risco de interdição no setor!',
+    urgent: true,
+    minCareerLevel: 0,
+    choices: [
+      {
+        text: 'Apresentar plano de ação corretivo com base na RDC ANVISA, recolher materiais expostos e reforçar higienização',
+        tooltip: 'Resposta estruturada e conformidade sanitária imediata',
+        correct: true,
+        prestigeEffect: 45, energyEffect: -15, stressEffect: -10,
+        feedback: '🌟 REDENÇÃO DA CULTURA JUSTA! Medidas preventivas e conformidade sanitária restabeleceram a biossegurança no HUAP!',
+      },
+      {
+        text: 'Argumentar que o setor estava sob pressão de tempo e pedir dispensa da fiscalização',
+        tooltip: 'Negligência em normas sanitárias',
+        correct: false,
+        prestigeEffect: -25, energyEffect: -5, stressEffect: 20,
+        feedback: 'Biossegurança não admite concessões. O gestor deve liderar a conformidade com as normas sanitárias.',
+      },
+      {
+        text: 'Transferir a responsabilidade do incidente para a equipe do almoxarifado',
+        tooltip: 'Evasão de responsabilidade',
+        correct: false,
+        prestigeEffect: -20, energyEffect: -5, stressEffect: 15,
+        feedback: 'A fiscalização exige plano de ação operacional do enfermeiro responsável pelo setor, não evasão.',
+      },
+    ],
+  },
+  {
+    id: 'desdobramento_risco_juridico',
+    title: '⚖️ DESDOBRAMENTO: Notificação na Ouvidoria!',
+    description: 'Consequência da falta de transparência: familiar indignado registrou queixa formal na Ouvidoria do hospital contra a equipe!',
+    urgent: false,
+    minCareerLevel: 0,
+    choices: [
+      {
+        text: 'Convidar a família para sala privativa, praticar escuta ativa, acolher a dor e apresentar o plano de cuidados com transparência',
+        tooltip: 'Comunicação terapêutica e resolução pacífica de conflitos',
+        correct: true,
+        prestigeEffect: 45, energyEffect: -15, stressEffect: -10,
+        feedback: '🌟 REDENÇÃO DA CULTURA JUSTA! A escuta empática e a transparência resolveram o conflito e preservaram a imagem institucional!',
+      },
+      {
+        text: 'Avisar que a família não tem autorização técnica para questionar condutas internas da equipe',
+        tooltip: 'Hostilidade institucional e quebra do Código de Ética',
+        correct: false,
+        prestigeEffect: -30, energyEffect: -5, stressEffect: 25,
+        feedback: 'Hostilidade com pacientes e acompanhantes viola os direitos dos usuários do SUS e o Código de Ética do COFEN.',
+      },
+      {
+        text: 'Pedir para a equipe de segurança da portaria mediar a conversa no corredor',
+        tooltip: 'Inadequação da delegação',
+        correct: false,
+        prestigeEffect: -20, energyEffect: -5, stressEffect: 20,
+        feedback: 'A comunicação de eventos com a família é competência ética privativa da equipe de saúde.',
+      },
+    ],
+  },
+  {
+    id: 'desdobramento_desfalque_operacional',
+    title: '📉 DESDOBRAMENTO: Alarme Crítico na Ala Desfalcada!',
+    description: 'Consequência do remanejamento desordenado: o setor deixado com equipe reduzida acionou botão de emergência por sobrecarga!',
+    urgent: true,
+    minCareerLevel: 0,
+    choices: [
+      {
+        text: 'Redimensionar pelo cálculo COFEN 543/17, priorizar cuidados de alta dependência e acionar enfermeiro volante de retaguarda',
+        tooltip: 'Gestão técnica de dimensionamento em crise',
+        correct: true,
+        prestigeEffect: 45, energyEffect: -15, stressEffect: -10,
+        feedback: '🌟 REDENÇÃO DA CULTURA JUSTA! Gestão técnica do dimensionamento restabeleceu a segurança assistencial sem desfalcar outros setores.',
+      },
+      {
+        text: 'Pedir para os pacientes aguardarem o próximo turno pois faltam profissionais',
+        tooltip: 'Omissão assistencial grave',
+        correct: false,
+        prestigeEffect: -30, energyEffect: -5, stressEffect: 25,
+        feedback: 'Omissão de socorro institucional. O gestor deve acionar o plano de contingência imediatamente.',
+      },
+      {
+        text: 'Retirar às pressas mais um técnico de outro setor que ainda está funcionando',
+        tooltip: 'Efeito dominó de sobrecarga',
+        correct: false,
+        prestigeEffect: -20, energyEffect: -10, stressEffect: 20,
+        feedback: 'Remanejamentos em cascata disseminam o risco assistencial para todo o hospital.',
       },
     ],
   },

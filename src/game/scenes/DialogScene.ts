@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, SCENES } from '../constants';
-import type { DialogueDef, GameState, NPCDef } from '../data/gameData';
-import { MISSIONS } from '../data/gameData';
+import type { DialogueDef, GameState, NPCDef, ActiveHospitalStatus } from '../data/gameData';
+import { MISSIONS, getStatusDefForError } from '../data/gameData';
 import { playSound } from '../utils/audio';
 import { addErrorEntry } from '../utils/errorLog';
 
@@ -463,24 +463,48 @@ export class DialogScene extends Phaser.Scene {
     rel[this.npcDef.id] = (rel[this.npcDef.id] ?? 0) + 1;
     stateUpdate.relationships = rel;
 
-    // Apply updates locally to this.state
-    const prevPrestige = this.state.prestige;
-    this.state = { ...this.state, ...stateUpdate };
-    this.pendingStateUpdate = stateUpdate;
-
-    // Log error if choice is incorrect
+    // Log error and create active status consequence if choice is incorrect
     if (isIncorrectChoice) {
       const rightChoice = rawChoices.find((c: any) => c.correct === true) || rawChoices[0];
+      const qText = Array.isArray(this.dialogue.text) ? this.dialogue.text.join(' ') : (this.dialogue.text || 'Cenário gerencial apresentado no diálogo');
       addErrorEntry({
         sourceTitle: `Diálogo com ${this.npcDef.name} (${this.npcDef.title || 'Equipe HUAP'})`,
         category: (this.npcDef as any).sector || 'Gerência Assistencial',
-        questionText: Array.isArray(this.dialogue.text) ? this.dialogue.text.join(' ') : (this.dialogue.text || 'Cenário gerencial apresentado no diálogo'),
+        questionText: qText,
         wrongAnswerText: choice.text,
         correctAnswerText: rightChoice ? rightChoice.text : 'Conduta recomendada conforme diretrizes de gerência',
         explanation: Array.isArray((choice as any).feedback) ? (choice as any).feedback.join(' ') : ((choice as any).feedback || 'Escolha em desacordo com as boas práticas e referenciais de gerência de enfermagem.'),
         pedagogyRef: 'Kurcgant (2016) / Marquis & Huston (2015)',
       });
+
+      // Inject fast-paced negative hospital status (14s to consequence, 45s max duration)
+      const statusDef = getStatusDefForError({
+        title: `Diálogo com ${this.npcDef.name}`,
+        category: (this.npcDef as any).sector,
+        questionText: qText,
+        wrongChoiceText: choice.text,
+      });
+
+      const currentStatuses = [...(this.state.activeStatuses || [])];
+      if (!currentStatuses.some(s => s.id === statusDef.id)) {
+        currentStatuses.push({
+          id: statusDef.id,
+          title: statusDef.title,
+          icon: statusDef.icon,
+          description: statusDef.description,
+          consequenceSummary: statusDef.consequenceSummary,
+          remainingSeconds: 45,
+          triggerCrisisId: statusDef.triggerCrisisId,
+          triggerInSeconds: 14,
+        });
+        stateUpdate.activeStatuses = currentStatuses;
+      }
     }
+
+    // Apply updates locally to this.state
+    const prevPrestige = this.state.prestige;
+    this.state = { ...this.state, ...stateUpdate };
+    this.pendingStateUpdate = stateUpdate;
 
     // ── Log decision to server (for Professor View: Erros e Acertos) ──
     try {

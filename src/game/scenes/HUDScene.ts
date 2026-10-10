@@ -88,6 +88,12 @@ export class HUDScene extends Phaser.Scene {
   private roomLabelBg!: Phaser.GameObjects.Graphics;
   private currentRoomName: string = 'Corredor';
 
+  // Active hospital status badge
+  private statusContainer!: Phaser.GameObjects.Container;
+  private statusBg!: Phaser.GameObjects.Graphics;
+  private statusText!: Phaser.GameObjects.Text;
+  private statusSubText!: Phaser.GameObjects.Text;
+
   // Guidance objective
   private currentGuidanceIdx: number = 0;
   private lastCompletedCount: number = -1;
@@ -141,6 +147,7 @@ export class HUDScene extends Phaser.Scene {
     this.buildTopBar();
     this.buildBottomHint();
     this.buildRoomLabel();
+    this.buildHospitalStatusBadge();
 
     const isMobile = (window as any).__portraitMobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     if (isMobile) {
@@ -186,6 +193,7 @@ export class HUDScene extends Phaser.Scene {
     this.buildTopBar();
     this.buildBottomHint();
     this.buildRoomLabel();
+    this.buildHospitalStatusBadge();
 
     const isMobile = (window as any).__portraitMobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     if (isMobile) {
@@ -552,6 +560,70 @@ export class HUDScene extends Phaser.Scene {
     this.roomLabelBg.fillCircle(rx + 20, ry + 20, 4);
   }
 
+  // ── HOSPITAL STATUS BADGE ────────────────────────────────────────────────
+  private buildHospitalStatusBadge() {
+    this.statusContainer = this.add.container(0, 0).setVisible(false).setDepth(200);
+    this.statusBg = this.add.graphics();
+    this.statusText = this.add.text(0, 0, '', {
+      fontFamily: "'Rajdhani', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif",
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#ff6b6b',
+    });
+    this.statusSubText = this.add.text(0, 0, '', {
+      fontFamily: "'Segoe UI', 'Trebuchet MS', system-ui, sans-serif",
+      fontSize: '10px',
+      color: '#cbd5e1',
+    });
+    this.statusContainer.add([this.statusBg, this.statusText, this.statusSubText]);
+  }
+
+  private updateHospitalStatusBadge(state: GameState) {
+    if (!this.statusContainer) return;
+    const statuses = state.activeStatuses || [];
+    if (statuses.length === 0) {
+      this.statusContainer.setVisible(false);
+      return;
+    }
+
+    const primary = statuses[0];
+    const ry = this.getRoomLabelY() + 46;
+    const rx = 14;
+    const w = 310;
+    const h = 34;
+
+    this.statusContainer.setPosition(rx, ry).setVisible(true);
+    this.statusBg.clear();
+
+    const pulse = 0.8 + 0.2 * Math.sin(this.time.now / 200);
+
+    // Drop shadow
+    this.statusBg.fillStyle(0x000000, 0.4);
+    this.statusBg.fillRoundedRect(2, 2, w, h, 8);
+
+    // Dark reddish-amber emergency telemetry background
+    this.statusBg.fillStyle(0x1f0b0b, 0.95);
+    this.statusBg.fillRoundedRect(0, 0, w, h, 8);
+
+    // Flashing red/orange warning border
+    this.statusBg.lineStyle(1.8, 0xe74c3c, pulse);
+    this.statusBg.strokeRoundedRect(0, 0, w, h, 8);
+
+    // Alert indicator dot
+    this.statusBg.fillStyle(0xe74c3c, pulse);
+    this.statusBg.fillCircle(16, 17, 4);
+
+    const extraStr = statuses.length > 1 ? ` (+${statuses.length - 1})` : '';
+    const secsLeft = Math.max(1, Math.ceil(primary.remainingSeconds));
+    const triggerLeft = primary.triggerInSeconds && primary.triggerInSeconds > 0 ? ` [Em ${Math.ceil(primary.triggerInSeconds)}s]` : '';
+
+    this.statusText.setPosition(28, 3)
+      .setText(`${primary.icon} ${primary.title.toUpperCase()}: ${secsLeft}s${triggerLeft}${extraStr}`);
+
+    this.statusSubText.setPosition(28, 17)
+      .setText(primary.consequenceSummary);
+  }
+
   // ── GUIDANCE HANDLERS ────────────────────────────────────────────────────
   public getCurrentGuidanceTarget() {
     return this.guidanceList[this.currentGuidanceIdx] || null;
@@ -863,6 +935,9 @@ export class HUDScene extends Phaser.Scene {
     this.playerDot.fillCircle(dotX, dotY, 3);
     this.playerDot.fillStyle(0x1abc9c, pulse);
     this.playerDot.fillCircle(dotX, dotY, 5);
+
+    // Update active hospital status telemetry
+    this.updateHospitalStatusBadge(state);
   }
 
   private onHint(msg: string) {
