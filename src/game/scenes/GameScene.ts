@@ -44,6 +44,8 @@ export class GameScene extends Phaser.Scene {
   private lastActivity = 'Explorando o hospital';
   private lastDustTime = 0;
   private lastDialogCloseTime = 0;
+  private lastBurnoutWarningTime = 0;
+  private burnoutPrestigeTimer = 0;
 
   // Ambient lights/decor
   private darkOverlay!: Phaser.GameObjects.RenderTexture;
@@ -2144,13 +2146,20 @@ export class GameScene extends Phaser.Scene {
        return;
     }
 
-    // Movement
+    // Stress & Burnout calculation
+    const currentStress = this.state.stress || 0;
+    const isBurnout = currentStress >= 100;
+    const isHighStress = currentStress >= 75;
+
+    // Movement: Sprint blocked during Burnout; Speed reduced under fatigue
     const up    = this.cursors.up.isDown    || this.wasd.up.isDown || vpad.up;
     const down  = this.cursors.down.isDown  || this.wasd.down.isDown || vpad.down;
     const left  = this.cursors.left.isDown  || this.wasd.left.isDown || vpad.left;
     const right = this.cursors.right.isDown || this.wasd.right.isDown || vpad.right;
-    const sprint = (this.shiftKey.isDown || vpad.sprint) && this.state.energy > 10;
-    this.player.move(up, down, left, right, delta, sprint);
+    const canSprint = !isBurnout && this.state.energy > 10;
+    const sprint = (this.shiftKey.isDown || vpad.sprint) && canSprint;
+    const speedMultiplier = isBurnout ? 0.72 : (isHighStress ? 0.88 : 1.0);
+    this.player.move(up, down, left, right, delta, sprint, speedMultiplier);
 
     if (this.player.isCurrentlyMoving()) {
       this.spawnDustParticle(this.player.x, this.player.y, this.player.isCurrentlySprinting());
@@ -2180,9 +2189,12 @@ export class GameScene extends Phaser.Scene {
        if (vpad.actionJustPressed) vpad.actionJustPressed = false;
     }
 
-    // Mission overlay toggle
-    if (Phaser.Input.Keyboard.JustDown(this.mKey) || vpad.missionJustPressed) {
-      if (vpad.missionJustPressed) vpad.missionJustPressed = false;
+    // Hospital Map & Mission overlay toggles
+    if (Phaser.Input.Keyboard.JustDown(this.mKey)) {
+      this.toggleHospitalMap();
+    }
+    if (vpad.missionJustPressed) {
+      vpad.missionJustPressed = false;
       this.toggleMissionOverlay();
     }
 
@@ -2238,9 +2250,11 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Energy depletion (every 6s = 1 point; sprint costs more)
+    // Energy depletion (sprint costs more; high stress accelerates exhaustion)
     this.energyTimer += delta;
-    const energyDrain = sprint ? 3000 : 7000;
+    const stressDrainMultiplier = isHighStress ? 1.4 : 1.0;
+    const baseEnergyDrain = sprint ? 3000 : 7000;
+    const energyDrain = baseEnergyDrain / stressDrainMultiplier;
     if (this.energyTimer >= energyDrain && this.state.energy > 0) {
       this.energyTimer = 0;
       this.state.energy = Math.max(0, this.state.energy - 1);
@@ -2252,32 +2266,51 @@ export class GameScene extends Phaser.Scene {
     const tileId = (row >= 0 && row < MAP_ROWS && col >= 0 && col < MAP_COLS)
       ? this.mapData[row][col] : TILE_ID.CORRIDOR;
 
-    // Break room: restore energy and reduce stress
+    // Periodic Burnout warning and consequence outside of rest zones
+    if (isBurnout && tileId !== TILE_ID.BREAK && tileId !== TILE_ID.GARDEN) {
+      if (time - this.lastBurnoutWarningTime > 9000) {
+        this.lastBurnoutWarningTime = time;
+        this.showFloatingText(this.player.x, this.player.y - 65, '⚠️ EXAUSTÃO / BURNOUT! Descanse na Copa!', '#e74c3c', 20);
+        try { playSound('error'); } catch {}
+        this.cameras.main.shake(200, 0.003);
+      }
+      this.burnoutPrestigeTimer += delta;
+      if (this.burnoutPrestigeTimer >= 12000 && this.state.prestige > 0) {
+        this.burnoutPrestigeTimer = 0;
+        this.state.prestige = Math.max(0, this.state.prestige - 2);
+        this.showFloatingText(this.player.x, this.player.y - 45, '-2 pts (Fadiga Extrema)', '#e74c3c', 16);
+      }
+    } else {
+      this.burnoutPrestigeTimer = 0;
+    }
+
+    // Break room (Copa): fast energy restoration and rapid stress reduction
     if (tileId === TILE_ID.BREAK) {
       this.energyRestoreTimer += delta;
       if (this.energyRestoreTimer >= 1500 && this.state.energy < 100) {
         this.energyRestoreTimer = 0;
-        this.state.energy = Math.min(100, this.state.energy + 6);
-        this.showFloatingText(this.player.x, this.player.y - 30, '+6 NRG', '#f1c40f');
+        this.state.energy = Math.min(100, this.state.energy + 8);
+        this.showFloatingText(this.player.x, this.player.y - 30, '+8 NRG ☕', '#f1c40f', 16);
       }
-      // Also reduce stress
+      // Rapid stress decay (clears Burnout in 5-8 seconds)
       this.stressDecayTimer += delta;
-      if (this.stressDecayTimer >= 3000 && this.state.stress > 0) {
+      if (this.stressDecayTimer >= 1500 && (this.state.stress || 0) > 0) {
         this.stressDecayTimer = 0;
-        this.state.stress = Math.max(0, this.state.stress - 3);
+        this.state.stress = Math.max(0, (this.state.stress || 0) - 8);
+        this.showFloatingText(this.player.x, this.player.y - 50, '-8% Estresse ☕', '#2ecc71', 16);
+      }
+    } else if (tileId === TILE_ID.GARDEN) {
+      // Garden: gentle restorative fresh air
+      this.energyRestoreTimer = 0;
+      this.stressDecayTimer += delta;
+      if (this.stressDecayTimer >= 2000 && (this.state.stress || 0) > 0) {
+        this.stressDecayTimer = 0;
+        this.state.stress = Math.max(0, (this.state.stress || 0) - 5);
+        this.showFloatingText(this.player.x, this.player.y - 45, '-5% Estresse 🌿', '#2ecc71', 14);
       }
     } else {
       this.energyRestoreTimer = 0;
       this.stressDecayTimer = 0;
-    }
-
-    // Garden: gentle stress reduction
-    if (tileId === TILE_ID.GARDEN) {
-      this.stressDecayTimer += delta;
-      if (this.stressDecayTimer >= 5000 && this.state.stress > 0) {
-        this.stressDecayTimer = 0;
-        this.state.stress = Math.max(0, this.state.stress - 1);
-      }
     }
 
     // Room change event
@@ -2441,6 +2474,13 @@ export class GameScene extends Phaser.Scene {
     const hud = this.scene.get('HUDScene') as any;
     if (hud) {
       hud.toggleMissionOverlay(this.state);
+    }
+  }
+
+  public toggleHospitalMap() {
+    const hud = this.scene.get('HUDScene') as any;
+    if (hud) {
+      hud.openHospitalMap();
     }
   }
 

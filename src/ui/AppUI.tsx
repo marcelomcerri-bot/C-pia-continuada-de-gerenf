@@ -15,6 +15,7 @@ import { isAppFullscreen, toggleAppFullscreen, subscribeFullscreenChange } from 
 import { ProfessorView } from "./ProfessorView";
 import { ErrorNotebookModal } from "./ErrorNotebookModal";
 import { CharacterCreationModal } from "./CharacterCreationModal";
+import { HospitalMapModal } from "./HospitalMapModal";
 
 // Students are identified by a generated ID stored in sessionStorage so the
 // professor dashboard can track them across the session without any login.
@@ -108,12 +109,14 @@ function RoutesWrapper({
     window.addEventListener("togglenotebook", handleToggle);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Toggle notebook with 'C' key if not typing in input
-      if (
-        (e.key === "c" || e.key === "C") &&
-        !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName || "")
-      ) {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName || "")) return;
+      // Toggle notebook with 'C' key
+      if (e.key === "c" || e.key === "C") {
         setIsNotebookOpen((prev) => !prev);
+      }
+      // Toggle hospital map with 'M' key
+      if (e.key === "m" || e.key === "M") {
+        window.dispatchEvent(new CustomEvent("toggle-hospital-map"));
       }
     };
 
@@ -160,6 +163,15 @@ function RoutesWrapper({
 
   const [missionsModalData, setMissionsModalData] = useState<GameState | null>(null);
   const [victoryModalData, setVictoryModalData] = useState<GameState | null>(null);
+  const [mapModalData, setMapModalData] = useState<{
+    isOpen: boolean;
+    gameState: GameState | null;
+    playerPos?: { x: number; y: number };
+    activeTarget?: any;
+  }>({
+    isOpen: false,
+    gameState: null,
+  });
 
   useEffect(() => {
     const handleGameCompleted = (e: any) => {
@@ -192,6 +204,52 @@ function RoutesWrapper({
     window.addEventListener("toggle-missions" as any, handleToggleMissions);
     return () => {
       window.removeEventListener("toggle-missions" as any, handleToggleMissions);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleOpenMap = (e: any) => {
+      const phaser = (window as any).phaserGame;
+      const gameScene = phaser?.scene?.getScene("GameScene") as any;
+      const hudScene = phaser?.scene?.getScene("HUDScene") as any;
+      const state = e?.detail?.state || gameScene?.state || loadGame();
+      const playerPos = e?.detail?.playerPos || (gameScene?.player ? { x: gameScene.player.x, y: gameScene.player.y } : undefined);
+      const activeTarget = e?.detail?.activeTarget || hudScene?.getCurrentGuidanceTarget?.() || null;
+
+      setMapModalData({
+        isOpen: true,
+        gameState: state,
+        playerPos,
+        activeTarget,
+      });
+    };
+
+    const handleToggleMap = (e: any) => {
+      setMapModalData((prev) => {
+        if (prev.isOpen) {
+          return { ...prev, isOpen: false };
+        }
+        const phaser = (window as any).phaserGame;
+        const gameScene = phaser?.scene?.getScene("GameScene") as any;
+        const hudScene = phaser?.scene?.getScene("HUDScene") as any;
+        const state = e?.detail?.state || gameScene?.state || loadGame();
+        const playerPos = e?.detail?.playerPos || (gameScene?.player ? { x: gameScene.player.x, y: gameScene.player.y } : undefined);
+        const activeTarget = e?.detail?.activeTarget || hudScene?.getCurrentGuidanceTarget?.() || null;
+        return {
+          isOpen: true,
+          gameState: state,
+          playerPos,
+          activeTarget,
+        };
+      });
+    };
+
+    window.addEventListener("open-hospital-map" as any, handleOpenMap);
+    window.addEventListener("toggle-hospital-map" as any, handleToggleMap);
+
+    return () => {
+      window.removeEventListener("open-hospital-map" as any, handleOpenMap);
+      window.removeEventListener("toggle-hospital-map" as any, handleToggleMap);
     };
   }, []);
 
@@ -248,6 +306,18 @@ function RoutesWrapper({
       <ErrorNotebookModal
         isOpen={isNotebookOpen}
         onClose={() => setIsNotebookOpen(false)}
+      />
+
+      <HospitalMapModal
+        isOpen={mapModalData.isOpen}
+        onClose={() => setMapModalData((prev) => ({ ...prev, isOpen: false }))}
+        gameState={mapModalData.gameState}
+        playerPos={mapModalData.playerPos}
+        activeTarget={mapModalData.activeTarget}
+        onOpenMissions={() => {
+          setMapModalData((prev) => ({ ...prev, isOpen: false }));
+          setMissionsModalData(mapModalData.gameState || (window as any).phaserGame?.scene?.getScene("GameScene")?.state || loadGame());
+        }}
       />
 
       <MissionsModal
@@ -1112,6 +1182,14 @@ function MobileControls() {
     setVPad("missionJustPressed", true);
   };
 
+  const handleMap = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    try { playSound("click"); } catch {}
+    window.dispatchEvent(new CustomEvent("open-hospital-map"));
+  };
+
   const handlePause = (e?: React.SyntheticEvent) => {
     if (e) {
       e.stopPropagation();
@@ -1213,7 +1291,7 @@ function MobileControls() {
           position: "fixed",
           right: "max(12px, env(safe-area-inset-right, 12px))",
           bottom: "max(12px, env(safe-area-inset-bottom, 12px))",
-          width: 160,
+          width: 210,
           height: 160,
           pointerEvents: "none",
           zIndex: 85,
@@ -1289,6 +1367,40 @@ function MobileControls() {
           <span style={{ fontSize: 10, letterSpacing: 0.5, marginTop: 1 }}>FALAR</span>
         </button>
 
+        {/* MAPA HUAP */}
+        <button
+          type="button"
+          onPointerDown={handleMap}
+          onClick={handleMap}
+          style={{
+            position: "absolute",
+            left: 4,
+            bottom: 8,
+            width: 50,
+            height: 50,
+            pointerEvents: "auto",
+            borderRadius: "50%",
+            background: "rgba(15,23,42,0.92)",
+            border: "2.5px solid #06b6d4",
+            color: "#fff",
+            fontFamily: "monospace",
+            fontSize: 9,
+            fontWeight: "bold",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            touchAction: "manipulation",
+            userSelect: "none",
+            WebkitUserSelect: "none",
+            cursor: "pointer",
+            boxShadow: "0 0 10px rgba(6,182,212,0.35), 0 4px 10px rgba(0,0,0,0.5)",
+          }}
+        >
+          <span style={{ fontSize: 15 }}>🗺️</span>
+          <span style={{ fontSize: 8 }}>MAPA</span>
+        </button>
+
         {/* MISSÃO */}
         <button
           type="button"
@@ -1296,10 +1408,10 @@ function MobileControls() {
           onClick={handleMission}
           style={{
             position: "absolute",
-            left: 4,
+            left: 58,
             bottom: 8,
-            width: 52,
-            height: 52,
+            width: 50,
+            height: 50,
             pointerEvents: "auto",
             borderRadius: "50%",
             background: "rgba(15,23,42,0.92)",
@@ -1725,24 +1837,38 @@ function MissionsModal({
                 </p>
               </div>
             </div>
-            <button
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                try { playSound("click"); } catch {}
-                onClose();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                try { playSound("click"); } catch {}
-                onClose();
-              }}
-              className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-xl font-bold font-mono cursor-pointer touch-manipulation"
-              aria-label="Sair"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  try { playSound("click"); } catch {}
+                  onClose();
+                  window.dispatchEvent(new CustomEvent("open-hospital-map"));
+                }}
+                className="px-3 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 hover:text-cyan-100 font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span>🗺️</span>
+                <span>Planta do Hospital</span>
+              </button>
+              <button
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  try { playSound("click"); } catch {}
+                  onClose();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  try { playSound("click"); } catch {}
+                  onClose();
+                }}
+                className="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-xl font-bold font-mono cursor-pointer touch-manipulation"
+                aria-label="Sair"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Progress Bar */}
@@ -1869,9 +1995,21 @@ function MissionsModal({
                   </div>
 
                   <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
-                    <span className="flex items-center gap-1 text-slate-300">
-                      📍 <strong className="text-emerald-400 font-medium">{m.npcName}</strong> ({m.room})
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try { playSound("click"); } catch {}
+                        onClose();
+                        window.dispatchEvent(new CustomEvent("open-hospital-map"));
+                      }}
+                      className="flex items-center gap-1 text-slate-300 hover:text-cyan-300 cursor-pointer transition-colors group"
+                      title="Clique para ver localização na planta baixa"
+                    >
+                      <span>📍</span>
+                      <strong className="text-emerald-400 group-hover:text-cyan-300 font-medium underline-offset-2 group-hover:underline">{m.npcName}</strong>
+                      <span className="text-slate-400">({m.room})</span>
+                      <span className="text-[10px] text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity">🗺️</span>
+                    </button>
                     {m.pedagogyRef && (
                       <span className="text-[10px] text-amber-300/80">
                         📖 {m.pedagogyRef}

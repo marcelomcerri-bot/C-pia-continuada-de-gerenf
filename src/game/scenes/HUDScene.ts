@@ -67,6 +67,7 @@ export class HUDScene extends Phaser.Scene {
   // Stress
   private stressBarFill!: Phaser.GameObjects.Graphics;
   private stressValText!: Phaser.GameObjects.Text;
+  private stressSubText?: Phaser.GameObjects.Text;
 
   // Career
   private prestigeText!: Phaser.GameObjects.Text;
@@ -227,14 +228,14 @@ export class HUDScene extends Phaser.Scene {
     // Shadow
     const shadow = this.add.graphics();
     shadow.fillStyle(0x000000, 0.4);
-    shadow.fillRoundedRect(mmX - 2, MM_Y - 2, MM_W + 16, MM_H + 24, 10);
+    shadow.fillRoundedRect(mmX - 2, MM_Y - 2, MM_W + 16, MM_H + 36, 10);
 
     // Background
     const bg = this.add.graphics();
     bg.fillStyle(0x1a252f, 1);
-    bg.fillRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 28, 10);
-    bg.lineStyle(2, 0xf39c12, 1);
-    bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 28, 10);
+    bg.fillRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 42, 10);
+    bg.lineStyle(2, 0x06b6d4, 0.85);
+    bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 42, 10);
 
     this.minimapGfx = this.add.graphics();
     this.drawMinimap();
@@ -242,10 +243,71 @@ export class HUDScene extends Phaser.Scene {
     // Player dot (animated)
     this.playerDot = this.add.graphics().setDepth(5);
 
-    // Label
-    this.add.text(mmX + MM_W / 2, MM_Y + MM_H + 8, 'MAPA HUAP', {
-      fontFamily: 'monospace', fontSize: '12px', color: '#f39c12', stroke: '#000', strokeThickness: 2,
-    }).setOrigin(0.5, 0);
+    // Interactive button below minimap
+    const btnY = MM_Y + MM_H + 8;
+    const btnW = MM_W;
+    const btnH = 22;
+
+    const btnBg = this.add.graphics();
+    btnBg.fillStyle(0x0a192f, 0.95);
+    btnBg.fillRoundedRect(mmX, btnY, btnW, btnH, 6);
+    btnBg.lineStyle(1.2, 0x38bdf8, 0.7);
+    btnBg.strokeRoundedRect(mmX, btnY, btnW, btnH, 6);
+
+    const btnText = this.add.text(mmX + btnW / 2, btnY + btnH / 2, '🗺️ ABRIR PLANTA [M]', {
+      fontFamily: "'Rajdhani', 'Segoe UI', monospace",
+      fontSize: '12px',
+      color: '#38bdf8',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    // Make entire minimap and button interactive
+    const hitArea = this.add.rectangle(mmX + MM_W / 2, MM_Y + (MM_H + 42) / 2 - 6, MM_W + 12, MM_H + 42)
+      .setInteractive({ cursor: 'pointer' })
+      .setDepth(10);
+
+    hitArea.on('pointerover', () => {
+      bg.lineStyle(2.5, 0x38bdf8, 1);
+      bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 42, 10);
+      btnBg.clear();
+      btnBg.fillStyle(0x0f2b48, 1);
+      btnBg.fillRoundedRect(mmX, btnY, btnW, btnH, 6);
+      btnBg.lineStyle(1.5, 0x38bdf8, 1);
+      btnBg.strokeRoundedRect(mmX, btnY, btnW, btnH, 6);
+      btnText.setColor('#ffffff');
+    });
+
+    hitArea.on('pointerout', () => {
+      bg.lineStyle(2, 0x06b6d4, 0.85);
+      bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 42, 10);
+      btnBg.clear();
+      btnBg.fillStyle(0x0a192f, 0.95);
+      btnBg.fillRoundedRect(mmX, btnY, btnW, btnH, 6);
+      btnBg.lineStyle(1.2, 0x38bdf8, 0.7);
+      btnBg.strokeRoundedRect(mmX, btnY, btnW, btnH, 6);
+      btnText.setColor('#38bdf8');
+    });
+
+    hitArea.on('pointerdown', () => {
+      this.openHospitalMap();
+    });
+  }
+
+  public openHospitalMap() {
+    playSound('click');
+    const gameScene = this.scene.get(SCENES.GAME) as any;
+    const playerX = gameScene?.player?.x ?? this.lastHudData?.playerX ?? 0;
+    const playerY = gameScene?.player?.y ?? this.lastHudData?.playerY ?? 0;
+    const targetObj = this.getCurrentGuidanceTarget();
+    window.dispatchEvent(
+      new CustomEvent('open-hospital-map', {
+        detail: {
+          state: this.lastHudData?.state ?? gameScene?.state,
+          playerPos: { x: playerX, y: playerY },
+          activeTarget: targetObj,
+        },
+      })
+    );
   }
 
   private drawMinimap() {
@@ -414,8 +476,8 @@ export class HUDScene extends Phaser.Scene {
     this.stressBarFill = this.add.graphics();
 
     if (!isTwoRow) {
-      this.add.text(bx + stressX + 8, by + 60, 'SOBRECARGA', {
-        fontFamily: SUB_FONT, fontSize: '11px', color: '#94a3b8', fontStyle: 'bold',
+      this.stressSubText = this.add.text(bx + stressX + 8, by + 60, 'ESTÁVEL', {
+        fontFamily: SUB_FONT, fontSize: '11px', color: '#2ed573', fontStyle: 'bold',
       });
     }
 
@@ -479,7 +541,7 @@ export class HUDScene extends Phaser.Scene {
     bg.strokeRoundedRect(this.scale.width / 2 - W / 2, this.scale.height - H - 10, W, H, 18);
 
     this.hintText = this.add.text(this.scale.width / 2, this.scale.height - H / 2 - 10,
-      'WASD: Mover  |  SHIFT: Correr  |  E: Interagir  |  M: Missões  |  C: 📖 Caderno de Erros  |  ESC: Menu', {
+      'WASD: Mover  |  SHIFT: Correr  |  E: Interagir  |  M: 🗺️ Planta Baixa  |  C: 📖 Caderno  |  ESC: Menu', {
         fontFamily: "'VT323', monospace", fontSize: '20px', color: '#1abc9c',
       }).setOrigin(0.5)
       .setInteractive({ cursor: 'pointer' })
@@ -893,20 +955,35 @@ export class HUDScene extends Phaser.Scene {
     this.energyValText.setText(`${Math.round(state.energy || 0)}%`).setColor(eHexStr);
 
     // Stress bar
-    const sp = Math.max(0, Math.min(1, (state.stress || 0) / 100));
-    const sColor = sp < 0.3 ? 0x2ecc71 : sp < 0.6 ? 0xf1c40f : 0xe74c3c;
-    const sHexStr = sp < 0.3 ? '#2ecc71' : sp < 0.6 ? '#f1c40f' : '#e74c3c';
+    const stressVal = Math.round(state.stress || 0);
+    const sp = Math.max(0, Math.min(1, stressVal / 100));
+    const sColor = sp < 0.5 ? 0x2ecc71 : sp < 0.75 ? 0xf1c40f : sp < 1.0 ? 0xe67e22 : 0xe74c3c;
+    const sHexStr = sp < 0.5 ? '#2ecc71' : sp < 0.75 ? '#f1c40f' : sp < 1.0 ? '#e67e22' : '#e74c3c';
     this.stressBarFill.clear();
     const stTrackW = Math.max(4, cfg.stressW - 16);
     const sW = Math.max(0, stTrackW * sp);
     if (sW > 2) {
-      this.stressBarFill.fillStyle(sColor, 1);
+      // Pulse animation effect if in critical burnout (100%)
+      const pulseAlpha = sp >= 1.0 ? (0.75 + 0.25 * Math.sin(this.time.now / 150)) : 1.0;
+      this.stressBarFill.fillStyle(sColor, pulseAlpha);
       const fillX = cfg.bx + cfg.stressX + 8;
       const fillY = cfg.by + (cfg.isTwoRow ? 38 : 36);
       const fillH = cfg.isTwoRow ? 15 : 16;
       this.stressBarFill.fillRoundedRect(fillX, fillY, sW, fillH, Math.min(5, sW / 2));
     }
-    this.stressValText.setText(`${Math.round(state.stress || 0)}%`).setColor(sHexStr);
+    this.stressValText.setText(`${stressVal}%`).setColor(sHexStr);
+
+    if (this.stressSubText) {
+      if (sp >= 1.0) {
+        this.stressSubText.setText('BURNOUT! (PAUSA)').setColor('#ff4757');
+      } else if (sp >= 0.75) {
+        this.stressSubText.setText('FADIGA (-12% VEL)').setColor('#ffa502');
+      } else if (sp >= 0.5) {
+        this.stressSubText.setText('TENSÃO MODERADA').setColor('#f1c40f');
+      } else {
+        this.stressSubText.setText('ESTÁVEL').setColor('#2ed573');
+      }
+    }
 
     // Career
     this.prestigeText.setText(`${state.prestige} pts`);

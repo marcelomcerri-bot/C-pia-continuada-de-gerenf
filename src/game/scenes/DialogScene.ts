@@ -395,7 +395,7 @@ export class DialogScene extends Phaser.Scene {
       stateUpdate = choice.effect(this.state);
     }
 
-    // Strictly enforce NO prestige gain on incorrect choices
+    // Strictly enforce NO prestige gain on incorrect choices and increase stress
     if (isIncorrectChoice) {
       const currentPrestige = this.state.prestige;
       let newPrestige = stateUpdate.prestige !== undefined ? stateUpdate.prestige : currentPrestige - 5;
@@ -403,6 +403,10 @@ export class DialogScene extends Phaser.Scene {
         newPrestige = Math.max(0, currentPrestige - 5);
       }
       stateUpdate.prestige = newPrestige;
+
+      // Increase nurse manager stress on errors
+      const currentStress = this.state.stress || 0;
+      stateUpdate.stress = Math.min(100, (stateUpdate.stress !== undefined ? stateUpdate.stress : currentStress) + 15);
     }
 
     // Process mission completion / advancement whenever a choice with missionEffect is selected
@@ -426,6 +430,10 @@ export class DialogScene extends Phaser.Scene {
             const prestigeGain = mission ? mission.prestige : 100;
             const basePrestige = stateUpdate.prestige ?? this.state.prestige;
             stateUpdate.prestige = basePrestige + prestigeGain;
+
+            // Relief from duty accomplishment reduces stress
+            const currentStress = stateUpdate.stress !== undefined ? stateUpdate.stress : (this.state.stress || 0);
+            stateUpdate.stress = Math.max(0, currentStress - 10);
             
             const title = mission ? mission.title : 'Missão Concluída';
             const pedagogy = mission ? mission.pedagogy : 'Conduta de gerência aplicada com sucesso conforme protocolos hospitalares.';

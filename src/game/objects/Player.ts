@@ -28,7 +28,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setAngle(0);
   }
 
-  move(up: boolean, down: boolean, left: boolean, right: boolean, delta: number, sprint = false) {
+  move(up: boolean, down: boolean, left: boolean, right: boolean, delta: number, sprint = false, speedMultiplier = 1.0) {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(0, 0);
 
@@ -41,7 +41,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
 
     this.isSprinting = sprint && (dx !== 0 || dy !== 0);
-    const speed = this.isSprinting ? PLAYER_SPRINT_SPEED : PLAYER_SPEED;
+    const baseSpeed = this.isSprinting ? PLAYER_SPRINT_SPEED : PLAYER_SPEED;
+    const speed = baseSpeed * speedMultiplier;
     body.setVelocity(dx * speed, dy * speed);
 
     this.isMoving = dx !== 0 || dy !== 0;
