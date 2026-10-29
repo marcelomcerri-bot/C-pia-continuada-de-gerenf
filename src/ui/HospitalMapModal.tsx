@@ -143,7 +143,7 @@ export function HospitalMapModal({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-sm sm:text-base font-bold font-mono text-cyan-300 tracking-wider uppercase">
-                  Planta do Hospital Universitário (HUAP)
+                  Mapa do Hospital Universitário (HUAP)
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-[10px] font-mono text-cyan-300">
                   76 × 50 Setores

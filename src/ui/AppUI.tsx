@@ -1848,7 +1848,7 @@ function MissionsModal({
                 className="px-3 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 hover:text-cyan-100 font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <span>🗺️</span>
-                <span>Planta do Hospital</span>
+                <span>Mapa do Hospital</span>
               </button>
               <button
                 onPointerDown={(e) => {
@@ -2003,7 +2003,7 @@ function MissionsModal({
                         window.dispatchEvent(new CustomEvent("open-hospital-map"));
                       }}
                       className="flex items-center gap-1 text-slate-300 hover:text-cyan-300 cursor-pointer transition-colors group"
-                      title="Clique para ver localização na planta baixa"
+                      title="Clique para ver localização no mapa"
                     >
                       <span>📍</span>
                       <strong className="text-emerald-400 group-hover:text-cyan-300 font-medium underline-offset-2 group-hover:underline">{m.npcName}</strong>

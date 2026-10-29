@@ -228,14 +228,14 @@ export class HUDScene extends Phaser.Scene {
     // Shadow
     const shadow = this.add.graphics();
     shadow.fillStyle(0x000000, 0.4);
-    shadow.fillRoundedRect(mmX - 2, MM_Y - 2, MM_W + 16, MM_H + 36, 10);
+    shadow.fillRoundedRect(mmX - 2, MM_Y - 2, MM_W + 16, MM_H + 16, 10);
 
-    // Background
+    // Background & border
     const bg = this.add.graphics();
     bg.fillStyle(0x1a252f, 1);
-    bg.fillRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 42, 10);
+    bg.fillRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 12, 10);
     bg.lineStyle(2, 0x06b6d4, 0.85);
-    bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 42, 10);
+    bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 12, 10);
 
     this.minimapGfx = this.add.graphics();
     this.drawMinimap();
@@ -243,49 +243,19 @@ export class HUDScene extends Phaser.Scene {
     // Player dot (animated)
     this.playerDot = this.add.graphics().setDepth(5);
 
-    // Interactive button below minimap
-    const btnY = MM_Y + MM_H + 8;
-    const btnW = MM_W;
-    const btnH = 22;
-
-    const btnBg = this.add.graphics();
-    btnBg.fillStyle(0x0a192f, 0.95);
-    btnBg.fillRoundedRect(mmX, btnY, btnW, btnH, 6);
-    btnBg.lineStyle(1.2, 0x38bdf8, 0.7);
-    btnBg.strokeRoundedRect(mmX, btnY, btnW, btnH, 6);
-
-    const btnText = this.add.text(mmX + btnW / 2, btnY + btnH / 2, '🗺️ ABRIR PLANTA [M]', {
-      fontFamily: "'Rajdhani', 'Segoe UI', monospace",
-      fontSize: '12px',
-      color: '#38bdf8',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
-
-    // Make entire minimap and button interactive
-    const hitArea = this.add.rectangle(mmX + MM_W / 2, MM_Y + (MM_H + 42) / 2 - 6, MM_W + 12, MM_H + 42)
+    // Make entire minimap interactive
+    const hitArea = this.add.rectangle(mmX + MM_W / 2, MM_Y + MM_H / 2, MM_W + 12, MM_H + 12)
       .setInteractive({ cursor: 'pointer' })
       .setDepth(10);
 
     hitArea.on('pointerover', () => {
       bg.lineStyle(2.5, 0x38bdf8, 1);
-      bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 42, 10);
-      btnBg.clear();
-      btnBg.fillStyle(0x0f2b48, 1);
-      btnBg.fillRoundedRect(mmX, btnY, btnW, btnH, 6);
-      btnBg.lineStyle(1.5, 0x38bdf8, 1);
-      btnBg.strokeRoundedRect(mmX, btnY, btnW, btnH, 6);
-      btnText.setColor('#ffffff');
+      bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 12, 10);
     });
 
     hitArea.on('pointerout', () => {
       bg.lineStyle(2, 0x06b6d4, 0.85);
-      bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 42, 10);
-      btnBg.clear();
-      btnBg.fillStyle(0x0a192f, 0.95);
-      btnBg.fillRoundedRect(mmX, btnY, btnW, btnH, 6);
-      btnBg.lineStyle(1.2, 0x38bdf8, 0.7);
-      btnBg.strokeRoundedRect(mmX, btnY, btnW, btnH, 6);
-      btnText.setColor('#38bdf8');
+      bg.strokeRoundedRect(mmX - 6, MM_Y - 6, MM_W + 12, MM_H + 12, 10);
     });
 
     hitArea.on('pointerdown', () => {
@@ -541,7 +511,7 @@ export class HUDScene extends Phaser.Scene {
     bg.strokeRoundedRect(this.scale.width / 2 - W / 2, this.scale.height - H - 10, W, H, 18);
 
     this.hintText = this.add.text(this.scale.width / 2, this.scale.height - H / 2 - 10,
-      'WASD: Mover  |  SHIFT: Correr  |  E: Interagir  |  M: 🗺️ Planta Baixa  |  C: 📖 Caderno  |  ESC: Menu', {
+      'WASD: Mover  |  SHIFT: Correr  |  E: Interagir  |  M: 🗺️ Mapa  |  C: 📖 Caderno  |  ESC: Menu', {
         fontFamily: "'VT323', monospace", fontSize: '20px', color: '#1abc9c',
       }).setOrigin(0.5)
       .setInteractive({ cursor: 'pointer' })
